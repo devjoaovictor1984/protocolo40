@@ -125,6 +125,60 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
   return templates;
 }
 
+/**
+ * Cria um exercício do próprio usuário.
+ *
+ * Precisa de rede: a biblioteca é compartilhada entre aparelhos e o `id` vem do
+ * banco. O treino em si continua funcionando offline com o que já está em cache.
+ */
+export async function createCustomExercise(input: {
+  userId: string;
+  name: string;
+  category: ExerciseCategory;
+  modality: ExerciseModality;
+}): Promise<CatalogExercise> {
+  const name = input.name.trim();
+
+  if (name.length < 2 || name.length > 60) {
+    throw new Error('O nome precisa ter entre 2 e 60 caracteres.');
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({
+      owner_id: input.userId,
+      name,
+      category: input.category,
+      modality: input.modality,
+    })
+    .select('id, name, category, modality, equipment, owner_id')
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('Você já tem um exercício com esse nome.');
+    }
+    throw new Error('Não foi possível criar o exercício agora. Verifique sua conexão.');
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    category: data.category,
+    modality: data.modality,
+    equipment: data.equipment,
+    isCustom: true,
+  };
+}
+
+export const MODALITY_LABELS: Record<ExerciseModality, string> = {
+  reps: 'Repetições',
+  time: 'Tempo',
+  distance: 'Distância',
+  load: 'Carga',
+};
+
 export function useExercises() {
   return useQuery({
     queryKey: ['catalog', 'exercises'],

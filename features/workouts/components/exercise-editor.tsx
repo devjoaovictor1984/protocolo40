@@ -14,6 +14,7 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { CATEGORY_LABELS, useExercises, type CatalogExercise } from '@/features/exercises/catalog';
+import { NewExerciseForm } from '@/features/exercises/components/new-exercise-form';
 import { cn } from '@/lib/utils';
 import type { LocalWorkoutExercise } from '@/types/offline';
 
@@ -189,11 +190,13 @@ function ExercisePicker({ onPick }: { onPick: (exercise: CatalogExercise) => voi
         />
       </div>
 
+      <NewExerciseForm onCreated={onPick} />
+
       {isLoading ? (
         <p className="text-muted-foreground py-8 text-center text-sm">Carregando exercícios…</p>
       ) : groups.length === 0 ? (
         <p className="text-muted-foreground py-8 text-center text-sm">
-          Nenhum exercício com esse nome.
+          Nenhum exercício com esse nome. Crie um acima.
         </p>
       ) : (
         <div className="flex-1 overflow-y-auto">

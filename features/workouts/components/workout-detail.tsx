@@ -4,11 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CloudOff, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, BookmarkPlus, CloudOff, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { saveWorkoutAsTemplate } from '@/features/templates/repository';
 import { useSession } from '@/features/session/session-context';
 import { removeWorkout } from '@/features/workouts/repository';
 import { useWorkout } from '@/features/workouts/use-workout';
@@ -20,9 +23,11 @@ import { protocolDay } from '@/services/streak';
 export function WorkoutDetail({ clientId }: { clientId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { protocolStartedOn } = useSession();
+  const { protocolStartedOn, userId } = useSession();
   const { data: workout, isLoading } = useWorkout(clientId);
   const [removing, setRemoving] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateTitle, setTemplateTitle] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -60,6 +65,22 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
     } catch {
       setRemoving(false);
       toast.error('Não conseguimos apagar agora.', { description: 'Tente novamente.' });
+    }
+  }
+
+  async function handleSaveTemplate() {
+    if (!workout || templateTitle === null) return;
+
+    setSavingTemplate(true);
+    try {
+      await saveWorkoutAsTemplate(workout, { userId, title: templateTitle });
+      await queryClient.invalidateQueries({ queryKey: ['catalog', 'templates'] });
+      toast.success('Treino salvo.', { description: 'Agora ele aparece em Treinos.' });
+      setTemplateTitle(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não conseguimos salvar o treino.');
+    } finally {
+      setSavingTemplate(false);
     }
   }
 
@@ -153,6 +174,50 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
             {workout.notes}
           </p>
         </section>
+      ) : null}
+
+      {workout.exercises.length > 0 ? (
+        templateTitle === null ? (
+          <Button
+            variant="outline"
+            className="h-12"
+            onClick={() =>
+              setTemplateTitle(workout.title ?? workout.template_title ?? 'Meu treino')
+            }
+          >
+            <BookmarkPlus aria-hidden className="size-4" />
+            Salvar como meu treino
+          </Button>
+        ) : (
+          <div className="border-border flex flex-col gap-3 rounded-xl border p-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="nome-template">Nome do treino</Label>
+              <Input
+                id="nome-template"
+                value={templateTitle}
+                onChange={(event) => setTemplateTitle(event.target.value)}
+                maxLength={80}
+                className="h-12 text-base"
+              />
+              <p className="text-muted-foreground text-sm">
+                Fica em Treinos, com o botão USAR HOJE.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="h-12" onClick={() => setTemplateTitle(null)}>
+                Cancelar
+              </Button>
+              <Button
+                className="h-12 flex-1 font-semibold"
+                disabled={savingTemplate}
+                onClick={() => void handleSaveTemplate()}
+              >
+                {savingTemplate ? 'Salvando…' : 'Salvar treino'}
+              </Button>
+            </div>
+          </div>
+        )
       ) : null}
     </div>
   );
