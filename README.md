@@ -75,14 +75,17 @@ coluna com o banco.
 
 ### 4. Login com Google
 
-No painel do Supabase, em **Authentication → Providers → Google**, informe o Client ID e o
-Secret do Google Cloud. Em **Authentication → URL Configuration**, adicione as URLs de
-redirecionamento:
+Crie uma credencial **OAuth client ID → Web application** no Google Cloud Console, com o
+redirect `https://SEU-REF.supabase.co/auth/v1/callback`. Baixe o JSON e rode:
 
+```bash
+SUPABASE_ACCESS_TOKEN=sbp_... GOOGLE_CLIENT_SECRET_FILE=/caminho/client_secret_....json npm run auth:config -- --site-url https://seu-dominio.vercel.app
 ```
-http://localhost:3000/auth/callback
-https://SEU-DOMINIO/auth/callback
-```
+
+O script liga o provedor e cadastra as URLs de redirecionamento pela Management API. O
+access token sai de [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
+e pode ser revogado depois. Sem o token, dá para fazer o mesmo pelo painel em
+**Authentication → Providers → Google** e **URL Configuration**.
 
 ### 5. Desenvolvimento
 
@@ -101,8 +104,19 @@ npm run build && npm start
 ## Testes
 
 ```bash
-npm test              # regras puras (streak, duração, recordes) + RLS
+npm test              # regras puras + RLS + deriva do schema
+npm run test:smoke    # sessão real contra um servidor rodando
 npm run test:e2e      # Playwright — rode `npx playwright install` na primeira vez
+```
+
+`test:smoke` cria um usuário de verdade, monta o cookie de sessão no formato do
+`@supabase/ssr`, pede todas as telas privadas ao servidor e apaga o usuário no
+fim. É o que prova que proxy, guard de sessão e Server Components funcionam
+contra o Supabase real. Contra um deploy:
+
+```bash
+npm run build && npm start
+SMOKE_BASE_URL=https://seu-dominio.vercel.app npm run test:smoke
 ```
 
 Os testes de RLS só rodam com `.env.local` apontando para um projeto real: eles criam dois

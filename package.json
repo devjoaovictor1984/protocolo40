@@ -16,7 +16,8 @@
     "build:sw": "serwist build serwist.config.mjs",
     "test:e2e": "playwright test",
     "db:diff": "node scripts/db.mjs diff",
-    "auth:config": "node scripts/configure-auth.mjs"
+    "auth:config": "node scripts/configure-auth.mjs",
+    "test:smoke": "node scripts/smoke-session.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
