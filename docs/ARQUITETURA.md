@@ -1,8 +1,8 @@
 # PROTOCOLO40 — Documento de Arquitetura (Entrega 1)
 
 > **20 minutos. Todos os dias.**
-> Arquitetura aprovada em 22/08/2026. **Fase 0 concluída** — a Fase 1 é a próxima.
-> Versão 1.1 — 22/08/2026 · repositório: `devjoaovictor1984/protocolo40`
+> Arquitetura aprovada em 22/08/2026. **Fases 0 e 1 concluídas** — a Fase 2 é a próxima.
+> Versão 1.2 — 22/08/2026 · repositório: `devjoaovictor1984/protocolo40`
 
 ---
 
@@ -471,14 +471,19 @@ Mesma regra para `insert` / `update` / `delete`.
 | Store | keyPath | Conteúdo |
 |---|---|---|
 | `active_session` | `id` | sessão do cronômetro em andamento (uma só) |
-| `workouts` | `client_id` | treinos locais + `sync_state` |
-| `workout_exercises` | `id` | indexado por `workout_client_id` |
+| `workouts` | `client_id` | treinos locais + `sync_state`, **com os exercícios embutidos** |
 | `measurements` | `client_id` | |
 | `photos` | `client_id` | metadados + **Blob** já processado |
 | `pending_operations` | auto | a fila (§53) |
 | `cache` | `key` | exercícios, templates, últimos 30 dias, stats |
 
 `sync_state ∈ { local, pending, syncing, synced, failed }`.
+
+Os exercícios ficam dentro do registro do treino, e não numa store própria como
+previa a v1.0: um treino é criado, editado e sincronizado como uma unidade só, e
+separar as duas coisas só criaria a chance de subir metade. Na sincronização, os
+exercícios do treino são substituídos por completo — é o que faz o reenvio
+convergir para o mesmo estado sem duplicar linha.
 
 ### Fila
 
@@ -686,11 +691,11 @@ Next.js 16 + TypeScript strict + Tailwind v4 + shadcn/ui · projeto Supabase e v
 
 **Critério de saída:** login com Google funcionando em produção, RLS provada por teste automatizado (usuário A não lê treino de B), aplicação instalável no celular.
 
-### FASE 1 — MVP *(o produto existe)*
+### FASE 1 — MVP ✅ *(concluída em 22/08/2026)*
 
 Onboarding · tela Dia 1 · Dashboard · **cronômetro à prova de background** · CRUD de treino e exercícios · biblioteca + exercícios personalizados · templates e `USAR HOJE` · histórico com filtros e busca · calendário · peso e medidas · fotos com pipeline e privacidade · comparação A/B · streak · recordes por trigger · perfil · configurações de privacidade · **offline completo do treino**.
 
-**Critério de saída:** 30 dias de uso real sem perder um único treino; cada tela com loading, empty state, tratamento de erro e responsividade (§86).
+**Critério de saída:** 30 dias de uso real sem perder um único treino; cada tela com loading, empty state, tratamento de erro e responsividade (§86). *As telas estão entregues; os 30 dias de uso real só o tempo resolve.*
 
 ### FASE 2 — EVOLUÇÃO
 

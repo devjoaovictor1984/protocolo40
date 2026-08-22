@@ -12,7 +12,7 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · 
 
 ## Estado atual
 
-**Fase 0 — Fundação.** Base técnica pronta; as funcionalidades de produto entram na Fase 1.
+**Fase 1 — MVP.** O produto existe: dá para treinar, registrar, acompanhar e comparar.
 
 | Entregue | O que é |
 |---|---|
@@ -23,10 +23,14 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · 
 | Autenticação | E-mail e senha, Google, recuperação e troca de senha |
 | PWA | Manifest, ícones, service worker com estratégia por rota, fallback offline |
 | Design system | Tokens em OKLCH, tema claro/escuro/sistema, 18 componentes base |
-| Regras puras | Streak, duração e recordes em `services/`, com 42 testes |
+| Regras puras | Streak, duração, recordes, calendário, progresso e sugestões em `services/`, com 70 testes |
 | Qualidade | ESLint, `tsc --noEmit`, Vitest e Playwright configurados |
+| Offline | IndexedDB, fila com backoff e idempotência por `client_id` |
+| Cronômetro | Baseado em timestamp: sobrevive a segundo plano, tela bloqueada e fechar o app |
+| Telas | Onboarding, Dia 1, dashboard, treino, histórico, calendário, evolução, fotos, comparação, medidas, recordes, perfil, privacidade |
+| Gráficos | SVG próprio, paleta validada em claro e escuro, tabela equivalente em cada um |
 
-Próximo: **Fase 1 — MVP** (dashboard, cronômetro, treino, histórico, calendário, fotos, medidas).
+Próximo: **Fase 2 — Evolução** (marcos, estatísticas mais finas, melhorias de cache e sync).
 
 ---
 
