@@ -1,8 +1,8 @@
 # PROTOCOLO40 — Documento de Arquitetura (Entrega 1)
 
 > **20 minutos. Todos os dias.**
-> Documento de aprovação (§87). Nenhuma linha de aplicação foi escrita ainda (§88).
-> Versão 1.0 — 22/08/2026 · repositório: `devjoaovictor1984/protocolo40`
+> Arquitetura aprovada em 22/08/2026. **Fase 0 concluída** — a Fase 1 é a próxima.
+> Versão 1.1 — 22/08/2026 · repositório: `devjoaovictor1984/protocolo40`
 
 ---
 
@@ -513,7 +513,9 @@ Sempre com ícone e texto, nunca só por cor (§55).
 
 **Manifest** (`app/manifest.ts`): `name: "Protocolo40"` · `short_name: "P40"` · `display: standalone` · `orientation: portrait` · `start_url: /app` · `theme_color` · `background_color` · ícones 192/512 + `maskable` · `shortcuts: [{ name: "Começar treino", url: "/treino/hoje" }]`.
 
-**Serwist** (`app/sw.ts` + `withSerwist` no `next.config.ts`):
+**Serwist** (`app/sw.ts` + `serwist.config.mjs`). O service worker é compilado num **passo de build próprio**, `next build && serwist build`, e não como plugin de bundler: a partir do Next 16 o Turbopack é o padrão, e o caminho de plugin do Serwist ainda depende de webpack. O registro no cliente fica com o `SerwistProvider`.
+
+Estratégias por recurso:
 
 | Recurso | Estratégia | Motivo |
 |---|---|---|
@@ -678,9 +680,9 @@ Projetado em 360 / 390 / 430. `sm 640` → listas em 2 colunas · `md 768` → c
 
 ## 12. ROADMAP
 
-### FASE 0 — FUNDAÇÃO *(base técnica, sem funcionalidade de produto)*
+### FASE 0 — FUNDAÇÃO ✅ *(concluída em 22/08/2026)*
 
-Next.js 15 + TypeScript strict + Tailwind + shadcn/ui · projeto Supabase e variáveis de ambiente · migrations `0001_types` → `0006_rls` · seed de ~60 exercícios e ~12 templates de sistema · três clientes Supabase + middleware de sessão · Auth (e-mail/senha, Google, recuperação, alteração) · buckets e políticas de storage · Serwist + manifest + ícones · design tokens e 8 componentes base · Vitest + Playwright configurados · deploy na Vercel.
+Next.js 16 + TypeScript strict + Tailwind v4 + shadcn/ui · projeto Supabase e variáveis de ambiente · migrations `0001_types` → `0006_rls` · seed de ~60 exercícios e ~12 templates de sistema · três clientes Supabase + middleware de sessão · Auth (e-mail/senha, Google, recuperação, alteração) · buckets e políticas de storage · Serwist + manifest + ícones · design tokens e 8 componentes base · Vitest + Playwright configurados · deploy na Vercel.
 
 **Critério de saída:** login com Google funcionando em produção, RLS provada por teste automatizado (usuário A não lê treino de B), aplicação instalável no celular.
 
