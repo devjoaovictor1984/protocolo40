@@ -17,8 +17,8 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · 
 | Entregue | O que é |
 |---|---|
 | Arquitetura | `docs/ARQUITETURA.md` — schema, RLS, offline, PWA, design system, roadmap |
-| Banco | 16 tabelas, tipos, constraints, índices e triggers em `supabase/migrations` |
-| Segurança | RLS em todas as tabelas, com teste de integração que prova o isolamento |
+| Banco | 16 tabelas, tipos, constraints, índices e triggers — **aplicadas em produção** |
+| Segurança | RLS em todas as tabelas, **provada por 15 testes contra o banco real** |
 | Seed | ~65 exercícios e 12 sugestões de treino de 20 minutos |
 | Autenticação | E-mail e senha, Google, recuperação e troca de senha |
 | PWA | Manifest, ícones, service worker com estratégia por rota, fallback offline |
@@ -60,17 +60,18 @@ Preencha `.env.local` com **Project Settings → API**:
 ### 3. Banco
 
 ```bash
-npx supabase login
-npx supabase link --project-ref $SUPABASE_PROJECT_REF
 npm run db:push     # aplica as 7 migrations
 npm run db:seed     # migrations + biblioteca de exercícios e sugestões
 ```
 
-Depois de qualquer alteração no schema, regenere os tipos:
+Os dois usam `scripts/db.mjs`, que monta a connection string a partir do
+`.env.local` e chama o CLI com `--db-url`. Não precisa de `supabase login`, que é
+interativo e não roda em CI.
 
-```bash
-npm run db:types
-```
+`npm run db:types` regenera `types/generated.ts` a partir do schema real, mas
+exige um access token (`supabase login`) ou Docker instalado. Enquanto isso,
+`types/database.ts` é mantido à mão — e um teste confere que ele bate coluna a
+coluna com o banco.
 
 ### 4. Login com Google
 

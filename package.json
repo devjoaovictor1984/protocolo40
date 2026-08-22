@@ -10,13 +10,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:link": "supabase link",
-    "db:push": "supabase db push",
-    "db:reset": "supabase db reset",
-    "db:seed": "supabase db push --include-seed",
-    "db:types": "supabase gen types typescript --linked --schema public > types/database.ts",
+    "db:push": "node scripts/db.mjs push",
+    "db:seed": "node scripts/db.mjs push --include-seed",
+    "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > types/generated.ts",
     "build:sw": "serwist build serwist.config.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:diff": "node scripts/db.mjs diff"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
