@@ -262,14 +262,39 @@ export type UserStats = {
 };
 
 /**
- * Forma que o supabase-js espera de cada tabela. `Relationships` fica vazio: os
- * joins deste projeto são explícitos, e não dependem da inferência de relação.
+ * Forma que o supabase-js espera de cada tabela.
+ *
+ * `Relationships` não é decoração: é o que permite ao postgrest-js tipar um
+ * select aninhado como `workouts(..., workout_exercises(...))`. Sem a relação
+ * declarada, o retorno do embed vira `never` e o TypeScript não ajuda mais.
  */
-type TableDef<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
+type Relationship = {
+  foreignKeyName: string;
+  columns: string[];
+  isOneToOne: boolean;
+  referencedRelation: string;
+  referencedColumns: string[];
+};
+
+type TableDef<
+  Row,
+  Insert = Partial<Row>,
+  Update = Partial<Row>,
+  Rel extends Relationship[] = [],
+> = {
   Row: Row;
   Insert: Insert;
   Update: Update;
-  Relationships: [];
+  Relationships: Rel;
+};
+
+/** Atalho para as chaves estrangeiras, que sempre apontam para o `id`. */
+type FK<Name extends string, Column extends string, Target extends string> = {
+  foreignKeyName: Name;
+  columns: [Column];
+  isOneToOne: false;
+  referencedRelation: Target;
+  referencedColumns: ['id'];
 };
 
 /** Insert com as colunas obrigatórias explícitas; o resto é opcional. */
@@ -284,15 +309,30 @@ export interface Database {
       workout_templates: TableDef<WorkoutTemplateRow, InsertOf<WorkoutTemplateRow, 'title'>>;
       workout_template_exercises: TableDef<
         WorkoutTemplateExerciseRow,
-        InsertOf<WorkoutTemplateExerciseRow, 'template_id' | 'exercise_id' | 'order_index'>
+        InsertOf<WorkoutTemplateExerciseRow, 'template_id' | 'exercise_id' | 'order_index'>,
+        Partial<WorkoutTemplateExerciseRow>,
+        [
+          FK<'wte_template_id_fkey', 'template_id', 'workout_templates'>,
+          FK<'wte_exercise_id_fkey', 'exercise_id', 'exercises'>,
+        ]
       >;
       workouts: TableDef<
         WorkoutRow,
-        InsertOf<WorkoutRow, 'user_id' | 'client_id' | 'started_at' | 'duration_seconds'>
+        InsertOf<WorkoutRow, 'user_id' | 'client_id' | 'started_at' | 'duration_seconds'>,
+        Partial<WorkoutRow>,
+        [
+          FK<'workouts_user_id_fkey', 'user_id', 'profiles'>,
+          FK<'workouts_template_id_fkey', 'template_id', 'workout_templates'>,
+        ]
       >;
       workout_exercises: TableDef<
         WorkoutExerciseRow,
-        InsertOf<WorkoutExerciseRow, 'workout_id' | 'exercise_id' | 'order_index'>
+        InsertOf<WorkoutExerciseRow, 'workout_id' | 'exercise_id' | 'order_index'>,
+        Partial<WorkoutExerciseRow>,
+        [
+          FK<'workout_exercises_workout_id_fkey', 'workout_id', 'workouts'>,
+          FK<'workout_exercises_exercise_id_fkey', 'exercise_id', 'exercises'>,
+        ]
       >;
       body_measurements: TableDef<
         BodyMeasurementRow,
@@ -300,14 +340,24 @@ export interface Database {
       >;
       progress_photos: TableDef<
         ProgressPhotoRow,
-        InsertOf<ProgressPhotoRow, 'user_id' | 'client_id' | 'storage_path' | 'thumbnail_path' | 'taken_on'>
+        InsertOf<ProgressPhotoRow, 'user_id' | 'client_id' | 'storage_path' | 'thumbnail_path' | 'taken_on'>,
+        Partial<ProgressPhotoRow>,
+        [
+          FK<'progress_photos_user_id_fkey', 'user_id', 'profiles'>,
+          FK<'progress_photos_workout_id_fkey', 'workout_id', 'workouts'>,
+        ]
       >;
       // O INSERT existe no tipo, mas a RLS não tem policy de INSERT para o
       // cliente: quem grava recorde é o trigger. O tipo descreve a tabela; a
       // autorização continua sendo do banco.
       personal_records: TableDef<
         PersonalRecordRow,
-        InsertOf<PersonalRecordRow, 'user_id' | 'metric' | 'value' | 'achieved_on'>
+        InsertOf<PersonalRecordRow, 'user_id' | 'metric' | 'value' | 'achieved_on'>,
+        Partial<PersonalRecordRow>,
+        [
+          FK<'personal_records_exercise_id_fkey', 'exercise_id', 'exercises'>,
+          FK<'personal_records_workout_id_fkey', 'workout_id', 'workouts'>,
+        ]
       >;
       followers: TableDef<FollowerRow, InsertOf<FollowerRow, 'follower_id' | 'following_id'>>;
       workout_likes: TableDef<WorkoutLikeRow, InsertOf<WorkoutLikeRow, 'workout_id' | 'user_id'>>;
