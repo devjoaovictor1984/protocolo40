@@ -1,0 +1,130 @@
+# PROTOCOLO40
+
+**20 minutos. Todos os dias.**
+
+Plataforma de treino, consistência e evolução física. O produto responde a uma pergunta só:
+
+> Você fez seus 20 minutos hoje?
+
+Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · PWA (Serwist)
+
+---
+
+## Estado atual
+
+**Fase 0 — Fundação.** Base técnica pronta; as funcionalidades de produto entram na Fase 1.
+
+| Entregue | O que é |
+|---|---|
+| Arquitetura | `docs/ARQUITETURA.md` — schema, RLS, offline, PWA, design system, roadmap |
+| Banco | 16 tabelas, tipos, constraints, índices e triggers em `supabase/migrations` |
+| Segurança | RLS em todas as tabelas, com teste de integração que prova o isolamento |
+| Seed | ~65 exercícios e 12 sugestões de treino de 20 minutos |
+| Autenticação | E-mail e senha, Google, recuperação e troca de senha |
+| PWA | Manifest, ícones, service worker com estratégia por rota, fallback offline |
+| Design system | Tokens em OKLCH, tema claro/escuro/sistema, 18 componentes base |
+| Regras puras | Streak, duração e recordes em `services/`, com 42 testes |
+| Qualidade | ESLint, `tsc --noEmit`, Vitest e Playwright configurados |
+
+Próximo: **Fase 1 — MVP** (dashboard, cronômetro, treino, histórico, calendário, fotos, medidas).
+
+---
+
+## Como rodar
+
+### 1. Dependências
+
+```bash
+npm install
+```
+
+### 2. Projeto Supabase
+
+Crie um projeto em [supabase.com](https://supabase.com) e copie as credenciais:
+
+```bash
+cp .env.example .env.local
+```
+
+Preencha `.env.local` com **Project Settings → API**:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` — só servidor, nunca commitada, nunca no navegador
+- `SUPABASE_PROJECT_REF` — **Project Settings → General → Reference ID**
+
+### 3. Banco
+
+```bash
+npx supabase login
+npx supabase link --project-ref $SUPABASE_PROJECT_REF
+npm run db:push     # aplica as 7 migrations
+npm run db:seed     # migrations + biblioteca de exercícios e sugestões
+```
+
+Depois de qualquer alteração no schema, regenere os tipos:
+
+```bash
+npm run db:types
+```
+
+### 4. Login com Google
+
+No painel do Supabase, em **Authentication → Providers → Google**, informe o Client ID e o
+Secret do Google Cloud. Em **Authentication → URL Configuration**, adicione as URLs de
+redirecionamento:
+
+```
+http://localhost:3000/auth/callback
+https://SEU-DOMINIO/auth/callback
+```
+
+### 5. Desenvolvimento
+
+```bash
+npm run dev
+```
+
+O service worker fica desligado em desenvolvimento de propósito. Para testar o PWA:
+
+```bash
+npm run build && npm start
+```
+
+---
+
+## Testes
+
+```bash
+npm test              # regras puras (streak, duração, recordes) + RLS
+npm run test:e2e      # Playwright — rode `npx playwright install` na primeira vez
+```
+
+Os testes de RLS só rodam com `.env.local` apontando para um projeto real: eles criam dois
+usuários descartáveis e verificam que um não enxerga nem altera nada do outro. Sem as
+credenciais, o bloco se declara pulado em vez de falhar.
+
+---
+
+## Estrutura
+
+```
+app/           rotas (App Router), metadata, service worker, ícones
+components/    design system + primitivos shadcn/ui
+features/      um diretório por domínio: auth, workouts, timer, photos…
+lib/           supabase, auth, storage, offline, validação, permissões
+services/      regras de negócio puras — sem React, sem Supabase, testáveis
+supabase/      migrations versionadas e seed
+tests/         Vitest (unitário e integração)
+e2e/           Playwright
+docs/          arquitetura e decisões
+```
+
+Convenções e decisões que não mudam sem discussão estão em `AGENTS.md`.
+
+---
+
+## Deploy
+
+Vercel, com as mesmas variáveis de ambiente. O build gera o service worker no passo
+`build:sw`, logo após o `next build`.
