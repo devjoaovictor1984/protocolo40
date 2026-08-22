@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
 
@@ -304,16 +305,16 @@ function DayOne() {
       </div>
 
       <Button
-        render={<a href="/treino/hoje?auto=1" />}
+        render={<Link href="/treino/hoje?auto=1" />}
         className="h-16 w-full max-w-sm text-base font-bold"
       >
         <Play aria-hidden className="size-5" />
         INICIAR MEUS 20 MINUTOS
       </Button>
 
-      <a href="/app" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
+      <Link href="/app" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
         Prefiro conhecer o app primeiro
-      </a>
+      </Link>
     </div>
   );
 }

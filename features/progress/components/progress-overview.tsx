@@ -1,0 +1,185 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Camera, ChevronRight, LineChart as LineChartIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+import { BarChart, LineChart } from '@/components/charts';
+import { EmptyState, StatCard } from '@/components/stats';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useExercises } from '@/features/exercises/catalog';
+import { localMeasurements } from '@/features/measurements/repository';
+import { useSession, useToday } from '@/features/session/session-context';
+import { useLocalWorkouts } from '@/features/workouts/use-workout';
+import { cn } from '@/lib/utils';
+import { calculateStreak } from '@/services/streak';
+import {
+  exerciseVolume,
+  exercisesUsed,
+  weeklyMinutes,
+  weeklyWorkoutDays,
+  weightDelta,
+  weightSeries,
+} from '@/services/progress';
+
+/**
+ * Evolução.
+ *
+ * Poucas métricas, escolhidas para responder "estou melhorando?": peso,
+ * frequência, minutos e volume. Nada de painel corporativo.
+ */
+export function ProgressOverview() {
+  const { userId } = useSession();
+  const today = useToday();
+  const { data: workouts, isLoading } = useLocalWorkouts();
+  const { data: exercises } = useExercises();
+
+  const { data: measurements } = useQuery({
+    queryKey: ['measurements', userId],
+    queryFn: () => localMeasurements(userId),
+    staleTime: 10_000,
+  });
+
+  const [exerciseId, setExerciseId] = useState<string | null>(null);
+
+  const used = useMemo(() => exercisesUsed(workouts ?? []).slice(0, 8), [workouts]);
+  const selectedExercise = exerciseId ?? used[0]?.exerciseId ?? null;
+  const nameById = useMemo(
+    () => new Map((exercises ?? []).map((exercise) => [exercise.id, exercise.name])),
+    [exercises],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4 py-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-56 w-full rounded-xl" />
+        <Skeleton className="h-56 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  const all = workouts ?? [];
+
+  if (all.length === 0) {
+    return (
+      <div className="py-6">
+        <h1 className="mb-6 text-2xl font-extrabold tracking-tight">Evolução</h1>
+        <EmptyState
+          icon={LineChartIcon}
+          title="Sua evolução aparece a partir do primeiro treino."
+          description="Depois de alguns dias os gráficos começam a contar a história sozinhos."
+          action={
+            <Button render={<Link href="/treino/hoje?auto=1" />} className="h-12">
+              COMEÇAR TREINO
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  const days = [...new Set(all.map((workout) => workout.workout_date))];
+  const streak = calculateStreak(days, today);
+  const totalMinutes = Math.round(
+    all.reduce((sum, workout) => sum + workout.duration_seconds, 0) / 60,
+  );
+  const weights = weightSeries(measurements ?? []);
+  const delta = weightDelta(measurements ?? []);
+  const volume = selectedExercise
+    ? exerciseVolume(all, selectedExercise, today)
+    : { series: [], unit: 'repetições' };
+
+  return (
+    <div className="flex flex-col gap-6 py-6">
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-extrabold tracking-tight">Evolução</h1>
+        <Button render={<Link href="/evolucao/fotos" />} variant="outline" size="sm" className="h-10">
+          <Camera aria-hidden className="size-4" />
+          Fotos
+        </Button>
+      </header>
+
+      <section aria-label="Resumo" className="grid grid-cols-4 gap-3">
+        <StatCard value={days.length} label="dias" />
+        <StatCard value={totalMinutes} label="minutos" />
+        <StatCard value={streak.current} label="sequência" />
+        <StatCard value={streak.longest} label="recorde" />
+      </section>
+
+      <LineChart
+        title="Peso"
+        unit="kg"
+        data={weights}
+        format={(value) => value.toFixed(1).replace('.', ',')}
+        emptyMessage="Registre seu peso em Medidas para ver a curva aqui."
+      />
+
+      {delta !== null ? (
+        <p className="text-muted-foreground -mt-3 text-sm">
+          {delta === 0
+            ? 'Mesmo peso do primeiro registro.'
+            : `${delta < 0 ? '−' : '+'}${Math.abs(delta).toFixed(1).replace('.', ',')} kg desde o primeiro registro.`}
+        </p>
+      ) : null}
+
+      <BarChart
+        title="Dias treinados por semana"
+        unit="dias"
+        data={weeklyWorkoutDays(all, today)}
+        emptyMessage="Sem treinos nas últimas semanas."
+      />
+
+      <BarChart
+        title="Minutos por semana"
+        unit="min"
+        data={weeklyMinutes(all, today)}
+        emptyMessage="Sem treinos nas últimas semanas."
+      />
+
+      {used.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4" role="group" aria-label="Exercício">
+            {used.map(({ exerciseId: id }) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={selectedExercise === id}
+                onClick={() => setExerciseId(id)}
+                className={cn(
+                  'min-h-9 shrink-0 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors',
+                  selectedExercise === id
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border hover:bg-muted',
+                )}
+              >
+                {nameById.get(id) ?? 'Exercício'}
+              </button>
+            ))}
+          </div>
+
+          <BarChart
+            title={`Volume de ${nameById.get(selectedExercise ?? '') ?? 'exercício'}`}
+            unit={volume.unit}
+            data={volume.series}
+            emptyMessage="Sem volume registrado para este exercício."
+          />
+        </section>
+      ) : null}
+
+      <Link
+        href="/evolucao/comparar"
+        className="border-border hover:bg-muted flex items-center gap-4 rounded-xl border p-4 transition-colors"
+      >
+        <Camera aria-hidden className="text-primary size-5" />
+        <span className="flex-1">
+          <span className="block font-semibold">Comparar fotos</span>
+          <span className="text-muted-foreground text-sm">Lado a lado ou com o slider</span>
+        </span>
+        <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+      </Link>
+    </div>
+  );
+}

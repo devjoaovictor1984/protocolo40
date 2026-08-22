@@ -1,0 +1,66 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
+
+import {
+  DailyGoalField,
+  SignOutButton,
+  ThemeSwitcher,
+} from '@/features/settings/components/settings-controls';
+import { requireSession } from '@/lib/auth/session';
+
+export const metadata: Metadata = {
+  title: 'Configurações',
+  robots: { index: false, follow: false },
+};
+
+export default async function ConfiguracoesPage() {
+  const { settings } = await requireSession();
+
+  return (
+    <div className="flex flex-col gap-8 py-6">
+      <h1 className="text-2xl font-extrabold tracking-tight">Configurações</h1>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+          Aparência
+        </h2>
+        <ThemeSwitcher />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+          Treino
+        </h2>
+        <DailyGoalField seconds={settings.daily_goal_seconds} />
+        <p className="text-muted-foreground text-sm">
+          O cronômetro abre com essa meta. Treinar menos ou mais continua contando igual.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+          Conta
+        </h2>
+
+        <Link
+          href="/configuracoes/privacidade"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <span className="flex-1 font-medium">Privacidade</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
+        <Link
+          href="/configuracoes/conta"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <span className="flex-1 font-medium">Perfil e dados</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
+        <SignOutButton />
+      </section>
+    </div>
+  );
+}
