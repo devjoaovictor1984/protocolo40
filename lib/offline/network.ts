@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { QUEUED_EVENT } from '@/lib/offline/queue';
+
 /**
  * Estado da conexão.
  *
@@ -52,6 +54,8 @@ export function useSyncTriggers(callback: () => void, intervalMs = 60_000) {
 
     window.addEventListener('online', run);
     window.addEventListener('focus', run);
+    // algo acabou de entrar na fila: sobe agora, não daqui a um minuto
+    window.addEventListener(QUEUED_EVENT, run);
     document.addEventListener('visibilitychange', onVisible);
     const timer = window.setInterval(run, intervalMs);
 
@@ -60,6 +64,7 @@ export function useSyncTriggers(callback: () => void, intervalMs = 60_000) {
     return () => {
       window.removeEventListener('online', run);
       window.removeEventListener('focus', run);
+      window.removeEventListener(QUEUED_EVENT, run);
       document.removeEventListener('visibilitychange', onVisible);
       window.clearInterval(timer);
     };

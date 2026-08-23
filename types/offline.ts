@@ -42,6 +42,8 @@ export type LocalWorkout = {
   exercises: LocalWorkoutExercise[];
   sync_state: SyncState;
   sync_error: string | null;
+  /** true quando repetir não adianta: o dado é que está inválido, não a rede */
+  sync_permanent?: boolean;
   updated_at: number;
 };
 

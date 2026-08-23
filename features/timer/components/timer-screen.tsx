@@ -14,7 +14,7 @@ import { useTimer } from '@/features/timer/use-timer';
 import { saveWorkout } from '@/features/workouts/repository';
 import { useOnlineStatus } from '@/lib/offline/network';
 import { cn } from '@/lib/utils';
-import { formatClock } from '@/services/duration';
+import { formatClock, MIN_MEANINGFUL_SECONDS } from '@/services/duration';
 import type { LocalWorkoutExercise } from '@/types/offline';
 
 /**
@@ -66,6 +66,16 @@ export function TimerScreen({
   const session = timer.session!;
 
   async function handleFinish() {
+    // Um treino de poucos segundos quase sempre é toque errado. Perguntar aqui
+    // evita um registro sem sentido no histórico e na sequência.
+    if (timer.elapsed < MIN_MEANINGFUL_SECONDS) {
+      const confirmado = window.confirm(
+        `O cronômetro rodou ${timer.elapsed} ${timer.elapsed === 1 ? 'segundo' : 'segundos'}. ` +
+          'Registrar assim mesmo?',
+      );
+      if (!confirmado) return;
+    }
+
     setSaving(true);
 
     try {

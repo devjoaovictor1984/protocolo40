@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo } from 'react';
 
+import { useSync } from '@/features/sync/use-sync';
 import { todayIn } from '@/services/calendar';
 
 /**
@@ -29,7 +30,25 @@ export function SessionProvider({
   children: React.ReactNode;
 }) {
   const memo = useMemo(() => value, [value]);
-  return <SessionContext.Provider value={memo}>{children}</SessionContext.Provider>;
+
+  return (
+    <SessionContext.Provider value={memo}>
+      <SyncEngine />
+      {children}
+    </SessionContext.Provider>
+  );
+}
+
+/**
+ * Mantém a fila andando em qualquer tela com sessão.
+ *
+ * Antes isso vivia dentro do chip de status, que só existe no dashboard: um
+ * treino terminado no cronômetro só subia quando a pessoa voltava para o Hoje.
+ * Não renderiza nada — só liga os gatilhos.
+ */
+function SyncEngine() {
+  useSync();
+  return null;
 }
 
 export function useSession(): SessionValue {

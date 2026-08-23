@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, BookmarkPlus, CloudOff, Pencil, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BookmarkPlus, CloudOff, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -127,11 +127,42 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
           {workout.effort ? ` · esforço ${workout.effort}/10` : ''}
         </p>
 
-        {workout.sync_state !== 'synced' ? (
+        {workout.sync_state === 'failed' && workout.sync_permanent ? (
+          // repetir não resolve: o dado é que está inválido, e a pessoa precisa
+          // saber o motivo e ter uma saída
+          <div className="border-destructive/30 bg-destructive/8 mt-1 flex flex-col gap-3 rounded-xl border p-4">
+            <div className="flex gap-2">
+              <AlertTriangle aria-hidden className="text-destructive mt-0.5 size-4 shrink-0" />
+              <div>
+                <p className="text-destructive text-sm font-semibold">
+                  Este treino não pode ser enviado como está
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {workout.sync_error ?? 'Algum dado ficou fora do aceito.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <ButtonLink href={`/treino/${clientId}/editar`} size="sm" className="h-11 flex-1">
+                Corrigir treino
+              </ButtonLink>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive h-11"
+                onClick={() => void handleDelete()}
+                disabled={removing}
+              >
+                Descartar
+              </Button>
+            </div>
+          </div>
+        ) : workout.sync_state !== 'synced' ? (
           <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
             <CloudOff aria-hidden className="size-3.5" />
             {workout.sync_state === 'failed'
-              ? 'Falhou ao sincronizar — vamos tentar de novo automaticamente.'
+              ? 'Não conseguimos enviar agora — vamos tentar de novo sozinhos.'
               : 'Aguardando sincronização. Já está salvo no aparelho.'}
           </p>
         ) : null}

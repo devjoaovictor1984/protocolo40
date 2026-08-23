@@ -131,3 +131,20 @@ describe('formatação', () => {
     expect(formatDurationShort(3900)).toBe('1h 05');
   });
 });
+
+describe('duração nunca sai zerada', () => {
+  it('finalizar no mesmo instante grava 1 segundo, não 0', () => {
+    // o banco recusa duration_seconds = 0 e o registro ficaria preso na fila
+    const result = finishSession(startSession(T0), T0);
+    expect(result.durationSeconds).toBe(1);
+  });
+
+  it('finalizar com o cronômetro pausado desde o começo também grava 1', () => {
+    const session = pause(startSession(T0), T0);
+    expect(finishSession(session, T0 + minutes(5)).durationSeconds).toBe(1);
+  });
+
+  it('acima do piso a duração é a real', () => {
+    expect(finishSession(startSession(T0), T0 + minutes(3)).durationSeconds).toBe(180);
+  });
+});

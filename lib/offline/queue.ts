@@ -10,6 +10,19 @@ import type { PendingOperation, PendingOperationType } from '@/types/offline';
 
 const MAX_ATTEMPTS = 6;
 
+/** Evento que acorda a sincronização assim que algo entra na fila. */
+export const QUEUED_EVENT = 'p40:queued';
+
+/**
+ * Sem isto, um treino recém-terminado esperava o próximo tick de 60 segundos
+ * para subir — e o chip ficava dizendo "aguardando" com a rede perfeita.
+ */
+function avisarFila(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(QUEUED_EVENT));
+  }
+}
+
 /** Backoff exponencial: 2s, 4s, 8s… até 5 minutos. */
 export function backoffMs(attempts: number): number {
   return Math.min(300_000, 2_000 * 2 ** attempts);
@@ -24,11 +37,21 @@ export async function enqueue(
   const tx = db.transaction('pending_operations', 'readwrite');
   const store = tx.objectStore('pending_operations');
 
-  // Uma entidade tem no máximo uma operação pendente por tipo: a mais recente
-  // já carrega o estado final, então enfileirar duas vezes só geraria trabalho.
+  // Criar e atualizar levam o registro inteiro, então a mais recente substitui
+  // qualquer anterior do mesmo item — inclusive uma que já tinha falhado de vez.
+  // É isso que permite consertar um treino inválido editando: a correção
+  // reenfileira do zero em vez de conviver com a operação quebrada.
+  const substitui = type === 'CREATE_WORKOUT' || type === 'UPDATE_WORKOUT';
+
   const existing = await store.index('by_client').getAll(clientId);
   for (const operation of existing) {
-    if (operation.type === type && operation.id !== undefined) {
+    if (operation.id === undefined) continue;
+
+    const mesmoTipo = operation.type === type;
+    const supersedido =
+      substitui && (operation.type === 'CREATE_WORKOUT' || operation.type === 'UPDATE_WORKOUT');
+
+    if (mesmoTipo || supersedido) {
       await store.delete(operation.id);
     }
   }
@@ -44,6 +67,7 @@ export async function enqueue(
   });
 
   await tx.done;
+  avisarFila();
 }
 
 export async function listOperations(): Promise<PendingOperation[]> {
@@ -99,6 +123,7 @@ export async function retryAll(): Promise<void> {
   }
 
   await tx.done;
+  avisarFila();
 }
 
 export type QueueSummary = {

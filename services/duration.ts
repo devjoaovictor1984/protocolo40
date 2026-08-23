@@ -85,16 +85,22 @@ export function startSession(now: number, targetSeconds = DEFAULT_TARGET_SECONDS
   return { startedAt: now, pauses: [], targetSeconds, mode: 'regressivo' };
 }
 
+/** Abaixo disto o cronômetro mal começou; a interface pergunta antes de gravar. */
+export const MIN_MEANINGFUL_SECONDS = 20;
+
 /**
  * Fecha a sessão. Uma pausa aberta é encerrada em `now` para que o tempo parado
  * não entre na duração.
+ *
+ * A duração nunca sai zerada: o banco recusa `duration_seconds = 0`, e um
+ * registro assim ficaria preso na fila para sempre, sem caminho de conserto.
  */
 export function finishSession(session: TimerSession, now: number) {
   const closed = isPaused(session) ? resume(session, now) : session;
   return {
     startedAt: new Date(closed.startedAt).toISOString(),
     finishedAt: new Date(now).toISOString(),
-    durationSeconds: elapsedSeconds(closed, now),
+    durationSeconds: Math.max(1, elapsedSeconds(closed, now)),
   };
 }
 

@@ -212,6 +212,37 @@ function describe(error: unknown): string {
   return 'Falha desconhecida';
 }
 
+/**
+ * Traduz a recusa do banco para uma frase que diz o que fazer.
+ *
+ * "violates check constraint workouts_duration_range" não ajuda ninguém a
+ * consertar o próprio treino.
+ */
+function describeRejection(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes('workouts_duration_range')) {
+    return 'A duração precisa ser de pelo menos 1 segundo e no máximo 24 horas.';
+  }
+  if (message.includes('workouts_finish_after')) {
+    return 'O fim do treino ficou antes do começo.';
+  }
+  if (message.includes('workouts_rounds_range')) {
+    return 'A quantidade de rounds está fora do intervalo aceito.';
+  }
+  if (message.includes('workouts_effort_range')) {
+    return 'O esforço precisa ficar entre 1 e 10.';
+  }
+  if (message.includes('bm_weight_range')) {
+    return 'O peso precisa ficar entre 20 e 400 kg.';
+  }
+  if (message.includes('we_has_metric')) {
+    return 'Um dos exercícios ficou sem nenhuma medida preenchida.';
+  }
+
+  return message;
+}
+
 /** Erros que não adianta repetir: o dado está inválido, não a conexão. */
 function isPermanent(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
@@ -276,13 +307,25 @@ async function runOperation(
 }
 
 let running = false;
+let pedidoPendente = false;
+
+/** Quantas rodadas seguidas antes de devolver o controle. */
+const MAX_RODADAS = 20;
 
 /**
- * Processa a fila. Uma execução por vez: chamadas concorrentes (evento online
- * mais foco da janela, por exemplo) não duplicam trabalho.
+ * Processa a fila.
+ *
+ * Uma execução por vez, mas pedidos que chegam durante uma rodada não são
+ * descartados: ficam anotados e a rodada seguinte os atende. Isso importa
+ * porque gravar vários registros de uma vez — 14 dias anteriores, por exemplo —
+ * dispara 14 pedidos quase simultâneos, e engolir 13 deixaria a fila parada
+ * até o próximo tick do relógio.
  */
 export async function flushQueue(supabase: Client): Promise<SyncResult> {
-  if (running) return { processed: 0, failed: 0 };
+  if (running) {
+    pedidoPendente = true;
+    return { processed: 0, failed: 0 };
+  }
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return { processed: 0, failed: 0 };
   }
@@ -292,26 +335,41 @@ export async function flushQueue(supabase: Client): Promise<SyncResult> {
   let failed = 0;
 
   try {
-    for (const operation of await listReady()) {
-      try {
-        await runOperation(supabase, operation);
-        if (operation.id !== undefined) {
-          await removeOperation(operation.id);
-        }
-        processed += 1;
-      } catch (error) {
-        failed += 1;
-        const message = describe(error);
+    for (let rodada = 0; rodada < MAX_RODADAS; rodada += 1) {
+      pedidoPendente = false;
 
-        if (isPermanent(error)) {
-          // Não adianta repetir: marca como falha visível e para de tentar.
-          await failOperation({ ...operation, attempts: 99 }, message);
-        } else {
-          await failOperation(operation, message);
-        }
+      const prontas = await listReady();
+      if (prontas.length === 0) break;
 
-        await markEntityFailed(operation, message);
+      for (const operation of prontas) {
+        try {
+          await runOperation(supabase, operation);
+          if (operation.id !== undefined) {
+            await removeOperation(operation.id);
+          }
+          processed += 1;
+        } catch (error) {
+          failed += 1;
+          const message = describe(error);
+          const permanente = isPermanent(error);
+
+          if (permanente) {
+            // Não adianta repetir: marca como falha visível e para de tentar.
+            await failOperation({ ...operation, attempts: 99 }, message);
+          } else {
+            await failOperation(operation, message);
+          }
+
+          await markEntityFailed(
+            operation,
+            permanente ? describeRejection(error) : message,
+            permanente,
+          );
+        }
       }
+
+      // nada novo chegou e nada mais está pronto: encerra
+      if (!pedidoPendente && (await listReady()).length === 0) break;
     }
   } finally {
     running = false;
@@ -320,7 +378,11 @@ export async function flushQueue(supabase: Client): Promise<SyncResult> {
   return { processed, failed };
 }
 
-async function markEntityFailed(operation: PendingOperation, message: string): Promise<void> {
+async function markEntityFailed(
+  operation: PendingOperation,
+  message: string,
+  permanente: boolean,
+): Promise<void> {
   if (operation.type === 'UPLOAD_PHOTO') {
     const photo = await getPhoto(operation.client_id);
     if (photo) await putPhoto({ ...photo, sync_state: 'failed', sync_error: message });
@@ -329,6 +391,11 @@ async function markEntityFailed(operation: PendingOperation, message: string): P
 
   const workout = await getWorkout(operation.client_id);
   if (workout) {
-    await putWorkout({ ...workout, sync_state: 'failed', sync_error: message });
+    await putWorkout({
+      ...workout,
+      sync_state: 'failed',
+      sync_error: message,
+      sync_permanent: permanente,
+    });
   }
 }

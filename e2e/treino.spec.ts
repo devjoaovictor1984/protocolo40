@@ -100,6 +100,8 @@ test.describe('treino', () => {
 
     const erros: string[] = [];
     page.on('pageerror', (error) => erros.push(error.message));
+    // o treino do teste dura poucos segundos e cai na confirmação de treino curto
+    page.on('dialog', (dialog) => void dialog.accept());
 
     await page.goto('/app');
 
@@ -161,6 +163,51 @@ test.describe('treino', () => {
     expect(records.map((r: { metric: string }) => r.metric).sort()).toEqual(['duration', 'rounds']);
 
     expect(erros, `erros na página: ${erros.join(' | ')}`).toEqual([]);
+  });
+
+  test('treino de poucos segundos pede confirmação e nunca grava zero', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    userId = await signIn(context, baseURL!);
+
+    let perguntou = false;
+    let mensagem = '';
+
+    await page.goto('/treino/hoje?auto=1');
+    await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
+
+    // primeiro recusa: o treino não pode ser gravado
+    page.once('dialog', (dialog) => {
+      perguntou = true;
+      mensagem = dialog.message();
+      void dialog.dismiss();
+    });
+    await page.getByRole('button', { name: 'Finalizar' }).click();
+    await page.waitForTimeout(1500);
+
+    expect(perguntou, 'deveria perguntar antes de gravar um treino de segundos').toBe(true);
+    expect(mensagem).toContain('Registrar assim mesmo?');
+    await expect(page).toHaveURL(/\/treino\/hoje/);
+
+    // agora aceita: grava, e com duração de pelo menos 1 segundo
+    page.once('dialog', (dialog) => void dialog.accept());
+    await page.getByRole('button', { name: 'Finalizar' }).click();
+    await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
+
+
+    await expect
+      .poll(
+        async () => {
+          const rows = await (
+            await admin(`/rest/v1/workouts?user_id=eq.${userId}&select=duration_seconds`)
+          ).json();
+          return rows[0]?.duration_seconds ?? 0;
+        },
+        { timeout: 30_000, message: 'o treino não sincronizou — duração zerada seria recusada' },
+      )
+      .toBeGreaterThan(0);
   });
 
   test('o cronômetro sobrevive a sair e voltar para a tela', async ({ context, page, baseURL }) => {
