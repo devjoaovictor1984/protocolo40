@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   CalendarDays,
+  CalendarPlus,
   Camera,
   History,
   Home,
@@ -94,9 +95,15 @@ const QUICK_ACTIONS: {
     grupo: 'Registrar',
     itens: [
       {
+        href: '/treino/registrar-dias',
+        label: 'Vários dias de uma vez',
+        description: 'Marque no calendário os dias em que treinou',
+        icon: CalendarPlus,
+      },
+      {
         href: '/treino/novo',
-        label: 'Treino passado',
-        description: 'Já treinou e quer anotar depois',
+        label: 'Um treino passado',
+        description: 'Com duração, rounds e exercícios',
         icon: History,
       },
       {

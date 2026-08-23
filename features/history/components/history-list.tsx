@@ -131,9 +131,14 @@ export function HistoryList() {
           }
           action={
             term ? null : (
-              <ButtonLink href="/treino/hoje?auto=1" className="h-12">
-                COMEÇAR TREINO
-              </ButtonLink>
+              <div className="flex flex-col items-center gap-2">
+                <ButtonLink href="/treino/hoje?auto=1" className="h-12">
+                  COMEÇAR TREINO
+                </ButtonLink>
+                <ButtonLink href="/treino/registrar-dias" variant="ghost" className="h-11">
+                  Já treinava antes? Registrar dias anteriores
+                </ButtonLink>
+              </div>
             )
           }
         />

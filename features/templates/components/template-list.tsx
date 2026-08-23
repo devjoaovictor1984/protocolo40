@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Lightbulb, Play, Timer } from 'lucide-react';
+import { ChevronDown, Lightbulb, Play, Timer } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
-import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { describeMetrics, useExercises, useTemplates } from '@/features/exercises/catalog';
@@ -17,28 +16,38 @@ import { suggestFocus, type RecentDay } from '@/services/suggestions';
 import type { WorkoutLevel } from '@/types/database';
 
 /**
- * Sugestões de treino e templates salvos.
+ * Escolher um treino.
  *
- * Os treinos do sistema e os do usuário vivem na mesma tabela: a única
- * diferença é quem é o dono. Isso deixa "USAR HOJE" idêntico nos dois casos.
+ * A pergunta que a tela responde é "o que eu consigo fazer agora, com o que eu
+ * tenho". Por isso o primeiro corte é equipamento, e não grupo muscular — e o
+ * padrão é o caso mais comum: nada, em casa.
+ *
+ * Foco e nível continuam existindo, mas fechados. Doze filtros abertos de uma
+ * vez transformavam uma escolha simples numa consulta.
  */
 
-const LEVEL_FILTERS: { value: WorkoutLevel | 'todos'; label: string }[] = [
+type Equipamento = 'nenhum' | 'academia' | 'todos';
+
+const EQUIPAMENTO: { value: Equipamento; label: string }[] = [
+  { value: 'nenhum', label: 'Sem equipamento' },
+  { value: 'academia', label: 'Com equipamento' },
   { value: 'todos', label: 'Todos' },
+];
+
+const FOCOS = [
+  { value: 'corpo_inteiro', label: 'Corpo inteiro' },
+  { value: 'superiores', label: 'Superiores' },
+  { value: 'inferiores', label: 'Pernas' },
+  { value: 'core', label: 'Core' },
+  { value: 'cardio', label: 'Cardio' },
+  { value: 'recuperacao_ativa', label: 'Leve' },
+];
+
+const NIVEIS: { value: WorkoutLevel | 'todos'; label: string }[] = [
+  { value: 'todos', label: 'Qualquer nível' },
   { value: 'iniciante', label: 'Iniciante' },
   { value: 'intermediario', label: 'Intermediário' },
   { value: 'avancado', label: 'Avançado' },
-];
-
-const TAG_FILTERS = [
-  { value: 'sem_equipamento', label: 'Sem equipamento' },
-  { value: 'academia', label: 'Academia' },
-  { value: 'cardio', label: 'Cardio' },
-  { value: 'core', label: 'Core' },
-  { value: 'superiores', label: 'Superiores' },
-  { value: 'inferiores', label: 'Inferiores' },
-  { value: 'corpo_inteiro', label: 'Corpo inteiro' },
-  { value: 'recuperacao_ativa', label: 'Recuperação ativa' },
 ];
 
 export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolean }) {
@@ -47,42 +56,68 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
   const { data: exercises } = useExercises();
   const { data: workouts } = useLocalWorkouts();
 
-  const [level, setLevel] = useState<WorkoutLevel | 'todos'>('todos');
-  const [tags, setTags] = useState<string[]>([]);
+  const [equipamento, setEquipamento] = useState<Equipamento>('nenhum');
+  const [foco, setFoco] = useState<string | null>(null);
+  const [nivel, setNivel] = useState<WorkoutLevel | 'todos'>('todos');
+  const [maisFiltros, setMaisFiltros] = useState(false);
 
-  // A sugestão precisa da categoria de cada exercício, que só o catálogo tem.
+  /** O que cada treino exige, somado a partir dos exercícios que ele usa. */
+  const equipamentoPorTemplate = useMemo(() => {
+    const porExercicio = new Map((exercises ?? []).map((item) => [item.id, item.equipment]));
+    const mapa = new Map<string, string[]>();
+
+    for (const template of templates ?? []) {
+      const itens = new Set<string>();
+      for (const exercicio of template.exercises) {
+        for (const item of porExercicio.get(exercicio.exerciseId) ?? []) itens.add(item);
+      }
+      mapa.set(template.id, [...itens]);
+    }
+
+    return mapa;
+  }, [exercises, templates]);
+
   const suggestion = useMemo(() => {
     if (!exercises || !workouts) return null;
 
-    const categoryById = new Map(exercises.map((exercise) => [exercise.id, exercise.category]));
-    const byDay = new Map<string, RecentDay>();
+    const categoriaPorId = new Map(exercises.map((item) => [item.id, item.category]));
+    const porDia = new Map<string, RecentDay>();
 
     for (const workout of workouts) {
-      const entry = byDay.get(workout.workout_date) ?? { day: workout.workout_date, categories: [] };
+      const entrada = porDia.get(workout.workout_date) ?? {
+        day: workout.workout_date,
+        categories: [],
+      };
       for (const item of workout.exercises) {
-        const category = categoryById.get(item.exercise_id);
-        if (category) entry.categories.push(category);
+        const categoria = categoriaPorId.get(item.exercise_id);
+        if (categoria) entrada.categories.push(categoria);
       }
-      byDay.set(workout.workout_date, entry);
+      porDia.set(workout.workout_date, entrada);
     }
 
-    return suggestFocus([...byDay.values()], today);
+    return suggestFocus([...porDia.values()], today);
   }, [exercises, today, workouts]);
 
-  const visible = useMemo(() => {
-    let list = (templates ?? []).filter((template) =>
+  const visiveis = useMemo(() => {
+    let lista = (templates ?? []).filter((template) =>
       onlyFavorites ? template.isFavorite || !template.isSystem : true,
     );
 
-    if (level !== 'todos') {
-      list = list.filter((template) => template.level === level);
+    if (equipamento !== 'todos') {
+      lista = lista.filter((template) => {
+        const precisa = (equipamentoPorTemplate.get(template.id) ?? []).length > 0;
+        return equipamento === 'nenhum' ? !precisa : precisa;
+      });
     }
-    if (tags.length > 0) {
-      list = list.filter((template) => tags.every((tag) => template.tags.includes(tag)));
+    if (foco) {
+      lista = lista.filter((template) => template.tags.includes(foco));
+    }
+    if (nivel !== 'todos') {
+      lista = lista.filter((template) => template.level === nivel);
     }
 
-    return list;
-  }, [level, onlyFavorites, tags, templates]);
+    return lista;
+  }, [equipamento, equipamentoPorTemplate, foco, nivel, onlyFavorites, templates]);
 
   if (isLoading) {
     return (
@@ -95,65 +130,87 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6">
+    <div className="flex flex-col gap-5 py-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-extrabold tracking-tight">
-          {onlyFavorites ? 'Seus treinos' : 'Treinos'}
+          {onlyFavorites ? 'Seus treinos' : 'Escolher um treino'}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Circuitos de mais ou menos 20 minutos. Escolha um e comece.
+          Cerca de 20 minutos cada. Toque em USAR HOJE e o cronômetro já começa.
         </p>
       </header>
 
       {suggestion && !onlyFavorites ? (
         <div className="border-border bg-secondary/60 flex gap-3 rounded-xl border p-4">
           <Lightbulb aria-hidden className="text-primary mt-0.5 size-5 shrink-0" />
-          <div className="flex flex-col items-start gap-2">
-            <p className="text-sm">{suggestion.message}</p>
-            <button
-              type="button"
-              onClick={() => setTags(suggestion.tags.slice(0, 1))}
-              className="text-primary text-sm font-medium underline underline-offset-4"
-            >
-              Ver esses treinos
-            </button>
-          </div>
+          <p className="text-sm">{suggestion.message}</p>
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3">
-        <FilterRow label="Nível">
-          {LEVEL_FILTERS.map((filter) => (
-            <FilterChip
-              key={filter.value}
-              active={level === filter.value}
-              onClick={() => setLevel(filter.value)}
-            >
-              {filter.label}
-            </FilterChip>
-          ))}
-        </FilterRow>
-
-        <FilterRow label="Tipo">
-          {TAG_FILTERS.map((filter) => (
-            <FilterChip
-              key={filter.value}
-              active={tags.includes(filter.value)}
-              onClick={() =>
-                setTags((current) =>
-                  current.includes(filter.value)
-                    ? current.filter((tag) => tag !== filter.value)
-                    : [...current, filter.value],
-                )
-              }
-            >
-              {filter.label}
-            </FilterChip>
-          ))}
-        </FilterRow>
+      {/* o primeiro corte é o que você tem em mãos */}
+      <div className="border-border flex rounded-xl border p-1" role="group" aria-label="Equipamento">
+        {EQUIPAMENTO.map((opcao) => (
+          <button
+            key={opcao.value}
+            type="button"
+            aria-pressed={equipamento === opcao.value}
+            onClick={() => setEquipamento(opcao.value)}
+            className={cn(
+              'min-h-11 flex-1 rounded-lg px-2 text-sm font-medium transition-colors',
+              equipamento === opcao.value
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted',
+            )}
+          >
+            {opcao.label}
+          </button>
+        ))}
       </div>
 
-      {visible.length === 0 ? (
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => setMaisFiltros((valor) => !valor)}
+          aria-expanded={maisFiltros}
+          className="text-muted-foreground hover:text-foreground flex min-h-10 items-center gap-1 self-start text-sm"
+        >
+          Filtrar por foco e nível
+          <ChevronDown
+            aria-hidden
+            className={cn('size-4 transition-transform', maisFiltros && 'rotate-180')}
+          />
+        </button>
+
+        {maisFiltros ? (
+          <div className="flex flex-col gap-3">
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Foco">
+              {FOCOS.map((opcao) => (
+                <Chip
+                  key={opcao.value}
+                  active={foco === opcao.value}
+                  onClick={() => setFoco(foco === opcao.value ? null : opcao.value)}
+                >
+                  {opcao.label}
+                </Chip>
+              ))}
+            </div>
+
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Nível">
+              {NIVEIS.map((opcao) => (
+                <Chip
+                  key={opcao.value}
+                  active={nivel === opcao.value}
+                  onClick={() => setNivel(opcao.value)}
+                >
+                  {opcao.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {visiveis.length === 0 ? (
         <EmptyState
           icon={Timer}
           title="Nenhum treino com esses filtros."
@@ -166,73 +223,89 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {visible.map((template) => (
-            <li key={template.id}>
-              <article className="border-border rounded-xl border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h2 className="font-bold tracking-tight">{template.title}</h2>
-                    <p className="text-muted-foreground tnum mt-0.5 text-xs">
-                      {formatDurationShort(template.estimatedSeconds)}
-                      {template.level ? ` · ${labelOfLevel(template.level)}` : ''}
-                      {template.isSystem ? '' : ' · seu'}
-                    </p>
+          {visiveis.map((template) => {
+            const precisa = equipamentoPorTemplate.get(template.id) ?? [];
+
+            return (
+              <li key={template.id}>
+                <article className="border-border rounded-xl border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="font-bold tracking-tight">{template.title}</h2>
+                      <p className="text-muted-foreground tnum mt-0.5 text-xs">
+                        {formatDurationShort(template.estimatedSeconds)}
+                        {template.level ? ` · ${rotuloNivel(template.level)}` : ''}
+                        {template.isSystem ? '' : ' · seu'}
+                      </p>
+                    </div>
+
+                    <ButtonLink
+                      href={`/treino/hoje?template=${template.id}&auto=1`}
+                      size="sm"
+                      className="h-10 shrink-0 px-4 font-semibold"
+                    >
+                      <Play aria-hidden className="size-3.5" />
+                      USAR HOJE
+                    </ButtonLink>
                   </div>
 
-                  <Button
-                    render={<Link href={`/treino/hoje?template=${template.id}&auto=1`} />}
-                    size="sm"
-                    className="h-10 shrink-0 px-4 font-semibold"
+                  {/* saber o que precisa antes de abrir o cronômetro */}
+                  <p
+                    className={cn(
+                      'mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
+                      precisa.length === 0
+                        ? 'bg-success/12 text-success'
+                        : 'bg-secondary text-muted-foreground',
+                    )}
                   >
-                    <Play aria-hidden className="size-3.5" />
-                    USAR HOJE
-                  </Button>
-                </div>
+                    {precisa.length === 0 ? 'Sem equipamento' : `Precisa de ${precisa.join(', ')}`}
+                  </p>
 
-                {template.description ? (
-                  <p className="text-muted-foreground mt-2 text-sm">{template.description}</p>
-                ) : null}
+                  {template.description ? (
+                    <p className="text-muted-foreground mt-2 text-sm">{template.description}</p>
+                  ) : null}
 
-                {template.exercises.length > 0 ? (
-                  <ul className="mt-3 flex flex-col gap-1">
-                    {template.exercises.map((item) => (
-                      <li
-                        key={`${template.id}-${item.exerciseId}-${item.orderIndex}`}
-                        className="flex justify-between gap-3 text-sm"
-                      >
-                        <span>{item.name}</span>
-                        <span className="text-muted-foreground tnum">{describeMetrics(item)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </article>
-            </li>
-          ))}
+                  {template.exercises.length > 0 ? (
+                    <ul className="mt-3 flex flex-col gap-1">
+                      {template.exercises.map((item) => (
+                        <li
+                          key={`${template.id}-${item.exerciseId}-${item.orderIndex}`}
+                          className="flex justify-between gap-3 text-sm"
+                        >
+                          <span>{item.name}</span>
+                          <span className="text-muted-foreground tnum">{describeMetrics(item)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </article>
+              </li>
+            );
+          })}
         </ul>
       )}
+
+      {!onlyFavorites ? (
+        <Link
+          href="/treino/hoje?auto=1"
+          className="text-muted-foreground hover:text-foreground self-center text-sm underline underline-offset-4"
+        >
+          Prefiro só o cronômetro, sem roteiro
+        </Link>
+      ) : null}
     </div>
   );
 }
 
-function labelOfLevel(level: WorkoutLevel): string {
-  return level === 'iniciante' ? 'Iniciante' : level === 'intermediario' ? 'Intermediário' : 'Avançado';
+function rotuloNivel(level: WorkoutLevel): string {
+  return level === 'iniciante'
+    ? 'Iniciante'
+    : level === 'intermediario'
+      ? 'Intermediário'
+      : 'Avançado';
 }
 
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-        {label}
-      </span>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label={label}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function FilterChip({
+function Chip({
   active,
   onClick,
   children,

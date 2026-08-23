@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, ChevronRight, ListChecks, Play, Timer } from 'lucide-react';
+import { CalendarPlus, Check, ChevronRight, ListChecks, Play, Timer } from 'lucide-react';
 
 import { ProgressRing } from '@/components/progress-ring';
 import { EmptyState, StatCard, StreakBadge } from '@/components/stats';
@@ -10,6 +10,7 @@ import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useSession, useToday } from '@/features/session/session-context';
+import { WeightRow } from '@/features/dashboard/components/weight-row';
 import { cn } from '@/lib/utils';
 import { formatClock, formatDurationShort } from '@/services/duration';
 import { greeting, monthLabel, monthGrid, relativeDay, WEEKDAY_LABELS, WEEKDAY_NAMES } from '@/services/calendar';
@@ -47,6 +48,8 @@ export function Dashboard() {
         </div>
       </header>
 
+      <WeightRow />
+
       {isLoading ? (
         <Skeleton className="h-80 w-full rounded-2xl" />
       ) : doneToday ? (
@@ -76,6 +79,22 @@ export function Dashboard() {
             </ButtonLink>
           }
         />
+      ) : null}
+
+      {!isLoading && data!.workouts.length < 5 ? (
+        <Link
+          href="/treino/registrar-dias"
+          className="border-border hover:bg-muted flex items-center gap-3 rounded-xl border border-dashed p-4 transition-colors"
+        >
+          <CalendarPlus aria-hidden className="text-primary size-5 shrink-0" />
+          <span className="flex-1">
+            <span className="block text-sm font-semibold">Já treinava antes de chegar aqui?</span>
+            <span className="text-muted-foreground text-sm">
+              Marque os dias anteriores e traga sua sequência junto
+            </span>
+          </span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
       ) : null}
 
       {!isLoading && data!.workouts.length > 0 ? (
