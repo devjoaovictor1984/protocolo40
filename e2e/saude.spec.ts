@@ -86,12 +86,15 @@ test.describe('saúde', () => {
   test.skip(!configured, 'precisa das credenciais do Supabase');
 
   let userId = '';
+  // o segundo usuário do teste de isolamento; sai mesmo se o teste falhar antes
+  let outroId = '';
 
   test.afterEach(async () => {
-    if (userId) {
-      await admin(`/auth/v1/admin/users/${userId}`, { method: 'DELETE' });
-      userId = '';
+    for (const id of [userId, outroId]) {
+      if (id) await admin(`/auth/v1/admin/users/${id}`, { method: 'DELETE' });
     }
+    userId = '';
+    outroId = '';
   });
 
   test('sem peso nem altura, pede os dois em vez de inventar números', async ({
@@ -225,6 +228,7 @@ test.describe('saúde', () => {
         }),
       })
     ).json();
+    outroId = outro.id;
 
     await admin('/rest/v1/water_logs', {
       method: 'POST',
@@ -252,6 +256,5 @@ test.describe('saúde', () => {
     await page.goto('/saude');
     await expect(page.getByText(/0,0 L de/)).toBeVisible({ timeout: 20_000 });
 
-    await admin(`/auth/v1/admin/users/${outro.id}`, { method: 'DELETE' });
   });
 });
