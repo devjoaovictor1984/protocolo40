@@ -50,6 +50,7 @@ export type CatalogTemplate = {
   place: WorkoutPlace | null;
   tags: string[];
   estimatedSeconds: number;
+  sortOrder: number;
   isSystem: boolean;
   isFavorite: boolean;
   exercises: CatalogTemplateExercise[];
@@ -92,11 +93,11 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
   const { data, error } = await supabase
     .from('workout_templates')
     .select(
-      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, is_favorite, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(name, modality))',
+      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, sort_order, is_favorite, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(name, modality))',
     )
     .is('deleted_at', null)
     .eq('is_active', true)
-    .order('title');
+    .order('level').order('sort_order').order('title');
 
   if (error || !data) {
     const cached = await readCache<CatalogTemplate[]>(TEMPLATES_KEY);
@@ -114,6 +115,7 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
     place: row.place,
     tags: row.tags,
     estimatedSeconds: row.estimated_seconds,
+    sortOrder: row.sort_order,
     isSystem: row.owner_id === null,
     isFavorite: row.is_favorite,
     exercises: (row.workout_template_exercises ?? [])

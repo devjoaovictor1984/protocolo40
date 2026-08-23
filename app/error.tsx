@@ -21,7 +21,7 @@ export default function AppError({
   }, [error]);
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
+    <main className="pt-safe px-safe flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
       <AlertTriangle aria-hidden className="text-muted-foreground size-10" />
 
       <div className="flex flex-col gap-2">

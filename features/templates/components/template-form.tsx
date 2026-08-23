@@ -17,6 +17,12 @@ import { cn } from '@/lib/utils';
 import type { WorkoutLevel } from '@/types/database';
 import type { LocalWorkoutExercise } from '@/types/offline';
 
+/*
+ * Sem autoFocus de propósito: no celular ele abre o teclado antes de a pessoa
+ * ver a tela, e convida a digitar enquanto o React ainda está hidratando — o
+ * que faz o texto ser descartado.
+ */
+
 /**
  * Montar um treino próprio.
  *
@@ -131,7 +137,6 @@ export function TemplateForm() {
           placeholder="Ex.: Meu 5•10•15"
           maxLength={80}
           className="h-12 text-base"
-          autoFocus
         />
       </div>
 

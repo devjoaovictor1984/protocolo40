@@ -136,13 +136,19 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
     if (nivel !== 'todos') lista = lista.filter((template) => template.level === nivel);
     if (objetivo) lista = lista.filter((template) => template.tags.includes(objetivo));
 
-    // quem já treinou aquilo vê primeiro; depois do mais leve ao mais pesado
-    const ordem: Record<string, number> = { iniciante: 0, intermediario: 1, avancado: 2 };
-    return lista.sort((a, b) => {
+    // quem já treinou aquilo vê primeiro; depois vale a progressão da biblioteca
+    const nivelOrdem: Record<string, number> = { iniciante: 0, intermediario: 1, avancado: 2 };
+
+    return [...lista].sort((a, b) => {
       const feitoA = marcas.has(a.id) ? 0 : 1;
       const feitoB = marcas.has(b.id) ? 0 : 1;
       if (feitoA !== feitoB) return feitoA - feitoB;
-      return (ordem[a.level ?? ''] ?? 3) - (ordem[b.level ?? ''] ?? 3);
+
+      const nivelA = nivelOrdem[a.level ?? ''] ?? 3;
+      const nivelB = nivelOrdem[b.level ?? ''] ?? 3;
+      if (nivelA !== nivelB) return nivelA - nivelB;
+
+      return a.sortOrder - b.sortOrder;
     });
   }, [marcas, nivel, objetivo, onlyFavorites, templates]);
 

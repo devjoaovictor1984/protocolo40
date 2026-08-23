@@ -182,8 +182,19 @@
 
   body {
     @apply bg-background text-foreground;
-    /* a bottom nav vive acima da safe area do iOS */
+
+    /*
+     * Area segura do aparelho.
+     *
+     * O viewport usa `viewport-fit=cover` para a barra inferior encostar na
+     * borda do iPhone. O preco disso e que o topo passa por baixo da status
+     * bar e da ilha dinamica — entao todo conteudo precisa respeitar o recuo
+     * de cima, e nao so o de baixo.
+     */
+    --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
 
   /* foco sempre visível — requisito de acessibilidade, não enfeite */
@@ -201,6 +212,23 @@
 
   .pb-safe {
     padding-bottom: calc(var(--safe-bottom) + 0.5rem);
+  }
+
+  /*
+   * Respiro do topo.
+   *
+   * Alem da area segura, uma folga fixa: encostar o titulo na status bar
+   * deixa a tela apertada, e o alvo de toque no canto superior e o mais
+   * dificil de alcancar com uma mao so.
+   */
+  .pt-safe {
+    padding-top: calc(var(--safe-top) + 0.75rem);
+  }
+
+  /* paisagem em aparelhos com recorte lateral */
+  .px-safe {
+    padding-left: max(var(--safe-left), 0px);
+    padding-right: max(var(--safe-right), 0px);
   }
 
   .h-dvh-safe {

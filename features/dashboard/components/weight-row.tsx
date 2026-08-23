@@ -24,7 +24,7 @@ export function WeightRow() {
   const today = useToday();
   const queryClient = useQueryClient();
 
-  const [valor, setValor] = useState('');
+  const [valor, setValor] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   const { data: medidas, isLoading } = useQuery({
@@ -38,8 +38,19 @@ export function WeightRow() {
   const deHoje = (medidas ?? []).find((item) => item.measured_on === today);
   const ultimo = (medidas ?? []).find((item) => item.weight_kg !== null);
 
+  /*
+   * O campo já vem com o último peso.
+   *
+   * Antes ele aparecia só como dica, e o resultado era um número visível com
+   * o botão apagado ao lado: parecia preenchido e não funcionava. O peso muda
+   * pouco de um dia para o outro, então partir do anterior é o caminho curto —
+   * e ajustar é um toque.
+   */
+  const preenchido =
+    valor ?? (ultimo?.weight_kg ? ultimo.weight_kg.toFixed(1).replace('.', ',') : '');
+
   async function registrar() {
-    const peso = Number(valor.replace(',', '.'));
+    const peso = Number(preenchido.replace(',', '.'));
 
     if (!Number.isFinite(peso) || peso < 20 || peso > 400) {
       toast.error('Informe um peso entre 20 e 400 kg.');
@@ -52,7 +63,7 @@ export function WeightRow() {
       await saveMeasurement({ userId, measuredOn: today, weightKg: peso });
       await queryClient.invalidateQueries({ queryKey: ['measurements'] });
       await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
-      setValor('');
+      setValor(null);
       toast.success('Peso registrado.');
     } catch {
       toast.error('Não conseguimos salvar agora.', { description: 'Tente novamente.' });
@@ -90,29 +101,34 @@ export function WeightRow() {
         <span className="text-sm font-medium">Peso de hoje</span>
         {ultimo?.weight_kg ? (
           <span className="text-muted-foreground tnum ml-auto text-xs">
-            último: {ultimo.weight_kg.toFixed(1).replace('.', ',')} kg ·{' '}
             {relativeDay(ultimo.measured_on, today)}
           </span>
         ) : null}
       </div>
 
       <div className="flex gap-2">
+        {/*
+          type="text" e não "number": um campo numérico do HTML recusa vírgula,
+          e no Brasil o peso se escreve 86,4. O teclado decimal continua sendo
+          o que aparece no celular.
+        */}
         <Input
-          type="number"
+          type="text"
           inputMode="decimal"
-          step="0.1"
-          min="20"
-          max="400"
-          value={valor}
+          value={preenchido}
           onChange={(event) => setValor(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') void registrar();
           }}
-          placeholder={ultimo?.weight_kg ? ultimo.weight_kg.toFixed(1).replace('.', ',') : '86,4'}
+          placeholder="86,4"
           aria-label="Peso de hoje em quilos"
           className="tnum h-12 flex-1 text-base"
         />
-        <Button className="h-12 px-5" disabled={salvando || !valor.trim()} onClick={() => void registrar()}>
+        <Button
+          className="h-12 px-5"
+          disabled={salvando || !preenchido.trim()}
+          onClick={() => void registrar()}
+        >
           {salvando ? 'Salvando…' : 'Registrar'}
         </Button>
       </div>

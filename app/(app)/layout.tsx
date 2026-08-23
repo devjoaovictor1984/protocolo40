@@ -28,12 +28,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         dailyGoalSeconds: settings.daily_goal_seconds,
       }}
     >
-      <div className="flex min-h-dvh">
+      <div className="px-safe flex min-h-dvh">
         <SideNav />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* espaço para a bottom nav não cobrir o fim do conteúdo */}
-          <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 lg:px-8 lg:pb-12">
+          {/*
+            pt-safe afasta o conteúdo da status bar e da ilha dinâmica;
+            pb-28 deixa a bottom nav sem cobrir o fim da página.
+          */}
+          <main className="pt-safe mx-auto w-full max-w-3xl flex-1 px-4 pb-28 lg:px-8 lg:pt-4 lg:pb-12">
             {children}
           </main>
         </div>

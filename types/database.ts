@@ -99,6 +99,7 @@ export type WorkoutTemplateRow = Timestamps & {
   place: WorkoutPlace | null;
   tags: string[];
   estimated_seconds: number;
+  sort_order: number;
   is_favorite: boolean;
   use_count: number;
   is_active: boolean;

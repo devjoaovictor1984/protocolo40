@@ -3,7 +3,7 @@ import { ButtonLink } from '@/components/ui/button-link';
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
+    <main className="pt-safe px-safe flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
       <p className="text-muted-foreground font-mono text-sm tracking-widest">404</p>
 
       <div className="flex flex-col gap-2">

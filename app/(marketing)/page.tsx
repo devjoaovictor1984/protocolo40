@@ -50,7 +50,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="pt-safe px-safe flex min-h-dvh flex-col">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

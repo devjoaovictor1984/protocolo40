@@ -385,6 +385,19 @@ export async function flushQueue(supabase: Client): Promise<SyncResult> {
     running = false;
   }
 
+  /*
+   * Um pedido que chegou entre o fim do laço e a liberação da trava ficaria
+   * anotado sem ninguém para lê-lo, e só sairia no próximo tick do relógio.
+   * A janela é estreita, mas apagar um treino cai bem nela: a exclusão entra
+   * na fila enquanto a tela ainda está sincronizando o que veio antes.
+   */
+  if (pedidoPendente) {
+    pedidoPendente = false;
+    const extra = await flushQueue(supabase);
+    processed += extra.processed;
+    failed += extra.failed;
+  }
+
   return { processed, failed };
 }
 

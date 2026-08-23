@@ -26,6 +26,8 @@ export default defineConfig({
   },
   projects: [
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // um iPhone grande com entalhe: e onde a area segura importa
+    { name: 'iphone', use: { ...devices['iPhone 14 Pro Max'] } },
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL

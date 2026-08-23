@@ -21,7 +21,7 @@ export default async function FocusLayout({ children }: { children: React.ReactN
         dailyGoalSeconds: settings.daily_goal_seconds,
       }}
     >
-      <div className="flex min-h-dvh flex-col">{children}</div>
+      <div className="pt-safe px-safe flex min-h-dvh flex-col">{children}</div>
     </SessionProvider>
   );
 }

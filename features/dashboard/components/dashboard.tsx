@@ -198,9 +198,9 @@ function DoneCard({ workouts, day }: { workouts: LocalWorkout[]; day: number }) 
 /**
  * A semana corrente, de segunda a domingo.
  *
- * O mes inteiro respondia "como foi meu mes", que nao e a pergunta da tela de
- * hoje. Sete dias cabem numa linha, mostram a sequencia viva e deixam espaco
- * para o que importa: o botao de comecar.
+ * O mês inteiro respondia "como foi meu mês", que não é a pergunta da tela de
+ * hoje. Sete dias cabem numa linha, mostram a sequência viva e deixam espaço
+ * para o que importa: o botão de começar.
  */
 function WeekStrip({ today, days }: { today: string; days: string[] }) {
   const trained = new Set(days);
@@ -215,7 +215,7 @@ function WeekStrip({ today, days }: { today: string; days: string[] }) {
           href="/calendario"
           className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-sm"
         >
-          Ver o mes
+          Ver o mês
           <ChevronRight aria-hidden className="size-3.5" />
         </Link>
       </div>

@@ -109,7 +109,13 @@ test.describe('biblioteca de treinos', () => {
     page.on('dialog', (dialog) => void dialog.accept());
 
     await page.goto('/treinos/novo');
-    await page.getByLabel('Nome').fill('Meu circuito');
+
+    // digitar antes da hidratação faz o React descartar o texto; conferir que
+    // o valor ficou é o que separa um teste honesto de um que passa por sorte
+    const nome = page.getByLabel('Nome');
+    await nome.click();
+    await nome.fill('Meu circuito');
+    await expect(nome).toHaveValue('Meu circuito');
 
     // dois exercícios no round
     for (const exercicio of ['Agachamento', 'Flexão']) {

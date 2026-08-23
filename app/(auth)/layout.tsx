@@ -2,7 +2,7 @@ import { Wordmark } from '@/components/brand/wordmark';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="pt-safe px-safe flex min-h-dvh flex-col">
       <header className="px-5 py-6">
         <Wordmark />
       </header>

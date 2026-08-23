@@ -75,7 +75,7 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
   const foto = avatarUrl(profile, env.supabaseUrl);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="pt-safe px-safe flex min-h-dvh flex-col">
       <header className="flex items-center justify-between px-5 py-6">
         <Wordmark />
         <ButtonLink href="/cadastro" size="sm">
