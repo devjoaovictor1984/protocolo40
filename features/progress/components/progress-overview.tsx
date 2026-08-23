@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock,
   Flame,
+  HeartPulse,
   LineChart as LineChartIcon,
   Scale,
   Stethoscope,
@@ -189,6 +190,20 @@ export function ProgressOverview() {
           <span className="block font-semibold">Análise do seu treino</span>
           <span className="text-muted-foreground text-sm">
             O que mudar em cada exercício, e por quê
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+      </Link>
+
+      <Link
+        href="/saude"
+        className="border-border hover:bg-muted flex items-center gap-4 rounded-xl border p-4 transition-colors"
+      >
+        <HeartPulse aria-hidden className="text-primary size-5" />
+        <span className="flex-1">
+          <span className="block font-semibold">Saúde e metas do dia</span>
+          <span className="text-muted-foreground text-sm">
+            Água, calorias, proteína e faixa de peso
           </span>
         </span>
         <ChevronRight aria-hidden className="text-muted-foreground size-4" />

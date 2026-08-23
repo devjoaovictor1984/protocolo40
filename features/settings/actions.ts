@@ -8,7 +8,13 @@ import { invalidState, type ActionState } from '@/lib/forms/action-state';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { profileSchema } from '@/lib/validation/profile';
-import type { Visibility, WorkoutGoal, WorkoutLevel, WorkoutPlace } from '@/types/database';
+import type {
+  BiologicalSex,
+  Visibility,
+  WorkoutGoal,
+  WorkoutLevel,
+  WorkoutPlace,
+} from '@/types/database';
 
 const VISIBILITY_KEYS = [
   'profile_visibility',
@@ -80,6 +86,7 @@ export async function updateProfile(
     birth_date: formData.get('birth_date') ?? undefined,
     protocol_started_on: formData.get('protocol_started_on') ?? undefined,
     height_cm: formData.get('height_cm'),
+    biological_sex: formData.get('biological_sex') || undefined,
     goal: formData.get('goal') || null,
     level: formData.get('level') ?? 'iniciante',
     default_location: formData.get('default_location') ?? 'casa',
@@ -102,6 +109,9 @@ export async function updateProfile(
         ? { protocol_started_on: parsed.data.protocol_started_on }
         : {}),
       height_cm: parsed.data.height_cm,
+      ...(parsed.data.biological_sex
+        ? { biological_sex: parsed.data.biological_sex as BiologicalSex }
+        : {}),
       goal: (parsed.data.goal as WorkoutGoal | null) ?? null,
       level: parsed.data.level as WorkoutLevel,
       default_location: parsed.data.default_location as WorkoutPlace,

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { updateProfile } from '@/features/settings/actions';
 import { idleState } from '@/lib/forms/action-state';
-import { GOALS, LEVELS, PLACES } from '@/lib/validation/profile';
+import { GOALS, LEVELS, PLACES, SEXOS } from '@/lib/validation/profile';
 import { cn } from '@/lib/utils';
 import type { ProfileRow } from '@/types/database';
 
@@ -19,6 +19,7 @@ export function ProfileForm({ profile }: { profile: ProfileRow }) {
   const [goal, setGoal] = useState(profile.goal ?? '');
   const [level, setLevel] = useState(profile.level);
   const [place, setPlace] = useState(profile.default_location);
+  const [sexo, setSexo] = useState<string>(profile.biological_sex);
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -112,6 +113,19 @@ export function ProfileForm({ profile }: { profile: ProfileRow }) {
           começou de verdade — as fotos e os treinos antigos entram na contagem certa.
         </p>
       </div>
+
+      <ChipField
+        label="Sexo biológico"
+        name="biological_sex"
+        options={SEXOS}
+        value={sexo}
+        onChange={setSexo}
+        required
+      />
+      <p className="text-muted-foreground -mt-3 text-xs">
+        Usado apenas para estimar o gasto calórico na tela de Saúde. Sem ele, a estimativa é a
+        média das duas equações.
+      </p>
 
       <ChipField label="Objetivo" name="goal" options={GOALS} value={goal} onChange={setGoal} />
       <ChipField

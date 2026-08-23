@@ -44,6 +44,12 @@ const optionalNumber = (min: number, max: number, message: string) =>
     })
     .refine((value) => value === null || (value >= min && value <= max), message);
 
+export const SEXOS = [
+  { value: 'feminino', label: 'Feminino' },
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'nao_informado', label: 'Prefiro não informar' },
+] as const;
+
 export const profileSchema = z.object({
   full_name: z
     .string()
@@ -76,6 +82,8 @@ export const profileSchema = z.object({
       'Informe a data no formato dd/mm/aaaa',
     ),
   height_cm: optionalNumber(80, 260, 'Altura fora do intervalo esperado (80 a 260 cm)'),
+  // usado só nas equações de gasto energético; informar é opcional
+  biological_sex: z.enum(['feminino', 'masculino', 'nao_informado']).optional(),
   goal: z.enum(GOALS.map((item) => item.value) as [string, ...string[]]).nullable().optional(),
   level: z.enum(['iniciante', 'intermediario', 'avancado']),
   default_location: z.enum(['casa', 'academia', 'externa', 'misto']),

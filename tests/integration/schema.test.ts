@@ -24,6 +24,7 @@ const INHERITED: Record<string, string[]> = {
   BodyMeasurementRow: ['created_at', 'updated_at'],
   WorkoutCommentRow: ['created_at', 'updated_at'],
   SupportTicketRow: ['created_at', 'updated_at'],
+  WaterLogRow: ['created_at', 'updated_at'],
   WorkoutTemplateExerciseRow: [
     'sets',
     'repetitions',
@@ -64,6 +65,7 @@ const TABLE_TO_TYPE: Record<string, string> = {
   support_tickets: 'SupportTicketRow',
   badges: 'BadgeRow',
   user_badges: 'UserBadgeRow',
+  water_logs: 'WaterLogRow',
 };
 
 type OpenApiSpec = {

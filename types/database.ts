@@ -42,6 +42,7 @@ export type TicketKind = 'sugestao' | 'erro' | 'duvida' | 'outro';
 export type TicketStatus = 'aberto' | 'em_analise' | 'resolvido' | 'fechado';
 export type BadgeMetric = 'dias' | 'barras' | 'flexoes' | 'fundador';
 export type BadgeTier = 'bronze' | 'ferro' | 'prata' | 'ouro' | 'imperial';
+export type BiologicalSex = 'feminino' | 'masculino' | 'nao_informado';
 
 type Timestamps = { created_at: string; updated_at: string };
 
@@ -62,6 +63,7 @@ export type ProfileRow = Timestamps & {
   protocol_started_on: string;
   onboarding_completed_at: string | null;
   is_admin: boolean;
+  biological_sex: BiologicalSex;
   deleted_at: string | null;
 };
 
@@ -287,6 +289,12 @@ export type SupportTicketRow = Timestamps & {
   app_version: string | null;
 };
 
+export type WaterLogRow = Timestamps & {
+  user_id: string;
+  day: string;
+  ml: number;
+};
+
 export type BadgeRow = {
   slug: string;
   name: string;
@@ -428,6 +436,12 @@ export interface Database {
         ]
       >;
       badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
+      water_logs: TableDef<
+        WaterLogRow,
+        InsertOf<WaterLogRow, 'user_id' | 'day'>,
+        Partial<WaterLogRow>,
+        [FK<'water_logs_user_id_fkey', 'user_id', 'profiles'>]
+      >;
       // Sem policy de INSERT: quem concede é `conceder_conquistas`, no banco.
       user_badges: TableDef<
         UserBadgeRow,
@@ -455,6 +469,10 @@ export interface Database {
         Args: { p_user?: string };
         Returns: boolean;
       };
+      somar_agua: {
+        Args: { p_day: string; p_ml: number };
+        Returns: number;
+      };
     };
     Enums: {
       visibility: Visibility;
@@ -473,6 +491,7 @@ export interface Database {
       ticket_status: TicketStatus;
       badge_metric: BadgeMetric;
       badge_tier: BadgeTier;
+      biological_sex: BiologicalSex;
     };
     CompositeTypes: { [_ in never]: never };
   };
