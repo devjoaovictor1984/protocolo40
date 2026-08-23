@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Estado da conexão.
@@ -35,8 +35,16 @@ export function useOnlineStatus(): boolean {
  * O `visibilitychange` é o que salva o iOS, onde Background Sync não existe.
  */
 export function useSyncTriggers(callback: () => void, intervalMs = 60_000) {
+  // guardado numa ref para que trocar de callback não reinstale os ouvintes
+  // nem dispare uma sincronização a cada render
+  const latest = useRef(callback);
+
   useEffect(() => {
-    const run = () => callback();
+    latest.current = callback;
+  });
+
+  useEffect(() => {
+    const run = () => latest.current();
 
     const onVisible = () => {
       if (document.visibilityState === 'visible') run();
@@ -55,5 +63,5 @@ export function useSyncTriggers(callback: () => void, intervalMs = 60_000) {
       document.removeEventListener('visibilitychange', onVisible);
       window.clearInterval(timer);
     };
-  }, [callback, intervalMs]);
+  }, [intervalMs]);
 }

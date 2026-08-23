@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { isBrowser } from '@/lib/offline/db';
@@ -45,10 +45,21 @@ export function useSync() {
     },
   });
 
+  // `flush` é um objeto novo a cada render. Depender dele aqui tornava o
+  // gatilho instável, o que refazia o efeito dos disparadores, que chamava a
+  // sincronização, que mudava o estado — um render em loop que travava a tela.
+  const mutate = useRef(flush.mutate);
+
+  // a ref é atualizada depois do render, e não durante — escrever numa ref no
+  // corpo do componente quebra com renderização concorrente
+  useEffect(() => {
+    mutate.current = flush.mutate;
+  });
+
   const trigger = useCallback(() => {
     if (!isBrowser() || !navigator.onLine) return;
-    flush.mutate();
-  }, [flush]);
+    mutate.current();
+  }, []);
 
   useSyncTriggers(trigger);
 
