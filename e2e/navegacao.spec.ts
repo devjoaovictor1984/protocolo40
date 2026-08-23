@@ -137,6 +137,7 @@ test.describe('navegação', () => {
     const obrigatorias = [
       '/app',
       '/treinos',
+      '/treinos/novo',
       '/historico',
       '/calendario',
       '/evolucao',

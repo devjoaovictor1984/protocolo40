@@ -10,6 +10,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type Visibility = 'private' | 'followers' | 'public';
 export type WorkoutLevel = 'iniciante' | 'intermediario' | 'avancado';
+/** Como o treino é executado. AMRAP repete o circuito até o tempo acabar. */
+export type WorkoutMethod = 'amrap' | 'livre';
 export type WorkoutPlace = 'casa' | 'academia' | 'externa' | 'misto';
 export type WorkoutGoal =
   | 'perder_gordura'
@@ -90,7 +92,9 @@ export type WorkoutTemplateRow = Timestamps & {
   id: string;
   owner_id: string | null;
   title: string;
+  subtitle: string | null;
   description: string | null;
+  method: WorkoutMethod;
   level: WorkoutLevel | null;
   place: WorkoutPlace | null;
   tags: string[];
@@ -384,6 +388,7 @@ export interface Database {
     Enums: {
       visibility: Visibility;
       workout_level: WorkoutLevel;
+      workout_method: WorkoutMethod;
       workout_place: WorkoutPlace;
       workout_goal: WorkoutGoal;
       exercise_cat: ExerciseCategory;

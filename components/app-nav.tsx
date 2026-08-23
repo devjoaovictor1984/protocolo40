@@ -89,6 +89,12 @@ const QUICK_ACTIONS: {
         description: 'Circuitos prontos de 20 minutos e os seus salvos',
         icon: ListChecks,
       },
+      {
+        href: '/treinos/novo',
+        label: 'Montar meu treino',
+        description: 'Fica salvo para as próximas vezes',
+        icon: Plus,
+      },
     ],
   },
   {

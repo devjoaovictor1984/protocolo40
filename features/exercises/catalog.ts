@@ -4,7 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 
 import { readCache, writeCache } from '@/lib/offline/db';
 import { createClient } from '@/lib/supabase/client';
-import type { ExerciseCategory, ExerciseModality, WorkoutLevel, WorkoutPlace } from '@/types/database';
+import type {
+  ExerciseCategory,
+  ExerciseModality,
+  WorkoutLevel,
+  WorkoutMethod,
+  WorkoutPlace,
+} from '@/types/database';
 
 /**
  * Catálogo de exercícios e templates.
@@ -37,7 +43,9 @@ export type CatalogTemplateExercise = {
 export type CatalogTemplate = {
   id: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
+  method: WorkoutMethod;
   level: WorkoutLevel | null;
   place: WorkoutPlace | null;
   tags: string[];
@@ -84,7 +92,7 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
   const { data, error } = await supabase
     .from('workout_templates')
     .select(
-      'id, title, description, level, place, tags, estimated_seconds, is_favorite, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(name, modality))',
+      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, is_favorite, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(name, modality))',
     )
     .is('deleted_at', null)
     .eq('is_active', true)
@@ -99,7 +107,9 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
   const templates: CatalogTemplate[] = data.map((row) => ({
     id: row.id,
     title: row.title,
+    subtitle: row.subtitle,
     description: row.description,
+    method: row.method,
     level: row.level,
     place: row.place,
     tags: row.tags,

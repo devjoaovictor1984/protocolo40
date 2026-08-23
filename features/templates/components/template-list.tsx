@@ -2,15 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Lightbulb, Play, Timer } from 'lucide-react';
+import { Lightbulb, Play, Plus, Timer, Trophy } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { describeMetrics, useExercises, useTemplates } from '@/features/exercises/catalog';
+import { useExercises, useTemplates, type CatalogTemplate } from '@/features/exercises/catalog';
 import { useToday } from '@/features/session/session-context';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
 import { cn } from '@/lib/utils';
+import { formatDay } from '@/services/calendar';
 import { formatDurationShort } from '@/services/duration';
 import { suggestFocus, type RecentDay } from '@/services/suggestions';
 import type { WorkoutLevel } from '@/types/database';
@@ -18,37 +19,42 @@ import type { WorkoutLevel } from '@/types/database';
 /**
  * Escolher um treino.
  *
- * A pergunta que a tela responde é "o que eu consigo fazer agora, com o que eu
- * tenho". Por isso o primeiro corte é equipamento, e não grupo muscular — e o
- * padrão é o caso mais comum: nada, em casa.
+ * Todos os treinos do P20X seguem o mesmo princípio: um circuito curto,
+ * repetido no seu ritmo por 20 minutos, contando rounds. Isso deixa o cartão
+ * previsível — sempre o mesmo formato — e transforma o número de rounds no
+ * indicador de evolução. Cinco rounds no dia 1 e oito no dia 20 dizem mais que
+ * qualquer estimativa de caloria.
  *
- * Foco e nível continuam existindo, mas fechados. Doze filtros abertos de uma
- * vez transformavam uma escolha simples numa consulta.
+ * Dois filtros, como manda a decisão de produto: nível e objetivo. Equipamento
+ * não é filtro, é informação — aparece em destaque em cada cartão, calculado a
+ * partir dos exercícios que o treino usa.
  */
 
-type Equipamento = 'nenhum' | 'academia' | 'todos';
-
-const EQUIPAMENTO: { value: Equipamento; label: string }[] = [
-  { value: 'nenhum', label: 'Sem equipamento' },
-  { value: 'academia', label: 'Com equipamento' },
-  { value: 'todos', label: 'Todos' },
-];
-
-const FOCOS = [
-  { value: 'corpo_inteiro', label: 'Corpo inteiro' },
-  { value: 'superiores', label: 'Superiores' },
-  { value: 'inferiores', label: 'Pernas' },
-  { value: 'core', label: 'Core' },
-  { value: 'cardio', label: 'Cardio' },
-  { value: 'recuperacao_ativa', label: 'Leve' },
-];
-
 const NIVEIS: { value: WorkoutLevel | 'todos'; label: string }[] = [
-  { value: 'todos', label: 'Qualquer nível' },
+  { value: 'todos', label: 'Todos' },
   { value: 'iniciante', label: 'Iniciante' },
-  { value: 'intermediario', label: 'Intermediário' },
+  { value: 'intermediario', label: 'Moderado' },
   { value: 'avancado', label: 'Avançado' },
 ];
+
+const OBJETIVOS: { value: string | null; label: string }[] = [
+  { value: null, label: 'Tudo' },
+  { value: 'corpo_inteiro', label: 'Corpo inteiro' },
+  { value: 'cardio', label: 'Cardio' },
+  { value: 'core', label: 'Core' },
+  { value: 'superiores', label: 'Superiores' },
+  { value: 'inferiores', label: 'Pernas' },
+  { value: 'recuperacao_ativa', label: 'Recuperação' },
+];
+
+const NIVEL_LABEL: Record<WorkoutLevel, string> = {
+  iniciante: 'Iniciante',
+  intermediario: 'Moderado',
+  avancado: 'Avançado',
+};
+
+/** O melhor e o mais recente número de rounds de cada treino. */
+type Marca = { recorde: number; ultimaRounds: number | null; ultimaData: string | null };
 
 export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolean }) {
   const today = useToday();
@@ -56,10 +62,8 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
   const { data: exercises } = useExercises();
   const { data: workouts } = useLocalWorkouts();
 
-  const [equipamento, setEquipamento] = useState<Equipamento>('nenhum');
-  const [foco, setFoco] = useState<string | null>(null);
   const [nivel, setNivel] = useState<WorkoutLevel | 'todos'>('todos');
-  const [maisFiltros, setMaisFiltros] = useState(false);
+  const [objetivo, setObjetivo] = useState<string | null>(null);
 
   /** O que cada treino exige, somado a partir dos exercícios que ele usa. */
   const equipamentoPorTemplate = useMemo(() => {
@@ -76,6 +80,32 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
 
     return mapa;
   }, [exercises, templates]);
+
+  /** Histórico por treino: é ele que transforma o cartão num placar. */
+  const marcas = useMemo(() => {
+    const mapa = new Map<string, Marca>();
+
+    for (const workout of workouts ?? []) {
+      if (!workout.template_id || workout.rounds === null) continue;
+
+      const atual = mapa.get(workout.template_id) ?? {
+        recorde: 0,
+        ultimaRounds: null,
+        ultimaData: null,
+      };
+
+      atual.recorde = Math.max(atual.recorde, workout.rounds);
+      // a lista já vem do mais recente para o mais antigo
+      if (atual.ultimaData === null) {
+        atual.ultimaRounds = workout.rounds;
+        atual.ultimaData = workout.workout_date;
+      }
+
+      mapa.set(workout.template_id, atual);
+    }
+
+    return mapa;
+  }, [workouts]);
 
   const suggestion = useMemo(() => {
     if (!exercises || !workouts) return null;
@@ -100,30 +130,27 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
 
   const visiveis = useMemo(() => {
     let lista = (templates ?? []).filter((template) =>
-      onlyFavorites ? template.isFavorite || !template.isSystem : true,
+      onlyFavorites ? !template.isSystem || template.isFavorite : true,
     );
 
-    if (equipamento !== 'todos') {
-      lista = lista.filter((template) => {
-        const precisa = (equipamentoPorTemplate.get(template.id) ?? []).length > 0;
-        return equipamento === 'nenhum' ? !precisa : precisa;
-      });
-    }
-    if (foco) {
-      lista = lista.filter((template) => template.tags.includes(foco));
-    }
-    if (nivel !== 'todos') {
-      lista = lista.filter((template) => template.level === nivel);
-    }
+    if (nivel !== 'todos') lista = lista.filter((template) => template.level === nivel);
+    if (objetivo) lista = lista.filter((template) => template.tags.includes(objetivo));
 
-    return lista;
-  }, [equipamento, equipamentoPorTemplate, foco, nivel, onlyFavorites, templates]);
+    // quem já treinou aquilo vê primeiro; depois do mais leve ao mais pesado
+    const ordem: Record<string, number> = { iniciante: 0, intermediario: 1, avancado: 2 };
+    return lista.sort((a, b) => {
+      const feitoA = marcas.has(a.id) ? 0 : 1;
+      const feitoB = marcas.has(b.id) ? 0 : 1;
+      if (feitoA !== feitoB) return feitoA - feitoB;
+      return (ordem[a.level ?? ''] ?? 3) - (ordem[b.level ?? ''] ?? 3);
+    });
+  }, [marcas, nivel, objetivo, onlyFavorites, templates]);
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3 py-6">
         {[0, 1, 2].map((index) => (
-          <Skeleton key={index} className="h-28 w-full rounded-xl" />
+          <Skeleton key={index} className="h-56 w-full rounded-2xl" />
         ))}
       </div>
     );
@@ -136,7 +163,8 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
           {onlyFavorites ? 'Seus treinos' : 'Escolher um treino'}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Cerca de 20 minutos cada. Toque em USAR HOJE e o cronômetro já começa.
+          Todos funcionam igual: repita o circuito no seu ritmo durante 20 minutos e anote os
+          rounds.
         </p>
       </header>
 
@@ -147,141 +175,60 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
         </div>
       ) : null}
 
-      {/* o primeiro corte é o que você tem em mãos */}
-      <div className="border-border flex rounded-xl border p-1" role="group" aria-label="Equipamento">
-        {EQUIPAMENTO.map((opcao) => (
-          <button
-            key={opcao.value}
-            type="button"
-            aria-pressed={equipamento === opcao.value}
-            onClick={() => setEquipamento(opcao.value)}
-            className={cn(
-              'min-h-11 flex-1 rounded-lg px-2 text-sm font-medium transition-colors',
-              equipamento === opcao.value
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted',
-            )}
-          >
-            {opcao.label}
-          </button>
-        ))}
-      </div>
-
       <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => setMaisFiltros((valor) => !valor)}
-          aria-expanded={maisFiltros}
-          className="text-muted-foreground hover:text-foreground flex min-h-10 items-center gap-1 self-start text-sm"
-        >
-          Filtrar por foco e nível
-          <ChevronDown
-            aria-hidden
-            className={cn('size-4 transition-transform', maisFiltros && 'rotate-180')}
-          />
-        </button>
+        <Filtro label="Nível">
+          {NIVEIS.map((opcao) => (
+            <Chip key={opcao.value} active={nivel === opcao.value} onClick={() => setNivel(opcao.value)}>
+              {opcao.label}
+            </Chip>
+          ))}
+        </Filtro>
 
-        {maisFiltros ? (
-          <div className="flex flex-col gap-3">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Foco">
-              {FOCOS.map((opcao) => (
-                <Chip
-                  key={opcao.value}
-                  active={foco === opcao.value}
-                  onClick={() => setFoco(foco === opcao.value ? null : opcao.value)}
-                >
-                  {opcao.label}
-                </Chip>
-              ))}
-            </div>
-
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Nível">
-              {NIVEIS.map((opcao) => (
-                <Chip
-                  key={opcao.value}
-                  active={nivel === opcao.value}
-                  onClick={() => setNivel(opcao.value)}
-                >
-                  {opcao.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <Filtro label="Objetivo">
+          {OBJETIVOS.map((opcao) => (
+            <Chip
+              key={opcao.label}
+              active={objetivo === opcao.value}
+              onClick={() => setObjetivo(opcao.value)}
+            >
+              {opcao.label}
+            </Chip>
+          ))}
+        </Filtro>
       </div>
+
+      <ButtonLink href="/treinos/novo" variant="outline" className="h-12 justify-start">
+        <Plus aria-hidden className="size-4" />
+        Montar meu próprio treino
+      </ButtonLink>
 
       {visiveis.length === 0 ? (
         <EmptyState
           icon={Timer}
-          title="Nenhum treino com esses filtros."
-          description="Tire um filtro ou comece um treino livre — o cronômetro não exige roteiro."
+          title={onlyFavorites ? 'Você ainda não montou um treino.' : 'Nada com esses filtros.'}
+          description={
+            onlyFavorites
+              ? 'Monte o seu com os exercícios que você já faz — ele fica salvo para as próximas vezes.'
+              : 'Tire um filtro ou comece um treino livre: o cronômetro não exige roteiro.'
+          }
           action={
-            <ButtonLink href="/treino/hoje?auto=1" className="h-12">
-              Treino livre
+            <ButtonLink href={onlyFavorites ? '/treinos/novo' : '/treino/hoje?auto=1'} className="h-12">
+              {onlyFavorites ? 'Montar um treino' : 'Treino livre'}
             </ButtonLink>
           }
         />
       ) : (
-        <ul className="flex flex-col gap-3">
-          {visiveis.map((template) => {
-            const precisa = equipamentoPorTemplate.get(template.id) ?? [];
-
-            return (
-              <li key={template.id}>
-                <article className="border-border rounded-xl border p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="font-bold tracking-tight">{template.title}</h2>
-                      <p className="text-muted-foreground tnum mt-0.5 text-xs">
-                        {formatDurationShort(template.estimatedSeconds)}
-                        {template.level ? ` · ${rotuloNivel(template.level)}` : ''}
-                        {template.isSystem ? '' : ' · seu'}
-                      </p>
-                    </div>
-
-                    <ButtonLink
-                      href={`/treino/hoje?template=${template.id}&auto=1`}
-                      size="sm"
-                      className="h-10 shrink-0 px-4 font-semibold"
-                    >
-                      <Play aria-hidden className="size-3.5" />
-                      USAR HOJE
-                    </ButtonLink>
-                  </div>
-
-                  {/* saber o que precisa antes de abrir o cronômetro */}
-                  <p
-                    className={cn(
-                      'mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
-                      precisa.length === 0
-                        ? 'bg-success/12 text-success'
-                        : 'bg-secondary text-muted-foreground',
-                    )}
-                  >
-                    {precisa.length === 0 ? 'Sem equipamento' : `Precisa de ${precisa.join(', ')}`}
-                  </p>
-
-                  {template.description ? (
-                    <p className="text-muted-foreground mt-2 text-sm">{template.description}</p>
-                  ) : null}
-
-                  {template.exercises.length > 0 ? (
-                    <ul className="mt-3 flex flex-col gap-1">
-                      {template.exercises.map((item) => (
-                        <li
-                          key={`${template.id}-${item.exerciseId}-${item.orderIndex}`}
-                          className="flex justify-between gap-3 text-sm"
-                        >
-                          <span>{item.name}</span>
-                          <span className="text-muted-foreground tnum">{describeMetrics(item)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </article>
-              </li>
-            );
-          })}
+        <ul className="flex flex-col gap-4">
+          {visiveis.map((template) => (
+            <li key={template.id}>
+              <TemplateCard
+                template={template}
+                equipamento={equipamentoPorTemplate.get(template.id) ?? []}
+                marca={marcas.get(template.id)}
+                today={today}
+              />
+            </li>
+          ))}
         </ul>
       )}
 
@@ -297,12 +244,117 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
   );
 }
 
-function rotuloNivel(level: WorkoutLevel): string {
-  return level === 'iniciante'
-    ? 'Iniciante'
-    : level === 'intermediario'
-      ? 'Intermediário'
-      : 'Avançado';
+function TemplateCard({
+  template,
+  equipamento,
+  marca,
+  today,
+}: {
+  template: CatalogTemplate;
+  equipamento: string[];
+  marca: Marca | undefined;
+  today: string;
+}) {
+  const semEquipamento = equipamento.length === 0;
+
+  return (
+    <article className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-5">
+      <header className="flex flex-col gap-1">
+        <h2 className="text-lg font-extrabold tracking-tight">{template.title}</h2>
+        {template.subtitle ? (
+          <p className="text-muted-foreground text-sm">{template.subtitle}</p>
+        ) : null}
+      </header>
+
+      {/* a ficha: o que é preciso saber antes de apertar iniciar */}
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <Ficha termo="Nível" valor={template.level ? NIVEL_LABEL[template.level] : 'Livre'} />
+        <Ficha termo="Duração" valor={formatDurationShort(template.estimatedSeconds)} />
+        <Ficha
+          termo="Equipamento"
+          valor={semEquipamento ? 'Nenhum' : equipamento.join(', ')}
+          destaque={semEquipamento}
+        />
+        <Ficha termo="Método" valor={template.method === 'amrap' ? 'AMRAP' : 'Livre'} />
+      </dl>
+
+      {template.exercises.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-muted-foreground text-[11px] font-bold tracking-[0.18em] uppercase">
+            Round
+          </p>
+          <ul className="flex flex-col gap-1">
+            {template.exercises.map((item) => (
+              <li
+                key={`${template.id}-${item.exerciseId}-${item.orderIndex}`}
+                className="flex items-baseline gap-2"
+              >
+                <span className="tnum text-primary min-w-12 font-bold">
+                  {item.repetitions !== null
+                    ? `${item.repetitions} ×`
+                    : item.durationSeconds !== null
+                      ? `${item.durationSeconds}s`
+                      : ''}
+                </span>
+                <span>{item.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {marca ? (
+        <div className="border-border flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-sm">
+          <span className="flex items-center gap-1.5">
+            <Trophy aria-hidden className="text-primary size-3.5" />
+            <span className="text-muted-foreground">Seu recorde:</span>
+            <span className="tnum font-bold">{marca.recorde} rounds</span>
+          </span>
+
+          {marca.ultimaRounds !== null ? (
+            <span className="text-muted-foreground">
+              Última vez: <span className="tnum font-medium">{marca.ultimaRounds} rounds</span>
+              {marca.ultimaData && marca.ultimaData !== today
+                ? ` · ${formatDay(marca.ultimaData)}`
+                : ''}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <ButtonLink
+        href={`/treino/hoje?template=${template.id}&auto=1`}
+        className="h-14 text-base font-bold"
+      >
+        <Play aria-hidden className="size-4" />
+        INICIAR {formatDurationShort(template.estimatedSeconds).replace(' min', ':00')}
+      </ButtonLink>
+    </article>
+  );
+}
+
+function Ficha({ termo, valor, destaque }: { termo: string; valor: string; destaque?: boolean }) {
+  return (
+    <div className="flex flex-col">
+      <dt className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+        {termo}
+      </dt>
+      <dd className={cn('font-medium', destaque && 'text-success')}>{valor}</dd>
+    </div>
+  );
+}
+
+function Filtro({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+        {label}
+      </span>
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label={label}>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function Chip({
@@ -320,7 +372,7 @@ function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'min-h-9 shrink-0 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors',
+        'min-h-10 shrink-0 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors',
         active ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-muted',
       )}
     >
