@@ -93,78 +93,58 @@ test.describe('planos e acesso', () => {
     marca = '';
   });
 
-  test('sem plano, Análise e Saúde mostram o paywall e o resto segue livre', async ({
-    context,
-    page,
-    baseURL,
-  }) => {
+  test('com a cobrança desligada, o app inteiro é livre', async ({ context, page, baseURL }) => {
     ({ id: userId } = await signIn(context, baseURL!));
 
-    await page.goto('/analise');
-    await expect(page.getByRole('heading', { name: 'Análise do seu treino' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.getByRole('link', { name: 'VER OS PLANOS' })).toBeVisible();
-
-    await page.goto('/saude');
-    await expect(page.getByRole('heading', { name: 'Saúde e metas do dia' })).toBeVisible();
-
-    // o núcleo continua aberto
-    for (const rota of ['/hoje', '/historico', '/evolucao', '/conquistas', '/medidas']) {
-      const resposta = await page.goto(rota);
-      expect(resposta?.status(), rota).toBeLessThan(400);
-    }
-  });
-
-  test('a tela de planos mostra o Livre como atual e o pago sem checkout', async ({
-    context,
-    page,
-    baseURL,
-  }) => {
-    ({ id: userId } = await signIn(context, baseURL!));
-
-    await page.goto('/planos');
-    await expect(page.getByRole('heading', { name: 'Planos', exact: true })).toBeVisible({
-      timeout: 20_000,
-    });
-
-    await expect(page.getByRole('heading', { name: 'Livre' })).toBeVisible();
-    await expect(page.getByText('Seu plano')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'P20X Completo', exact: true })).toBeVisible();
-
-    // sem preço do Stripe configurado, o botão não promete o que não entrega
-    await expect(page.getByRole('button', { name: 'Em breve' }).first()).toBeVisible();
-  });
-
-  test('com plano concedido, Análise e Saúde abrem', async ({ context, page, baseURL }) => {
-    test.setTimeout(120_000);
-    ({ id: userId } = await signIn(context, baseURL!));
-
-    await admin('/rest/v1/subscriptions', {
-      method: 'POST',
-      body: JSON.stringify({
-        user_id: userId,
-        plan_slug: 'mensal',
-        status: 'active',
-        granted_reason: 'teste automatizado',
-      }),
-    });
-
-    await page.goto('/saude');
-    await expect(page.getByRole('heading', { name: 'Saúde', exact: true })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.getByRole('heading', { name: 'Saúde e metas do dia' })).toHaveCount(0);
-
+    // nenhum paywall em lugar nenhum
     await page.goto('/analise');
     await expect(page.getByRole('heading', { name: 'Análise', exact: true })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByRole('link', { name: 'VER OS PLANOS' })).toHaveCount(0);
+
+    await page.goto('/saude');
+    await expect(page.getByRole('heading', { name: 'Saúde', exact: true })).toBeVisible();
+
+    for (const rota of ['/hoje', '/calendario', '/evolucao', '/conquistas', '/medidas']) {
+      const resposta = await page.goto(rota);
+      expect(resposta?.status(), rota).toBeLessThan(400);
+    }
   });
 
-  test('assinatura vencida não dá acesso', async ({ context, page, baseURL }) => {
+  test('a tela de planos sai do ar e o link some das configurações', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
     ({ id: userId } = await signIn(context, baseURL!));
+
+    await page.goto('/configuracoes');
+    await expect(page.getByRole('link', { name: 'Plano e cobrança' })).toHaveCount(0);
+
+    await page.goto('/planos');
+    await page.waitForURL('**/hoje', { timeout: 20_000 });
+  });
+
+  /**
+   * A regra de liberação continua valendo no banco.
+   *
+   * Com a cobrança desligada o app não pergunta, mas `tem_acesso()` é quem vai
+   * decidir no dia em que ela for ligada — e é aqui que se garante que vencida
+   * e cancelada não passam.
+   */
+  test('a função do banco recusa assinatura vencida e cancelada', async ({ context, baseURL }) => {
+    ({ id: userId } = await signIn(context, baseURL!));
+
+    const perguntar = async (): Promise<boolean> => {
+      const resposta = await admin('/rest/v1/rpc/tem_acesso', {
+        method: 'POST',
+        body: JSON.stringify({ p_recurso: 'analise', p_user: userId }),
+      });
+      return (await resposta.json()) as boolean;
+    };
+
+    expect(await perguntar(), 'sem assinatura não tem acesso').toBe(false);
 
     await admin('/rest/v1/subscriptions', {
       method: 'POST',
@@ -175,25 +155,19 @@ test.describe('planos e acesso', () => {
         current_period_end: new Date(Date.now() - 86_400_000).toISOString(),
       }),
     });
+    expect(await perguntar(), 'vencida não pode passar').toBe(false);
 
-    await page.goto('/analise');
-    await expect(page.getByRole('heading', { name: 'Análise do seu treino' })).toBeVisible({
-      timeout: 20_000,
+    await admin(`/rest/v1/subscriptions?user_id=eq.${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'canceled', current_period_end: null }),
     });
-  });
+    expect(await perguntar(), 'cancelada não pode passar').toBe(false);
 
-  test('status cancelado não dá acesso', async ({ context, page, baseURL }) => {
-    ({ id: userId } = await signIn(context, baseURL!));
-
-    await admin('/rest/v1/subscriptions', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: userId, plan_slug: 'mensal', status: 'canceled' }),
+    await admin(`/rest/v1/subscriptions?user_id=eq.${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'active' }),
     });
-
-    await page.goto('/saude');
-    await expect(page.getByRole('heading', { name: 'Saúde e metas do dia' })).toBeVisible({
-      timeout: 20_000,
-    });
+    expect(await perguntar(), 'ativa sem prazo tem acesso').toBe(true);
   });
 
   test('ninguém consegue se dar um plano com o próprio token', async ({ context, baseURL }) => {

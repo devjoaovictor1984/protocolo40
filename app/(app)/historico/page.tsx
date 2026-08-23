@@ -1,12 +1,12 @@
-import type { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 
-import { HistoryList } from '@/features/history/components/history-list';
-
-export const metadata: Metadata = {
-  title: 'Histórico',
-  robots: { index: false, follow: false },
-};
-
+/**
+ * O histórico mora no calendário.
+ *
+ * A lista continua existindo, logo abaixo do mês — ter as duas telas seria a
+ * mesma informação em dois endereços. Este redirect existe para os links
+ * antigos, que estão em favorito e em atalho de PWA.
+ */
 export default function HistoricoPage() {
-  return <HistoryList />;
+  permanentRedirect('/calendario');
 }

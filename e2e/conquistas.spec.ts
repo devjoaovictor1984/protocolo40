@@ -101,7 +101,7 @@ test.describe('conquistas', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|calendario)/, { timeout: 30_000 });
 
     // quem concede é o gatilho no banco, não o cliente
     await expect
@@ -114,11 +114,13 @@ test.describe('conquistas', () => {
         },
         { timeout: 60_000, message: 'as conquistas não foram concedidas' },
       )
-      .toEqual(['fundador', 'legionario', 'recruta']);
+      .toEqual(['fundador', 'legionario', 'recruta', 'sentinela']);
 
     await page.goto('/conquistas');
     await expect(page.getByText('Legionário')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('Recruta')).toBeVisible();
+    // sete dias seguidos também valem a insígnia de sequência
+    await expect(page.getByText('Sentinela')).toBeVisible();
 
     // e aparecem no perfil
     await page.goto('/perfil');
@@ -135,7 +137,7 @@ test.describe('conquistas', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|calendario)/, { timeout: 30_000 });
 
     await expect
       .poll(
@@ -147,10 +149,10 @@ test.describe('conquistas', () => {
         },
         { timeout: 60_000 },
       )
-      .toBe(3);
+      .toBe(4);
 
     // apagar um dia derruba a contagem para 6 e o Legionário sai junto
-    await page.goto('/historico');
+    await page.goto('/calendario');
     await page
       .locator(
         'main a[href^="/treino/"]:not([href*="?"]):not([href="/treinar"]):not([href^="/treino/novo"]):not([href^="/treino/registrar"])',
@@ -159,7 +161,7 @@ test.describe('conquistas', () => {
       .click();
     await page.waitForURL(/\/treino\/[0-9a-f-]+$/, { timeout: 20_000 });
     await page.getByRole('button', { name: 'Apagar treino' }).click();
-    await page.waitForURL('**/historico', { timeout: 30_000 });
+    await page.waitForURL('**/calendario', { timeout: 30_000 });
 
     await expect
       .poll(

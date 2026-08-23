@@ -160,9 +160,9 @@ test.describe('registrar dias anteriores', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 30 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|calendario)/, { timeout: 30_000 });
 
-    await page.goto('/historico');
+    await page.goto('/calendario');
     await page.getByRole('button', { name: 'Tudo' }).click();
 
     // a semana é a unidade do agrupamento

@@ -33,7 +33,7 @@ const PERIODS = [
   { value: 0, label: 'Tudo' },
 ];
 
-export function HistoryList() {
+export function HistoryList({ embutido = false }: { embutido?: boolean }) {
   const today = useToday();
   const { data: workouts, isLoading } = useLocalWorkouts();
   const [term, setTerm] = useState('');
@@ -93,7 +93,7 @@ export function HistoryList() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3 py-6">
+      <div className={cn('flex flex-col gap-3', embutido ? 'pb-6' : 'py-6')}>
         {[0, 1, 2, 3].map((index) => (
           <Skeleton key={index} className="h-20 w-full rounded-xl" />
         ))}
@@ -102,14 +102,21 @@ export function HistoryList() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6">
+    <div className={cn('flex flex-col gap-6', embutido ? 'pb-6' : 'py-6')}>
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-extrabold tracking-tight">Histórico</h1>
-          <ButtonLink href="/calendario" variant="outline" size="sm" className="h-10">
-            <CalendarDays aria-hidden className="size-4" />
-            Calendário
-          </ButtonLink>
+          {/* embutido no calendário, o título vira subtítulo da mesma tela */}
+          {embutido ? (
+            <h2 className="text-lg font-extrabold tracking-tight">Histórico</h2>
+          ) : (
+            <>
+              <h1 className="text-2xl font-extrabold tracking-tight">Histórico</h1>
+              <ButtonLink href="/calendario" variant="outline" size="sm" className="h-10">
+                <CalendarDays aria-hidden className="size-4" />
+                Calendário
+              </ButtonLink>
+            </>
+          )}
         </div>
 
         <div className="relative">

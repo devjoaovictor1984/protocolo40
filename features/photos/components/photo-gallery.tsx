@@ -127,11 +127,13 @@ export function PhotoGallery({
         </ButtonLink>
       </header>
 
+      {/* Sem `capture`: com ele o navegador abre a câmera direto e a pessoa não
+          chega à galeria nem aos arquivos. Sem ele o sistema mostra a folha
+          completa — fototeca, tirar foto e escolher arquivo. */}
       <input
         ref={fileInput}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={(event) => void handleFile(event)}
         className="sr-only"
         id="nova-foto"

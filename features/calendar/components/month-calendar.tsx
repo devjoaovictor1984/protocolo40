@@ -33,7 +33,7 @@ import { formatDurationShort } from '@/services/duration';
  * Dia treinado, hoje e dia vazio se distinguem por preenchimento, contorno e
  * ponto — nunca só pela cor. Tocar num dia abre o que aconteceu nele.
  */
-export function MonthCalendar() {
+export function MonthCalendar({ comLista = false }: { comLista?: boolean }) {
   const today = useToday();
   const { data: workouts, isLoading } = useLocalWorkouts();
   const [reference, setReference] = useState(() => startOfMonth(today));
@@ -59,14 +59,17 @@ export function MonthCalendar() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6">
+    <div className={cn('flex flex-col gap-6', comLista ? 'pt-6' : 'py-6')}>
       <header className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-extrabold tracking-tight">Calendário</h1>
-          <ButtonLink href="/historico" variant="ghost" size="sm" className="h-9">
-            <List aria-hidden className="size-4" />
-            Lista
-          </ButtonLink>
+          {/* com a lista logo abaixo, o atalho para ela seria ruído */}
+          {comLista ? null : (
+            <ButtonLink href="/calendario" variant="ghost" size="sm" className="h-9">
+              <List aria-hidden className="size-4" />
+              Lista
+            </ButtonLink>
+          )}
         </div>
 
         <div className="flex items-center gap-1">

@@ -55,7 +55,7 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
         <p className="text-muted-foreground max-w-xs text-sm">
           Ele pode ter sido apagado, ou ainda não foi baixado para este aparelho.
         </p>
-        <ButtonLink href="/historico" className="h-12">
+        <ButtonLink href="/calendario" className="h-12">
           Ver histórico
         </ButtonLink>
       </div>
@@ -71,7 +71,7 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
       await removeWorkout(clientId);
       await recarregar(queryClient, ['workouts']);
       toast.success('Treino apagado.');
-      router.replace('/historico');
+      router.replace('/calendario');
     } catch {
       setRemoving(false);
       toast.error('Não conseguimos apagar agora.', { description: 'Tente novamente.' });

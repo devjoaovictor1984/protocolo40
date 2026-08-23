@@ -3,6 +3,9 @@ import { Check, Sparkles } from 'lucide-react';
 
 import { CheckoutButton } from '@/features/billing/components/checkout-button';
 import { assinaturaAtual, planosAtivos, precoEmReais } from '@/features/billing/repository';
+import { redirect } from 'next/navigation';
+
+import { cobrancaAtiva } from '@/lib/billing/config';
 import { requireSession } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { formatDay } from '@/services/calendar';
@@ -26,6 +29,9 @@ const RECURSOS: Record<string, string> = {
 };
 
 export default async function PlanosPage() {
+  // de graça não há plano a escolher; a tela volta quando a cobrança ligar
+  if (!cobrancaAtiva) redirect('/hoje');
+
   const { user } = await requireSession();
   const [planos, assinatura] = await Promise.all([planosAtivos(), assinaturaAtual(user.id)]);
 

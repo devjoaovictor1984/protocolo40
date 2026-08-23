@@ -101,12 +101,11 @@ async function destinosAlcancaveis(page: Page): Promise<Set<string>> {
 
   // e o que cada destino abre a partir dele, dois níveis adentro
   for (const partida of [
-    '/historico',
+    '/calendario',
     '/evolucao',
     '/evolucao/fotos',
     '/perfil',
     '/treinos',
-    '/calendario',
     '/medidas',
   ]) {
     await page.goto(partida);
@@ -138,7 +137,6 @@ test.describe('navegação', () => {
       '/hoje',
       '/treinos',
       '/treinos/novo',
-      '/historico',
       '/calendario',
       '/evolucao',
       '/evolucao/fotos',
@@ -157,5 +155,32 @@ test.describe('navegação', () => {
       inalcancaveis,
       `sem caminho no celular: ${inalcancaveis.join(', ')}. Alcançáveis: ${[...alcancaveis].sort().join(', ')}`,
     ).toEqual([]);
+  });
+
+  test('o calendário é a segunda aba e traz o histórico junto', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await signIn(context, baseURL!);
+
+    await page.goto('/hoje');
+
+    const barra = page.getByRole('navigation', { name: 'Navegação principal' });
+    await expect(barra.getByRole('link', { name: 'Calendário' })).toBeVisible({ timeout: 20_000 });
+    await expect(barra.getByRole('link', { name: 'Histórico' })).toHaveCount(0);
+
+    await barra.getByRole('link', { name: 'Calendário' }).click();
+    await page.waitForURL('**/calendario', { timeout: 20_000 });
+
+    // o mês vem primeiro, a lista logo abaixo, na mesma tela
+    await expect(page.getByRole('heading', { name: 'Calendário' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Histórico' })).toBeVisible();
+    await expect(page.getByLabel('Buscar treino ou exercício')).toBeVisible();
+
+    // o endereço antigo continua funcionando: leva ao mesmo lugar
+    await page.goto('/historico');
+    await page.waitForURL('**/calendario', { timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: 'Histórico' })).toBeVisible();
   });
 });

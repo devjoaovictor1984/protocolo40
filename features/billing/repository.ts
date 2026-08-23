@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cache } from 'react';
 
+import { cobrancaAtiva } from '@/lib/billing/config';
 import { createClient } from '@/lib/supabase/server';
 import type { PlanRow, Recurso, SubscriptionRow } from '@/types/database';
 
@@ -15,6 +16,9 @@ import type { PlanRow, Recurso, SubscriptionRow } from '@/types/database';
  */
 
 export const temAcesso = cache(async (recurso: Recurso): Promise<boolean> => {
+  // enquanto o produto é inteiro de graça, não há o que consultar
+  if (!cobrancaAtiva) return true;
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('tem_acesso', { p_recurso: recurso });
 

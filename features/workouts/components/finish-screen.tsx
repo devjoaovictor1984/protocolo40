@@ -194,11 +194,12 @@ export function FinishScreen({ clientId }: { clientId: string }) {
               />
             ) : null}
 
+            {/* Sem `capture`: a câmera continua sendo a primeira opção da folha
+                do sistema, e a galeria deixa de ficar inalcançável. */}
             <input
               ref={fileInput}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={(event) => void handlePhoto(event)}
               className="sr-only"
               id="foto-evolucao"

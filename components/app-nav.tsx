@@ -8,6 +8,7 @@ import {
   CalendarPlus,
   Camera,
   History,
+  Medal,
   Home,
   LineChart,
   ListChecks,
@@ -44,16 +45,16 @@ type NavItem = {
 
 const PRIMARY: NavItem[] = [
   { href: '/hoje', label: 'Hoje', icon: Home },
-  { href: '/historico', label: 'Histórico', icon: History },
+  { href: '/calendario', label: 'Calendário', icon: CalendarDays },
   { href: '/evolucao', label: 'Evolução', icon: LineChart },
   { href: '/perfil', label: 'Perfil', icon: User },
 ];
 
 const SECONDARY: NavItem[] = [
   { href: '/treinos', label: 'Treinos', icon: ListChecks },
-  { href: '/calendario', label: 'Calendário', icon: CalendarDays },
   { href: '/medidas', label: 'Medidas', icon: Scale },
   { href: '/recordes', label: 'Recordes', icon: Trophy },
+  { href: '/conquistas', label: 'Conquistas', icon: Medal },
 ];
 
 /**

@@ -217,7 +217,7 @@ test.describe('treino', () => {
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
 
     // sai do cronômetro e volta: o tempo continua de onde estava
-    await page.goto('/historico');
+    await page.goto('/calendario');
     await page.waitForTimeout(3000);
     await page.goto('/treinar');
 

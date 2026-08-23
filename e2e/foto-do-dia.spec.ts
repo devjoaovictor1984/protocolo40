@@ -210,9 +210,9 @@ test.describe('foto de um dia anterior', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 14 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|calendario)/, { timeout: 30_000 });
 
-    await page.goto('/historico');
+    await page.goto('/calendario');
     await page.getByText(dia.split('-').reverse().join('/')).first().click();
     await page.waitForURL(/\/treino\/[0-9a-f-]+$/, { timeout: 20_000 });
 
@@ -289,5 +289,30 @@ test.describe('foto de um dia anterior', () => {
         })
         .toBeGreaterThan(0);
     }
+  });
+
+  test('o seletor de foto não força a câmera: galeria e arquivos ficam alcançáveis', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    userId = await signIn(context, baseURL!);
+
+    // `capture` manda o navegador abrir a câmera direto e pular a folha do
+    // sistema — foi o que impedia chegar à galeria no celular
+    for (const rota of ['/evolucao/fotos', '/configuracoes/conta']) {
+      await page.goto(rota);
+      await expect(page.locator('input[type="file"]').first()).toBeAttached({ timeout: 20_000 });
+
+      const comCaptura = await page
+        .locator('input[type="file"][capture]')
+        .count();
+
+      expect(comCaptura, `${rota} não pode forçar a câmera`).toBe(0);
+    }
+
+    // e o seletor continua aceitando imagem
+    await page.goto('/evolucao/fotos');
+    await expect(page.locator('#nova-foto')).toHaveAttribute('accept', 'image/*');
   });
 });

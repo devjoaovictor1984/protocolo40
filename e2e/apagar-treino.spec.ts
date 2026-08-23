@@ -112,7 +112,7 @@ test.describe('apagar treino', () => {
       )
       .toBe(7);
 
-    await page.goto('/historico');
+    await page.goto('/calendario');
     const primeiro = page.locator(LINHAS).first();
     await expect(primeiro).toBeVisible({ timeout: 20_000 });
     await primeiro.click();
@@ -121,7 +121,7 @@ test.describe('apagar treino', () => {
     await page.getByRole('button', { name: 'Apagar treino' }).click();
 
     // volta ao histórico já sem ele
-    await page.waitForURL('**/historico', { timeout: 20_000 });
+    await page.waitForURL('**/calendario', { timeout: 20_000 });
     await expect
       .poll(async () => page.locator(LINHAS).count(), { timeout: 20_000 })
       .toBe(6);
@@ -174,11 +174,11 @@ test.describe('apagar treino', () => {
     await expect(page.getByText(/1 recorde|2 recordes/)).toBeHidden().catch(() => {});
 
     // apaga o treino
-    await page.goto('/historico');
+    await page.goto('/calendario');
     await page.locator(LINHAS).first().click();
     await page.waitForURL(/\/treino\/[0-9a-f-]+$/);
     await page.getByRole('button', { name: 'Apagar treino' }).click();
-    await page.waitForURL('**/historico', { timeout: 20_000 });
+    await page.waitForURL('**/calendario', { timeout: 20_000 });
 
     // o recorde não pode sobreviver ao treino que o criou
     await expect
@@ -212,11 +212,11 @@ test.describe('apagar treino', () => {
     await expect(page.getByText(/7 dias seguidos/)).toBeVisible({ timeout: 25_000 });
 
     // apaga o de hoje: a sequência passa a contar a partir de ontem
-    await page.goto('/historico');
+    await page.goto('/calendario');
     await page.locator(LINHAS).first().click();
     await page.waitForURL(/\/treino\/[0-9a-f-]+$/);
     await page.getByRole('button', { name: 'Apagar treino' }).click();
-    await page.waitForURL('**/historico', { timeout: 20_000 });
+    await page.waitForURL('**/calendario', { timeout: 20_000 });
 
     await page.goto('/hoje');
     await expect(page.getByText(/6 dias seguidos/)).toBeVisible({ timeout: 25_000 });

@@ -8,6 +8,7 @@ import {
   ThemeSwitcher,
 } from '@/features/settings/components/settings-controls';
 import { requireSession } from '@/lib/auth/session';
+import { cobrancaAtiva } from '@/lib/billing/config';
 
 export const metadata: Metadata = {
   title: 'Configurações',
@@ -67,14 +68,16 @@ export default async function ConfiguracoesPage() {
           Suporte
         </h2>
 
-        <Link
-          href="/planos"
-          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
-        >
-          <CreditCard aria-hidden className="text-muted-foreground size-5" />
-          <span className="flex-1 font-medium">Plano e cobrança</span>
-          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
-        </Link>
+        {cobrancaAtiva ? (
+          <Link
+            href="/planos"
+            className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+          >
+            <CreditCard aria-hidden className="text-muted-foreground size-5" />
+            <span className="flex-1 font-medium">Plano e cobrança</span>
+            <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+          </Link>
+        ) : null}
 
         <Link
           href="/ajuda"

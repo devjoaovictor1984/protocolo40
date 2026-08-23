@@ -2,6 +2,7 @@ import { Lock } from 'lucide-react';
 
 import { Emblem } from '@/features/badges/components/emblem';
 import type { Conquista } from '@/features/badges/repository';
+import { cn } from '@/lib/utils';
 import { formatDay } from '@/services/calendar';
 
 /**
@@ -27,7 +28,12 @@ export function BadgeGrid({
       {badges.map((badge) => (
         <li
           key={badge.slug}
-          className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border p-4 text-center"
+          className={cn(
+            'flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-colors',
+            badge.earned
+              ? 'border-primary/30 bg-card'
+              : 'border-border/60 bg-muted/30',
+          )}
         >
           <Emblem emblem={badge.emblem} tier={badge.tier} earned={badge.earned} />
 
