@@ -4,7 +4,7 @@ import { ChevronRight, Settings, Trophy } from 'lucide-react';
 
 import { StatCard, StreakBadge } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { requireSession } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { formatDay } from '@/services/calendar';
@@ -43,14 +43,13 @@ export default async function PerfilPage() {
           <StreakBadge days={stats.current_streak} className="mt-2" />
         </div>
 
-        <Button
-          render={<Link href="/configuracoes" />}
+        <ButtonLink href="/configuracoes"
           variant="ghost"
           size="icon"
           aria-label="Configurações"
         >
           <Settings aria-hidden className="size-5" />
-        </Button>
+        </ButtonLink>
       </header>
 
       {profile.bio ? <p className="text-sm">{profile.bio}</p> : null}

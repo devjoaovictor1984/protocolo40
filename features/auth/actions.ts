@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import type { AuthError } from '@supabase/supabase-js';
 
 import { env } from '@/lib/env';
+import { invalidState, type ActionState } from '@/lib/forms/action-state';
 import { createClient } from '@/lib/supabase/server';
 import {
   forgotPasswordSchema,
@@ -12,14 +13,6 @@ import {
   resetPasswordSchema,
   signUpSchema,
 } from '@/lib/validation/auth';
-
-export type ActionState = {
-  status: 'idle' | 'error' | 'success';
-  message?: string;
-  fieldErrors?: Record<string, string>;
-};
-
-export const idleState: ActionState = { status: 'idle' };
 
 /**
  * Traduz o erro do Supabase para uma frase que explica o que aconteceu e o que
@@ -50,23 +43,6 @@ function describeAuthError(error: AuthError): string {
   return 'Não foi possível concluir agora. Tente novamente em instantes.';
 }
 
-function fieldErrorsFrom(issues: readonly { path: readonly PropertyKey[]; message: string }[]) {
-  const errors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? 'form');
-    errors[key] ??= issue.message;
-  }
-  return errors;
-}
-
-function invalid(issues: readonly { path: readonly PropertyKey[]; message: string }[]): ActionState {
-  return {
-    status: 'error',
-    message: 'Confira os campos destacados.',
-    fieldErrors: fieldErrorsFrom(issues),
-  };
-}
-
 export async function signInWithPassword(
   _prev: ActionState,
   formData: FormData,
@@ -77,7 +53,7 @@ export async function signInWithPassword(
   });
 
   if (!parsed.success) {
-    return invalid(parsed.error.issues);
+    return invalidState(parsed.error.issues);
   }
 
   const supabase = await createClient();
@@ -102,7 +78,7 @@ export async function signUpWithPassword(
   });
 
   if (!parsed.success) {
-    return invalid(parsed.error.issues);
+    return invalidState(parsed.error.issues);
   }
 
   const supabase = await createClient();
@@ -135,7 +111,7 @@ export async function requestPasswordReset(
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get('email') });
 
   if (!parsed.success) {
-    return invalid(parsed.error.issues);
+    return invalidState(parsed.error.issues);
   }
 
   const supabase = await createClient();
@@ -162,7 +138,7 @@ export async function updatePassword(_prev: ActionState, formData: FormData): Pr
   });
 
   if (!parsed.success) {
-    return invalid(parsed.error.issues);
+    return invalidState(parsed.error.issues);
   }
 
   const supabase = await createClient();

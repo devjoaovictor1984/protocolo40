@@ -6,6 +6,7 @@ import { Lightbulb, Play, Timer } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { describeMetrics, useExercises, useTemplates } from '@/features/exercises/catalog';
 import { useToday } from '@/features/session/session-context';
@@ -158,9 +159,9 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
           title="Nenhum treino com esses filtros."
           description="Tire um filtro ou comece um treino livre — o cronômetro não exige roteiro."
           action={
-            <Button render={<Link href="/treino/hoje?auto=1" />} className="h-12">
+            <ButtonLink href="/treino/hoje?auto=1" className="h-12">
               Treino livre
-            </Button>
+            </ButtonLink>
           }
         />
       ) : (

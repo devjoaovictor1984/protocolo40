@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { BarChart, LineChart } from '@/components/charts';
 import { EmptyState, StatCard } from '@/components/stats';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExercises } from '@/features/exercises/catalog';
 import { localMeasurements } from '@/features/measurements/repository';
@@ -72,9 +72,9 @@ export function ProgressOverview() {
           title="Sua evolução aparece a partir do primeiro treino."
           description="Depois de alguns dias os gráficos começam a contar a história sozinhos."
           action={
-            <Button render={<Link href="/treino/hoje?auto=1" />} className="h-12">
+            <ButtonLink href="/treino/hoje?auto=1" className="h-12">
               COMEÇAR TREINO
-            </Button>
+            </ButtonLink>
           }
         />
       </div>
@@ -96,10 +96,10 @@ export function ProgressOverview() {
     <div className="flex flex-col gap-6 py-6">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight">Evolução</h1>
-        <Button render={<Link href="/evolucao/fotos" />} variant="outline" size="sm" className="h-10">
+        <ButtonLink href="/evolucao/fotos" variant="outline" size="sm" className="h-10">
           <Camera aria-hidden className="size-4" />
           Fotos
-        </Button>
+        </ButtonLink>
       </header>
 
       <section aria-label="Resumo" className="grid grid-cols-4 gap-3">

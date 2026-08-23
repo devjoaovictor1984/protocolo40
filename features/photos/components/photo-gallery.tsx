@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, CloudOff, GitCompareArrows, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/stats';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Drawer,
@@ -87,15 +87,14 @@ export function PhotoGallery({ openCameraOnMount = false }: { openCameraOnMount?
           </p>
         </div>
 
-        <Button
-          render={<Link href="/evolucao/comparar" />}
+        <ButtonLink href="/evolucao/comparar"
           variant="outline"
           size="sm"
           className="h-10"
         >
           <GitCompareArrows aria-hidden className="size-4" />
           Comparar
-        </Button>
+        </ButtonLink>
       </header>
 
       <input

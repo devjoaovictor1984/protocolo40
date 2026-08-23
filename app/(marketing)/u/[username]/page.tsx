@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Flame } from 'lucide-react';
 
 import { Wordmark } from '@/components/brand/wordmark';
 import { StatCard } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { createClient } from '@/lib/supabase/server';
 import { formatDay } from '@/services/calendar';
 
@@ -76,9 +75,9 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
     <div className="flex min-h-dvh flex-col">
       <header className="flex items-center justify-between px-5 py-6">
         <Wordmark />
-        <Button render={<Link href="/cadastro" />} size="sm">
+        <ButtonLink href="/cadastro" size="sm">
           Começar meu protocolo
-        </Button>
+        </ButtonLink>
       </header>
 
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-5 py-8">
@@ -128,12 +127,11 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
           <p className="text-muted-foreground mt-2 text-sm text-balance">
             Treine, registre e acompanhe sua evolução um dia de cada vez.
           </p>
-          <Button
-            render={<Link href="/cadastro" />}
+          <ButtonLink href="/cadastro"
             className="mt-4 h-12 w-full font-semibold"
           >
             COMEÇAR MEU PROTOCOLO
-          </Button>
+          </ButtonLink>
         </section>
       </main>
     </div>

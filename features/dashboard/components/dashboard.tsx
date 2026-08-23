@@ -6,7 +6,7 @@ import { Check, ChevronRight, Play, Timer } from 'lucide-react';
 import { ProgressRing } from '@/components/progress-ring';
 import { EmptyState, StatCard, StreakBadge } from '@/components/stats';
 import { SyncStatus } from '@/components/sync-status';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useSession, useToday } from '@/features/session/session-context';
@@ -71,9 +71,9 @@ export function Dashboard() {
           title="Seu primeiro treino começa aqui."
           description="Vinte minutos. Sem equipamento, sem desculpa, sem preparação."
           action={
-            <Button render={<Link href="/treino/hoje?auto=1" />} size="lg" className="h-12">
+            <ButtonLink href="/treino/hoje?auto=1" size="lg" className="h-12">
               COMEÇAR TREINO
-            </Button>
+            </ButtonLink>
           }
         />
       ) : null}
@@ -108,13 +108,12 @@ function TodayCard({ day, goalSeconds }: { day: number; goalSeconds: number }) {
         </span>
       </ProgressRing>
 
-      <Button
-        render={<Link href="/treino/hoje?auto=1" />}
+      <ButtonLink href="/treino/hoje?auto=1"
         className="h-16 w-full text-base font-bold"
       >
         <Play aria-hidden className="size-5" />
         COMEÇAR TREINO
-      </Button>
+      </ButtonLink>
     </section>
   );
 }
@@ -139,9 +138,9 @@ function DoneCard({ workouts, day }: { workouts: LocalWorkout[]; day: number }) 
         </p>
       </div>
 
-      <Button render={<Link href="/treino/hoje" />} variant="outline" className="h-11">
+      <ButtonLink href="/treino/hoje" variant="outline" className="h-11">
         Treinar de novo
-      </Button>
+      </ButtonLink>
     </section>
   );
 }

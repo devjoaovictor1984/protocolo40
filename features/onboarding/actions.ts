@@ -3,17 +3,10 @@
 import { revalidatePath } from 'next/cache';
 
 import { requireUser } from '@/lib/auth/session';
+import { invalidState, type ActionState } from '@/lib/forms/action-state';
 import { createClient } from '@/lib/supabase/server';
 import { profileSchema } from '@/lib/validation/profile';
 import type { WorkoutGoal, WorkoutLevel, WorkoutPlace } from '@/types/database';
-
-export type OnboardingState = {
-  status: 'idle' | 'error' | 'success';
-  message?: string;
-  fieldErrors?: Record<string, string>;
-};
-
-export const idleOnboarding: OnboardingState = { status: 'idle' };
 
 /**
  * Conclui o onboarding.
@@ -22,9 +15,9 @@ export const idleOnboarding: OnboardingState = { status: 'idle' };
  * selecionado: o usuário pode pular tudo e completar o perfil depois.
  */
 export async function completeOnboarding(
-  _prev: OnboardingState,
+  _prev: ActionState,
   formData: FormData,
-): Promise<OnboardingState> {
+): Promise<ActionState> {
   const user = await requireUser();
 
   const parsed = profileSchema.safeParse({
@@ -38,12 +31,7 @@ export async function completeOnboarding(
   });
 
   if (!parsed.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = String(issue.path[0] ?? 'form');
-      fieldErrors[key] ??= issue.message;
-    }
-    return { status: 'error', message: 'Confira os campos destacados.', fieldErrors };
+    return invalidState(parsed.error.issues);
   }
 
   const supabase = await createClient();

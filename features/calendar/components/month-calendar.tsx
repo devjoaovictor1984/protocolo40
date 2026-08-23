@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Drawer,
@@ -165,9 +166,9 @@ export function MonthCalendar() {
                     : 'Nenhum treino neste dia.'}
                 </p>
                 {selected === today ? (
-                  <Button render={<Link href="/treino/hoje?auto=1" />} className="h-12">
+                  <ButtonLink href="/treino/hoje?auto=1" className="h-12">
                     COMEÇAR TREINO
-                  </Button>
+                  </ButtonLink>
                 ) : null}
               </div>
             ) : (

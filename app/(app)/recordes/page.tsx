@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Trophy } from 'lucide-react';
 
 import { EmptyState, RecordBadge } from '@/components/stats';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { formatRecordValue, listRecords } from '@/features/records/queries';
 import { requireUser } from '@/lib/auth/session';
 import { formatDay } from '@/services/calendar';
@@ -29,9 +28,9 @@ export default async function RecordesPage() {
           title="Seu primeiro treino já vira recorde."
           description="A partir dele, cada marca superada aparece aqui com a data e o valor anterior."
           action={
-            <Button render={<Link href="/treino/hoje?auto=1" />} className="h-12">
+            <ButtonLink href="/treino/hoje?auto=1" className="h-12">
               COMEÇAR TREINO
-            </Button>
+            </ButtonLink>
           }
         />
       ) : (

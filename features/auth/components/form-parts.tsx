@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import type { ActionState } from '@/features/auth/actions';
+import type { ActionState } from '@/lib/forms/action-state';
 
 type FieldProps = React.ComponentProps<'input'> & {
   label: string;

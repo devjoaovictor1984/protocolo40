@@ -1,4 +1,10 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+// os testes precisam das credenciais reais para criar e apagar usuários
+if (existsSync('.env.local')) {
+  process.loadEnvFile('.env.local');
+}
 
 /**
  * Testes de ponta a ponta.
@@ -28,6 +34,6 @@ export default defineConfig({
         command: 'npm run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
+        timeout: 240_000,
       },
 });

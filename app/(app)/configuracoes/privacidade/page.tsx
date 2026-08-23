@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { PrivacyForm } from '@/features/settings/components/privacy-form';
 import { requireSession } from '@/lib/auth/session';
 
@@ -14,10 +13,10 @@ export default async function PrivacidadePage() {
   return (
     <div className="flex flex-col gap-6 py-6">
       <div>
-        <Button render={<Link href="/configuracoes" />} variant="ghost" size="sm">
+        <ButtonLink href="/configuracoes" variant="ghost" size="sm">
           <ArrowLeft aria-hidden className="size-4" />
           Configurações
-        </Button>
+        </ButtonLink>
       </div>
 
       <h1 className="text-2xl font-extrabold tracking-tight">Privacidade</h1>

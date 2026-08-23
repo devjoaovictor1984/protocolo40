@@ -1,6 +1,5 @@
-import Link from 'next/link';
 
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 
 export default function NotFound() {
   return (
@@ -14,9 +13,9 @@ export default function NotFound() {
         </p>
       </div>
 
-      <Button render={<Link href="/app" />} size="lg" className="h-12">
+      <ButtonLink href="/app" size="lg" className="h-12">
         Ir para o meu protocolo
-      </Button>
+      </ButtonLink>
     </main>
   );
 }

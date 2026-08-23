@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { CalendarCheck, Flame, LineChart, Timer } from 'lucide-react';
 
 import { Wordmark } from '@/components/brand/wordmark';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
@@ -59,9 +58,9 @@ export default function LandingPage() {
 
       <header className="flex items-center justify-between px-5 py-6">
         <Wordmark href={null} />
-        <Button render={<Link href="/login" />} variant="ghost" size="sm">
+        <ButtonLink href="/login" variant="ghost" size="sm">
           Entrar
-        </Button>
+        </ButtonLink>
       </header>
 
       <main className="flex-1">
@@ -78,16 +77,15 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-              render={<Link href="/cadastro" />}
+            <ButtonLink href="/cadastro"
               size="lg"
               className="h-14 text-base font-semibold sm:w-auto"
             >
               COMEÇAR MEU PROTOCOLO
-            </Button>
-            <Button render={<Link href="/login" />} variant="ghost" size="lg" className="h-14 text-base">
+            </ButtonLink>
+            <ButtonLink href="/login" variant="ghost" size="lg" className="h-14 text-base">
               Já tenho conta
-            </Button>
+            </ButtonLink>
           </div>
 
           <p className="text-muted-foreground text-sm">
@@ -137,9 +135,9 @@ export default function LandingPage() {
             </ol>
 
             <div>
-              <Button render={<Link href="/cadastro" />} size="lg" className="h-14 text-base font-semibold">
+              <ButtonLink href="/cadastro" size="lg" className="h-14 text-base font-semibold">
                 COMEÇAR MEU PROTOCOLO
-              </Button>
+              </ButtonLink>
             </div>
           </div>
         </section>

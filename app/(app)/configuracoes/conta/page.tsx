@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { ProfileForm } from '@/features/settings/components/profile-form';
 import { DeleteAccountSection } from '@/features/settings/components/settings-controls';
 import { requireSession } from '@/lib/auth/session';
@@ -18,10 +17,10 @@ export default async function ContaPage() {
   return (
     <div className="flex flex-col gap-8 py-6">
       <div>
-        <Button render={<Link href="/configuracoes" />} variant="ghost" size="sm">
+        <ButtonLink href="/configuracoes" variant="ghost" size="sm">
           <ArrowLeft aria-hidden className="size-4" />
           Configurações
-        </Button>
+        </ButtonLink>
       </div>
 
       <h1 className="text-2xl font-extrabold tracking-tight">Perfil e dados</h1>

@@ -7,14 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { idleSettings, updateProfile } from '@/features/settings/actions';
+import { updateProfile } from '@/features/settings/actions';
+import { idleState } from '@/lib/forms/action-state';
 import { GOALS, LEVELS, PLACES } from '@/lib/validation/profile';
 import { cn } from '@/lib/utils';
 import type { ProfileRow } from '@/types/database';
 
 /** Edição do perfil. Os mesmos campos do onboarding, agora sem pressa. */
 export function ProfileForm({ profile }: { profile: ProfileRow }) {
-  const [state, action] = useActionState(updateProfile, idleSettings);
+  const [state, action] = useActionState(updateProfile, idleState);
   const [goal, setGoal] = useState(profile.goal ?? '');
   const [level, setLevel] = useState(profile.level);
   const [place, setPlace] = useState(profile.default_location);

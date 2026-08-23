@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { CloudOff } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 
 export const metadata: Metadata = {
   title: 'Sem conexão',
@@ -22,9 +21,9 @@ export default function OfflinePage() {
         </p>
       </div>
 
-      <Button render={<Link href="/treino/hoje" />} size="lg" className="h-12">
+      <ButtonLink href="/treino/hoje" size="lg" className="h-12">
         Ir para o treino
-      </Button>
+      </ButtonLink>
     </main>
   );
 }

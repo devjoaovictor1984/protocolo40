@@ -1,11 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { Camera, Columns2, SlidersHorizontal } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFullPhoto, usePhotos, type GalleryPhoto } from '@/features/photos/use-photos';
 import { useSession } from '@/features/session/session-context';
@@ -47,9 +46,9 @@ export function PhotoComparison() {
           title="Você precisa de pelo menos duas fotos."
           description="Tire uma hoje e outra daqui a algumas semanas — a diferença aparece sozinha."
           action={
-            <Button render={<Link href="/evolucao/fotos" />} className="h-12">
+            <ButtonLink href="/evolucao/fotos" className="h-12">
               Ir para as fotos
-            </Button>
+            </ButtonLink>
           }
         />
       </div>

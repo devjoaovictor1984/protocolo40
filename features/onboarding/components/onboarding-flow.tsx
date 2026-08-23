@@ -7,13 +7,11 @@ import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
 
 import { Wordmark } from '@/components/brand/wordmark';
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  completeOnboarding,
-  idleOnboarding,
-  skipOnboarding,
-} from '@/features/onboarding/actions';
+import { completeOnboarding, skipOnboarding } from '@/features/onboarding/actions';
+import { idleState } from '@/lib/forms/action-state';
 import { GOALS, LEVELS, PLACES } from '@/lib/validation/profile';
 import { cn } from '@/lib/utils';
 
@@ -31,7 +29,7 @@ export function OnboardingFlow({
   defaultName: string | null;
 }) {
   const router = useRouter();
-  const [state, action] = useActionState(completeOnboarding, idleOnboarding);
+  const [state, action] = useActionState(completeOnboarding, idleState);
   const [step, setStep] = useState(0);
   const [skipping, startSkip] = useTransition();
 
@@ -304,13 +302,12 @@ function DayOne() {
         </p>
       </div>
 
-      <Button
-        render={<Link href="/treino/hoje?auto=1" />}
+      <ButtonLink href="/treino/hoje?auto=1"
         className="h-16 w-full max-w-sm text-base font-bold"
       >
         <Play aria-hidden className="size-5" />
         INICIAR MEUS 20 MINUTOS
-      </Button>
+      </ButtonLink>
 
       <Link href="/app" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
         Prefiro conhecer o app primeiro

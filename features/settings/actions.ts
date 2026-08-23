@@ -4,18 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { requireUser } from '@/lib/auth/session';
+import { invalidState, type ActionState } from '@/lib/forms/action-state';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { profileSchema } from '@/lib/validation/profile';
 import type { Visibility, WorkoutGoal, WorkoutLevel, WorkoutPlace } from '@/types/database';
-
-export type SettingsState = {
-  status: 'idle' | 'error' | 'success';
-  message?: string;
-  fieldErrors?: Record<string, string>;
-};
-
-export const idleSettings: SettingsState = { status: 'idle' };
 
 const VISIBILITY_KEYS = [
   'profile_visibility',
@@ -75,9 +68,9 @@ export async function updateDailyGoal(seconds: number): Promise<void> {
 
 /** Edição do perfil, reaproveitando o schema do onboarding. */
 export async function updateProfile(
-  _prev: SettingsState,
+  _prev: ActionState,
   formData: FormData,
-): Promise<SettingsState> {
+): Promise<ActionState> {
   const user = await requireUser();
 
   const parsed = profileSchema.safeParse({
@@ -92,12 +85,7 @@ export async function updateProfile(
   });
 
   if (!parsed.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = String(issue.path[0] ?? 'form');
-      fieldErrors[key] ??= issue.message;
-    }
-    return { status: 'error', message: 'Confira os campos destacados.', fieldErrors };
+    return invalidState(parsed.error.issues);
   }
 
   const supabase = await createClient();

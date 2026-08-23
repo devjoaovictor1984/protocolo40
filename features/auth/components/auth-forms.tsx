@@ -3,12 +3,12 @@
 import { useActionState } from 'react';
 
 import {
-  idleState,
   requestPasswordReset,
   signInWithPassword,
   signUpWithPassword,
   updatePassword,
 } from '@/features/auth/actions';
+import { idleState } from '@/lib/forms/action-state';
 import { Field, FormMessage, SubmitButton } from '@/features/auth/components/form-parts';
 
 export function LoginForm({ redirectTo }: { redirectTo?: string }) {

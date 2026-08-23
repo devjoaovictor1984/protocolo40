@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ChevronRight, CloudOff, History, Search } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToday } from '@/features/session/session-context';
@@ -125,9 +125,9 @@ export function HistoryList() {
           }
           action={
             term ? null : (
-              <Button render={<Link href="/treino/hoje?auto=1" />} className="h-12">
+              <ButtonLink href="/treino/hoje?auto=1" className="h-12">
                 COMEÇAR TREINO
-              </Button>
+              </ButtonLink>
             )
           }
         />

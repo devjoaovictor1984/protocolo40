@@ -8,6 +8,7 @@ import { ArrowLeft, BookmarkPlus, CloudOff, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,9 +46,9 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
         <p className="text-muted-foreground max-w-xs text-sm">
           Ele pode ter sido apagado, ou ainda não foi baixado para este aparelho.
         </p>
-        <Button render={<Link href="/historico" />} className="h-12">
+        <ButtonLink href="/historico" className="h-12">
           Ver histórico
-        </Button>
+        </ButtonLink>
       </div>
     );
   }
