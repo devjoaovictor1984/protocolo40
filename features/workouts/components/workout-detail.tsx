@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ArrowLeft, BookmarkPlus, CloudOff, Pencil, Trash2 } from 'lucide-react';
@@ -96,14 +95,14 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
         </Button>
 
         <div className="flex gap-1">
-          <Button
-            render={<Link href={`/treino/${clientId}/editar`} />}
+          <ButtonLink
+            href={`/treino/${clientId}/editar`}
             variant="ghost"
             size="icon"
             aria-label="Editar treino"
           >
             <Pencil aria-hidden className="size-4" />
-          </Button>
+          </ButtonLink>
           <Button
             variant="ghost"
             size="icon"

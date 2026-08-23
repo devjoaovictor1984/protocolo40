@@ -1,6 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { getDb, getPhoto, getWorkout, putPhoto, putWorkout } from '@/lib/offline/db';
+import {
+  deleteWorkout as deleteWorkoutLocal,
+  getDb,
+  getPhoto,
+  getWorkout,
+  putPhoto,
+  putWorkout,
+} from '@/lib/offline/db';
 import { failOperation, listReady, removeOperation } from '@/lib/offline/queue';
 import type { Database } from '@/types/database';
 import type { LocalMeasurement, LocalPhoto, LocalWorkout, PendingOperation } from '@/types/offline';
@@ -275,7 +282,10 @@ async function runOperation(
     case 'DELETE_WORKOUT': {
       const workout = await getWorkout(operation.client_id);
       if (!workout) return;
+
       await deleteWorkoutRemote(supabase, workout);
+      // o servidor já sabe: a cópia local não serve mais para nada
+      await deleteWorkoutLocal(operation.client_id);
       return;
     }
 

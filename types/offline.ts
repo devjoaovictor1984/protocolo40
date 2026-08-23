@@ -44,6 +44,13 @@ export type LocalWorkout = {
   sync_error: string | null;
   /** true quando repetir não adianta: o dado é que está inválido, não a rede */
   sync_permanent?: boolean;
+  /**
+   * Apagado pelo usuário, aguardando o servidor saber disso.
+   *
+   * Some das listas na hora, mas o registro fica até a exclusão subir — senão
+   * a fila perderia a informação de o que apagar lá.
+   */
+  deleted_at?: number | null;
   updated_at: number;
 };
 

@@ -143,12 +143,17 @@ export async function deleteWorkout(clientId: string): Promise<void> {
   await db.delete('workouts', clientId);
 }
 
-/** Todos os treinos locais, do mais recente para o mais antigo. */
+/**
+ * Treinos locais visíveis, do mais recente para o mais antigo.
+ *
+ * O que foi apagado some daqui na hora, mesmo enquanto a exclusão ainda não
+ * subiu — quem apagou não deveria continuar vendo o registro na tela.
+ */
 export async function listWorkouts(userId: string): Promise<LocalWorkout[]> {
   const db = await getDb();
   const all = await db.getAll('workouts');
   return all
-    .filter((workout) => workout.user_id === userId)
+    .filter((workout) => workout.user_id === userId && !workout.deleted_at)
     .sort((a, b) => b.started_at.localeCompare(a.started_at));
 }
 

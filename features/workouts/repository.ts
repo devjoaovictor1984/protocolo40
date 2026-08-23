@@ -91,15 +91,29 @@ export async function updateWorkoutFields(
   return updated;
 }
 
+/**
+ * Apaga um treino.
+ *
+ * Some da interface imediatamente. Se o treino já existe no servidor, o
+ * registro local fica marcado até a exclusão subir — a fila precisa dele para
+ * saber o que apagar lá. Depois disso a sincronização remove de vez.
+ */
 export async function removeWorkout(clientId: string): Promise<void> {
   const workout = await getWorkout(clientId);
   if (!workout) return;
 
   if (workout.remote_id) {
-    // já existe no servidor: precisa de um soft delete lá também
-    await putWorkout({ ...workout, sync_state: 'pending', updated_at: Date.now() });
+    await putWorkout({
+      ...workout,
+      deleted_at: Date.now(),
+      sync_state: 'pending',
+      sync_error: null,
+      sync_permanent: false,
+      updated_at: Date.now(),
+    });
     await enqueue('DELETE_WORKOUT', clientId);
   } else {
+    // nunca subiu: nada a avisar ao servidor
     await deleteLocalWorkout(clientId);
   }
 }
@@ -147,7 +161,8 @@ export async function hydrateWorkouts(userId: string, sinceDay: string): Promise
 
   for (const row of data) {
     const existing = await getWorkout(row.client_id);
-    if (existing && existing.sync_state !== 'synced') continue;
+    // pendente é mais novo que o servidor; apagado não volta
+    if (existing && (existing.sync_state !== 'synced' || existing.deleted_at)) continue;
 
     const exercises: LocalWorkoutExercise[] = (row.workout_exercises ?? [])
       .map((item) => ({
