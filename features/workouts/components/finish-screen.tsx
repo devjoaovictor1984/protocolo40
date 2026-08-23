@@ -46,6 +46,7 @@ export function FinishScreen({ clientId }: { clientId: string }) {
   const [weight, setWeight] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [savingPhoto, setSavingPhoto] = useState(false);
+  const [effort, setEffort] = useState(0);
   const [finishing, setFinishing] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -120,10 +121,11 @@ export function FinishScreen({ clientId }: { clientId: string }) {
     setFinishing(true);
 
     try {
-      if (exercises !== null || notes !== null) {
+      if (exercises !== null || notes !== null || effort > 0) {
         await updateWorkoutFields(clientId, {
           ...(exercises !== null ? { exercises } : {}),
           ...(notes !== null ? { notes: notes.trim() || null } : {}),
+          ...(effort > 0 ? { effort } : {}),
         });
       }
 
@@ -166,6 +168,11 @@ export function FinishScreen({ clientId }: { clientId: string }) {
           </div>
         ) : null}
       </header>
+
+      {/* O esforço é o que separa "treinei" de "treinei pesado". Um toque,
+          antes de qualquer outra coisa, porque é a resposta mais perecível:
+          daqui a uma hora ninguém lembra direito como foi. */}
+      <EffortPicker value={effort} onChange={setEffort} />
 
       <div className="flex flex-col gap-2">
         <Section icon={Dumbbell} title="Registrar exercícios" count={currentExercises.length}>
@@ -292,5 +299,52 @@ function Section({
 
       {open ? <div className="border-border border-t p-4">{children}</div> : null}
     </div>
+  );
+}
+
+/**
+ * Quanto custou este treino, de 1 a 10.
+ *
+ * Escala de percepção de esforço: dez alvos numa linha, com as pontas
+ * nomeadas. Sem rótulo em cada número — quem treina sabe a diferença entre 6
+ * e 8, e obrigar a ler dez legendas afastaria justamente quem está cansado.
+ */
+function EffortPicker({ value, onChange }: { value: number; onChange: (valor: number) => void }) {
+  return (
+    <section className="border-border flex flex-col gap-3 rounded-xl border p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-semibold">Como foi o esforço?</h2>
+        {value > 0 ? (
+          <span className="text-primary tnum text-sm font-bold">{value}/10</span>
+        ) : (
+          <span className="text-muted-foreground text-xs">opcional</span>
+        )}
+      </div>
+
+      <div className="flex gap-1" role="group" aria-label="Esforço percebido, de 1 a 10">
+        {Array.from({ length: 10 }, (_, index) => index + 1).map((numero) => (
+          <button
+            key={numero}
+            type="button"
+            aria-pressed={value === numero}
+            aria-label={`Esforço ${numero} de 10`}
+            onClick={() => onChange(value === numero ? 0 : numero)}
+            className={cn(
+              'tnum min-h-11 flex-1 rounded-lg border text-sm font-semibold transition-colors',
+              value >= numero && value > 0
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border hover:bg-muted',
+            )}
+          >
+            {numero}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-muted-foreground flex justify-between text-[11px]">
+        <span>1 · tranquilo</span>
+        <span>10 · no limite</span>
+      </p>
+    </section>
   );
 }

@@ -270,10 +270,21 @@ async function runOperation(
 
       await putWorkout({ ...workout, sync_state: 'syncing' });
       const remoteId = await pushWorkout(supabase, workout);
+
+      // Reler antes de gravar: o registro pode ter mudado enquanto subia — é o
+      // que acontece quando a pessoa marca o esforço logo depois de terminar o
+      // treino, com o primeiro envio ainda em curso. Escrever de volta o
+      // retrato antigo apagaria a edição que ela acabou de fazer.
+      const atual = await getWorkout(operation.client_id);
+      if (!atual) return;
+
+      const mudouNoMeio = atual.updated_at !== workout.updated_at;
+
       await putWorkout({
-        ...workout,
+        ...atual,
         remote_id: remoteId,
-        sync_state: 'synced',
+        // ainda pendente de propósito: a operação nova já está na fila
+        sync_state: mudouNoMeio ? 'pending' : 'synced',
         sync_error: null,
       });
       return;
@@ -295,10 +306,14 @@ async function runOperation(
       if (!measurement) return;
 
       const remoteId = await pushMeasurement(supabase, measurement);
+
+      const atual = await db.get('measurements', operation.client_id);
+      if (!atual) return;
+
       await db.put('measurements', {
-        ...measurement,
+        ...atual,
         remote_id: remoteId,
-        sync_state: 'synced',
+        sync_state: atual.updated_at !== measurement.updated_at ? 'pending' : 'synced',
         sync_error: null,
       });
       return;
@@ -310,7 +325,16 @@ async function runOperation(
 
       await putPhoto({ ...photo, sync_state: 'syncing' });
       const remoteId = await pushPhoto(supabase, photo);
-      await putPhoto({ ...photo, remote_id: remoteId, sync_state: 'synced', sync_error: null });
+
+      const atual = await getPhoto(operation.client_id);
+      if (!atual) return;
+
+      await putPhoto({
+        ...atual,
+        remote_id: remoteId,
+        sync_state: atual.updated_at !== photo.updated_at ? 'pending' : 'synced',
+        sync_error: null,
+      });
       return;
     }
   }

@@ -10,6 +10,7 @@ import {
   Flame,
   LineChart as LineChartIcon,
   Scale,
+  Stethoscope,
   Trophy,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -177,6 +178,21 @@ export function ProgressOverview() {
           />
         </section>
       ) : null}
+
+      {/* A consultoria vem primeiro: é o que responde "e agora?" */}
+      <Link
+        href="/analise"
+        className="border-primary/40 bg-primary/5 hover:bg-primary/10 flex items-center gap-4 rounded-xl border p-4 transition-colors"
+      >
+        <Stethoscope aria-hidden className="text-primary size-5" />
+        <span className="flex-1">
+          <span className="block font-semibold">Análise do seu treino</span>
+          <span className="text-muted-foreground text-sm">
+            O que mudar em cada exercício, e por quê
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+      </Link>
 
       <Link
         href="/medidas"
