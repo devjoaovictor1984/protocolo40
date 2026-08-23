@@ -172,7 +172,7 @@ export function MonthCalendar() {
                     : 'Nenhum treino neste dia.'}
                 </p>
                 {selected === today ? (
-                  <ButtonLink href="/treino/hoje?auto=1" className="h-12">
+                  <ButtonLink href="/treinar?auto=1" className="h-12">
                     COMEÇAR TREINO
                   </ButtonLink>
                 ) : null}

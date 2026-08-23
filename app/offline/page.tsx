@@ -21,7 +21,7 @@ export default function OfflinePage() {
         </p>
       </div>
 
-      <ButtonLink href="/treino/hoje" size="lg" className="h-12">
+      <ButtonLink href="/treinar" size="lg" className="h-12">
         Ir para o treino
       </ButtonLink>
     </main>

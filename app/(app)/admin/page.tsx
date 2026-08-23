@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight, Dumbbell, LifeBuoy, UserPlus, Users } from 'lucide-react';
+import { Activity, ChevronRight, Dumbbell, LifeBuoy, UserPlus, Users } from 'lucide-react';
 
+import { BarChart } from '@/components/charts';
 import { StatCard } from '@/components/stats';
 import { listarChamados, resumo } from '@/features/admin/repository';
 import { TicketStatusBadge } from '@/features/support/components/ticket-status';
 import { requireAdmin } from '@/lib/auth/session';
-import { formatDay } from '@/services/calendar';
+import { formatDay, formatDayShort } from '@/services/calendar';
 
 export const metadata: Metadata = {
   title: 'Administração',
@@ -19,6 +20,12 @@ export default async function AdminPage() {
   const [numeros, chamados] = await Promise.all([resumo(), listarChamados('todos', 1)]);
   const ultimos = chamados.itens.slice(0, 5);
 
+  const serieDeCadastros = numeros.cadastrosPorDia.map((ponto) => ({
+    label: formatDayShort(ponto.dia),
+    value: ponto.total,
+    caption: `${formatDay(ponto.dia)} · ${ponto.total} ${ponto.total === 1 ? 'cadastro' : 'cadastros'}`,
+  }));
+
   return (
     <div className="flex flex-col gap-8 py-6">
       <header className="flex flex-col gap-1">
@@ -27,10 +34,28 @@ export default async function AdminPage() {
       </header>
 
       <section aria-label="Números gerais" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard value={numeros.usuarios} label="Usuários" icon={Users} />
+        <StatCard value={numeros.usuarios} label="Cadastrados" icon={Users} />
         <StatCard value={numeros.usuariosNovos7d} label="Novos em 7 dias" icon={UserPlus} />
-        <StatCard value={numeros.chamadosAbertos} label="Chamados abertos" icon={LifeBuoy} />
+        <StatCard value={numeros.usuariosAtivos7d} label="Treinaram em 7 dias" icon={Activity} />
         <StatCard value={numeros.treinos} label="Treinos" icon={Dumbbell} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+            Cadastros por dia
+          </h2>
+          <span className="text-muted-foreground tnum text-sm">
+            {numeros.usuariosNovos30d} em 30 dias
+          </span>
+        </div>
+
+        <BarChart
+          title="Cadastros"
+          unit="pessoas"
+          data={serieDeCadastros}
+          emptyMessage="Nenhum cadastro nos últimos 30 dias."
+        />
       </section>
 
       <nav className="flex flex-col gap-2">

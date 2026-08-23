@@ -295,6 +295,14 @@ export type WaterLogRow = Timestamps & {
   ml: number;
 };
 
+export type DailyMessageRow = {
+  day_of_year: number;
+  reference: string;
+  verse: string;
+  theme: string;
+  message: string;
+};
+
 export type BadgeRow = {
   slug: string;
   name: string;
@@ -436,6 +444,7 @@ export interface Database {
         ]
       >;
       badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
+      daily_messages: TableDef<DailyMessageRow, InsertOf<DailyMessageRow, 'day_of_year'>>;
       water_logs: TableDef<
         WaterLogRow,
         InsertOf<WaterLogRow, 'user_id' | 'day'>,

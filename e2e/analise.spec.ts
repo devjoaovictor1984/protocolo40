@@ -185,7 +185,7 @@ test.describe('análise', () => {
     // treino de poucos segundos pede confirmação
     page.on('dialog', (dialog) => void dialog.accept());
 
-    await page.goto('/treino/hoje?auto=1');
+    await page.goto('/treinar?auto=1');
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'Adicionar um round' }).click();
     await page.getByRole('button', { name: 'Finalizar' }).click();
@@ -195,7 +195,7 @@ test.describe('análise', () => {
     await expect(page.getByText('9/10')).toBeVisible();
 
     await page.getByRole('button', { name: 'CONCLUIR' }).click();
-    await page.waitForURL('**/app', { timeout: 20_000 });
+    await page.waitForURL('**/hoje', { timeout: 20_000 });
 
     await expect
       .poll(

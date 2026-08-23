@@ -103,7 +103,7 @@ test.describe('treino', () => {
     // o treino do teste dura poucos segundos e cai na confirmação de treino curto
     page.on('dialog', (dialog) => void dialog.accept());
 
-    await page.goto('/app');
+    await page.goto('/hoje');
 
     const cartao = page.getByLabel('Treino de hoje');
     await expect(cartao.getByText('DIA 1')).toBeVisible({ timeout: 20_000 });
@@ -113,7 +113,7 @@ test.describe('treino', () => {
     expect(await telaResponde(page), 'o dashboard travou a thread principal').toBeLessThan(3000);
 
     await cartao.getByRole('link', { name: 'COMEÇAR TREINO' }).click();
-    await page.waitForURL('**/treino/hoje**');
+    await page.waitForURL('**/treinar**');
 
     // o cronômetro está correndo, e não parado em 20:00
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
@@ -132,7 +132,7 @@ test.describe('treino', () => {
     await expect(page.getByText(/2 rounds/)).toBeVisible();
 
     await page.getByRole('button', { name: 'CONCLUIR' }).click();
-    await page.waitForURL('**/app', { timeout: 20_000 });
+    await page.waitForURL('**/hoje', { timeout: 20_000 });
 
     // o dia aparece como feito
     await expect(page.getByText('Dia 1 está feito.')).toBeVisible({ timeout: 20_000 });
@@ -175,7 +175,7 @@ test.describe('treino', () => {
     let perguntou = false;
     let mensagem = '';
 
-    await page.goto('/treino/hoje?auto=1');
+    await page.goto('/treinar?auto=1');
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
 
     // primeiro recusa: o treino não pode ser gravado
@@ -189,7 +189,7 @@ test.describe('treino', () => {
 
     expect(perguntou, 'deveria perguntar antes de gravar um treino de segundos').toBe(true);
     expect(mensagem).toContain('Registrar assim mesmo?');
-    await expect(page).toHaveURL(/\/treino\/hoje/);
+    await expect(page).toHaveURL(/\/treinar/);
 
     // agora aceita: grava, e com duração de pelo menos 1 segundo
     page.once('dialog', (dialog) => void dialog.accept());
@@ -213,13 +213,13 @@ test.describe('treino', () => {
   test('o cronômetro sobrevive a sair e voltar para a tela', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
 
-    await page.goto('/treino/hoje?auto=1');
+    await page.goto('/treinar?auto=1');
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
 
     // sai do cronômetro e volta: o tempo continua de onde estava
     await page.goto('/historico');
     await page.waitForTimeout(3000);
-    await page.goto('/treino/hoje');
+    await page.goto('/treinar');
 
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
     const marcador = await page.locator('.tnum').first().innerText();

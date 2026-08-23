@@ -202,31 +202,64 @@ export async function assinarPrint(caminho: string): Promise<string | null> {
 export type ResumoAdmin = {
   usuarios: number;
   usuariosNovos7d: number;
+  usuariosNovos30d: number;
+  usuariosAtivos7d: number;
   chamadosAbertos: number;
   treinos: number;
+  /** cadastros por dia nos últimos 30 dias, do mais antigo ao mais recente */
+  cadastrosPorDia: { dia: string; total: number }[];
 };
+
+/** Os últimos `dias` dias, do mais antigo ao mais recente, em `yyyy-MM-dd`. */
+function ultimosDias(dias: number): string[] {
+  const hoje = Date.now();
+  return Array.from({ length: dias }, (_, indice) =>
+    new Date(hoje - (dias - 1 - indice) * 86_400_000).toISOString().slice(0, 10),
+  );
+}
 
 export async function resumo(): Promise<ResumoAdmin> {
   const supabase = await createClient();
   const seteDiasAtras = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const trintaDiasAtras = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
-  const [usuarios, novos, abertos, treinos] = await Promise.all([
+  const [usuarios, novos, cadastros, abertos, treinos, ativos] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .gte('created_at', seteDiasAtras),
+    // as datas cruas: montar a série no servidor evita 30 consultas
+    supabase
+      .from('profiles')
+      .select('created_at')
+      .gte('created_at', trintaDiasAtras)
+      .order('created_at'),
     supabase
       .from('support_tickets')
       .select('id', { count: 'exact', head: true })
       .in('status', ['aberto', 'em_analise']),
     supabase.from('workouts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+    supabase
+      .from('workouts')
+      .select('user_id')
+      .is('deleted_at', null)
+      .gte('workout_date', seteDiasAtras.slice(0, 10)),
   ]);
+
+  const porDia = new Map<string, number>();
+  for (const linha of cadastros.data ?? []) {
+    const dia = String(linha.created_at).slice(0, 10);
+    porDia.set(dia, (porDia.get(dia) ?? 0) + 1);
+  }
 
   return {
     usuarios: usuarios.count ?? 0,
     usuariosNovos7d: novos.count ?? 0,
+    usuariosNovos30d: (cadastros.data ?? []).length,
+    usuariosAtivos7d: new Set((ativos.data ?? []).map((linha) => linha.user_id)).size,
     chamadosAbertos: abertos.count ?? 0,
     treinos: treinos.count ?? 0,
+    cadastrosPorDia: ultimosDias(30).map((dia) => ({ dia, total: porDia.get(dia) ?? 0 })),
   };
 }

@@ -66,6 +66,7 @@ const TABLE_TO_TYPE: Record<string, string> = {
   badges: 'BadgeRow',
   user_badges: 'UserBadgeRow',
   water_logs: 'WaterLogRow',
+  daily_messages: 'DailyMessageRow',
 };
 
 type OpenApiSpec = {

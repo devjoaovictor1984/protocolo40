@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         // nada do produto em si é indexável: só a landing e perfis públicos
         disallow: [
-          '/app',
+          '/hoje',
           '/onboarding',
           '/treino/',
           '/treinos/',

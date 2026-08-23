@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase/client';
  * Precisa acontecer no navegador: o fluxo PKCE guarda o verifier no cliente e
  * volta para /auth/callback, que troca o código pela sessão.
  */
-export function GoogleButton({ next = '/app' }: { next?: string }) {
+export function GoogleButton({ next = '/hoje' }: { next?: string }) {
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {

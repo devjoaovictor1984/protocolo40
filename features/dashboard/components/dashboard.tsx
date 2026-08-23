@@ -21,6 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useSession, useToday } from '@/features/session/session-context';
 import { WeightRow } from '@/features/dashboard/components/weight-row';
+import { DailyMessage } from '@/features/messages/components/daily-message';
+import type { MensagemDoDia } from '@/features/messages/repository';
 import { cn } from '@/lib/utils';
 import { formatClock, formatDurationShort } from '@/services/duration';
 import {
@@ -39,7 +41,7 @@ import type { LocalWorkout } from '@/types/offline';
  * A tela responde a uma pergunta só: o que eu preciso fazer hoje? Por isso o
  * cartão do treino ocupa o topo e tudo o mais vem depois, em texto pequeno.
  */
-export function Dashboard() {
+export function Dashboard({ mensagem }: { mensagem: MensagemDoDia | null }) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
   const { data, isLoading } = useDashboard();
@@ -64,6 +66,8 @@ export function Dashboard() {
           <SyncStatus />
         </div>
       </header>
+
+      {mensagem ? <DailyMessage mensagem={mensagem} /> : null}
 
       <WeightRow />
 
@@ -91,7 +95,7 @@ export function Dashboard() {
           title="Seu primeiro treino começa aqui."
           description="Vinte minutos. Sem equipamento, sem desculpa, sem preparação."
           action={
-            <ButtonLink href="/treino/hoje?auto=1" size="lg" className="h-12">
+            <ButtonLink href="/treinar?auto=1" size="lg" className="h-12">
               COMEÇAR TREINO
             </ButtonLink>
           }
@@ -150,7 +154,7 @@ function TodayCard({ day, goalSeconds }: { day: number; goalSeconds: number }) {
       </ProgressRing>
 
       <div className="flex w-full flex-col items-center gap-3">
-        <ButtonLink href="/treino/hoje?auto=1" className="h-16 w-full text-base font-bold">
+        <ButtonLink href="/treinar?auto=1" className="h-16 w-full text-base font-bold">
           <Play aria-hidden className="size-5" />
           COMEÇAR TREINO
         </ButtonLink>
@@ -188,7 +192,7 @@ function DoneCard({ workouts, day }: { workouts: LocalWorkout[]; day: number }) 
         </p>
       </div>
 
-      <ButtonLink href="/treino/hoje" variant="outline" className="h-11">
+      <ButtonLink href="/treinar" variant="outline" className="h-11">
         Treinar de novo
       </ButtonLink>
     </section>

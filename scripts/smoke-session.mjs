@@ -97,7 +97,7 @@ try {
     fetch(`${APP}${path}`, { headers: { cookie }, redirect: 'manual' });
 
   // ---- 4. o onboarding barra quem ainda não completou o perfil
-  const dashboard = await get('/app');
+  const dashboard = await get('/hoje');
   check(
     'sem onboarding, /app manda para /onboarding',
     dashboard.status === 307 && (dashboard.headers.get('location') ?? '').includes('/onboarding'),
@@ -117,13 +117,13 @@ try {
     body: JSON.stringify({ onboarding_completed_at: new Date().toISOString(), full_name: 'João Teste' }),
   });
 
-  const app = await get('/app');
+  const app = await get('/hoje');
   const appHtml = await app.text();
   check('dashboard abre com sessão', app.status === 200);
   check('dashboard saúda o usuário', appHtml.includes('João'), appHtml.match(/Bom (dia|tarde|noite), \w+/)?.[0]);
   check('dashboard mostra a navegação', appHtml.includes('Histórico') && appHtml.includes('Evolução'));
 
-  for (const path of ['/historico', '/calendario', '/evolucao', '/medidas', '/treinos', '/recordes', '/perfil', '/configuracoes/privacidade', '/treino/hoje']) {
+  for (const path of ['/historico', '/calendario', '/evolucao', '/medidas', '/treinos', '/recordes', '/perfil', '/configuracoes/privacidade', '/treinar']) {
     const page = await get(path);
     check(`${path} responde 200`, page.status === 200, page.status === 200 ? '' : String(page.status));
   }

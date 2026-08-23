@@ -53,7 +53,7 @@ export default async function AnalisePage() {
           title="Ainda não há o que analisar."
           description="A partir de alguns treinos registrados, esta tela passa a dizer o que mudar em cada exercício — e por quê."
           action={
-            <ButtonLink href="/treino/hoje?auto=1" className="h-12">
+            <ButtonLink href="/treinar?auto=1" className="h-12">
               COMEÇAR TREINO
             </ButtonLink>
           }

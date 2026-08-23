@@ -66,7 +66,7 @@ export function FinishScreen({ clientId }: { clientId: string }) {
         <p className="text-muted-foreground text-sm">
           Ele pode ter sido sincronizado e removido do cache local.
         </p>
-        <Button onClick={() => router.replace('/app')}>Voltar para o meu dia</Button>
+        <Button onClick={() => router.replace('/hoje')}>Voltar para o meu dia</Button>
       </div>
     );
   }
@@ -135,7 +135,7 @@ export function FinishScreen({ clientId }: { clientId: string }) {
 
       await recarregar(queryClient, ['workouts'], ['sync', 'queue']);
 
-      router.replace('/app');
+      router.replace('/hoje');
     } catch {
       setFinishing(false);
       toast.error('Não conseguimos salvar os extras.', {

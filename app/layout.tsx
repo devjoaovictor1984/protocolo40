@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { Analytics } from '@/components/analytics';
 import { Providers } from '@/components/providers';
 import { env } from '@/lib/env';
 
@@ -69,6 +70,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
+        {/* depois de tudo: medir não pode atrasar o que a pessoa veio fazer */}
+        <Analytics />
       </body>
     </html>
   );

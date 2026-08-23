@@ -91,7 +91,7 @@ test.describe('registrar dias anteriores', () => {
     await expect(page.getByRole('button', { name: /REGISTRAR 14 DIAS/ })).toBeVisible();
 
     await page.getByRole('button', { name: /REGISTRAR 14 DIAS/ }).click();
-    await page.waitForURL('**/app', { timeout: 25_000 });
+    await page.waitForURL('**/hoje', { timeout: 25_000 });
 
     // os 14 dias chegaram ao servidor
     await expect
@@ -126,7 +126,7 @@ test.describe('registrar dias anteriores', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR 7 DIAS/ }).click();
-    await page.waitForURL('**/app', { timeout: 25_000 });
+    await page.waitForURL('**/hoje', { timeout: 25_000 });
 
     // espera a fila esvaziar antes de conferir
     await expect
@@ -160,7 +160,7 @@ test.describe('registrar dias anteriores', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 30 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(app|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
 
     await page.goto('/historico');
     await page.getByRole('button', { name: 'Tudo' }).click();

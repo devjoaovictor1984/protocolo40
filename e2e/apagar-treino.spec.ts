@@ -22,7 +22,7 @@ const configured = Boolean(SUPABASE && ANON && SECRET && REF) && !SUPABASE!.incl
  * dias", que são atalhos e não registros.
  */
 const LINHAS =
-  'main a[href^="/treino/"]:not([href*="?"]):not([href="/treino/hoje"]):not([href^="/treino/novo"]):not([href^="/treino/registrar"])';
+  'main a[href^="/treino/"]:not([href*="?"]):not([href="/treinar"]):not([href^="/treino/novo"]):not([href^="/treino/registrar"])';
 
 const admin = (path: string, init: RequestInit = {}) =>
   fetch(`${SUPABASE}${path}`, {
@@ -98,7 +98,7 @@ test.describe('apagar treino', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR 7 DIAS/ }).click();
-    await page.waitForURL('**/app', { timeout: 25_000 });
+    await page.waitForURL('**/hoje', { timeout: 25_000 });
 
     await expect
       .poll(
@@ -150,13 +150,13 @@ test.describe('apagar treino', () => {
     page.on('dialog', (dialog) => void dialog.accept());
 
     // um treino de verdade, com rounds: gera recorde de duração e de rounds
-    await page.goto('/treino/hoje?auto=1');
+    await page.goto('/treinar?auto=1');
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
     await page.getByRole('button', { name: 'Adicionar um round' }).click();
     await page.getByRole('button', { name: 'Finalizar' }).click();
     await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'CONCLUIR' }).click();
-    await page.waitForURL('**/app', { timeout: 20_000 });
+    await page.waitForURL('**/hoje', { timeout: 20_000 });
 
     // o trigger gravou os recordes
     await expect
@@ -207,7 +207,7 @@ test.describe('apagar treino', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR 7 DIAS/ }).click();
-    await page.waitForURL('**/app', { timeout: 25_000 });
+    await page.waitForURL('**/hoje', { timeout: 25_000 });
 
     await expect(page.getByText(/7 dias seguidos/)).toBeVisible({ timeout: 25_000 });
 
@@ -218,7 +218,7 @@ test.describe('apagar treino', () => {
     await page.getByRole('button', { name: 'Apagar treino' }).click();
     await page.waitForURL('**/historico', { timeout: 20_000 });
 
-    await page.goto('/app');
+    await page.goto('/hoje');
     await expect(page.getByText(/6 dias seguidos/)).toBeVisible({ timeout: 25_000 });
   });
 });

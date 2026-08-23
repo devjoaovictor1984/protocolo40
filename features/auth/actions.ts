@@ -65,7 +65,7 @@ export async function signInWithPassword(
 
   const requested = String(formData.get('redirect') ?? '');
   revalidatePath('/', 'layout');
-  redirect(requested.startsWith('/') ? requested : '/app');
+  redirect(requested.startsWith('/') ? requested : '/hoje');
 }
 
 export async function signUpWithPassword(
@@ -160,7 +160,7 @@ export async function updatePassword(_prev: ActionState, formData: FormData): Pr
   }
 
   revalidatePath('/', 'layout');
-  redirect('/app');
+  redirect('/hoje');
 }
 
 export async function signOut() {

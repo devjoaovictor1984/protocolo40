@@ -108,7 +108,7 @@ test.describe('área segura', () => {
   test('o conteúdo desce quando o aparelho tem entalhe', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
 
-    await page.goto('/app');
+    await page.goto('/hoje');
     await page.waitForTimeout(2500);
     const semEntalhe = await primeiroAlvo(page);
 
@@ -124,7 +124,7 @@ test.describe('área segura', () => {
 
   test('nada clicável encosta na status bar', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
-    await page.goto('/app');
+    await page.goto('/hoje');
     await page.waitForTimeout(2500);
     await simularEntalhe(page);
     await page.waitForTimeout(400);
@@ -147,7 +147,7 @@ test.describe('área segura', () => {
   test('o cronômetro também respeita o topo', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
 
-    await page.goto('/treino/hoje?auto=1');
+    await page.goto('/treinar?auto=1');
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
     await simularEntalhe(page);
     await page.waitForTimeout(400);
@@ -160,7 +160,7 @@ test.describe('área segura', () => {
 
   test('a barra de baixo fica acima da faixa do gesto', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
-    await page.goto('/app');
+    await page.goto('/hoje');
     await page.waitForTimeout(2000);
     await simularEntalhe(page);
     await page.waitForTimeout(400);

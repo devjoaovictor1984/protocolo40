@@ -97,7 +97,7 @@ export function TemplateForm() {
       await recarregar(queryClient, ['catalog', 'templates']);
       toast.success('Treino salvo.', { description: 'Ele já aparece em Treinos.' });
 
-      router.replace(iniciarDepois ? `/treino/hoje?template=${id}&auto=1` : '/treinos/favoritos');
+      router.replace(iniciarDepois ? `/treinar?template=${id}&auto=1` : '/treinos/favoritos');
     } catch (caught) {
       setSalvando(false);
       setErro(caught instanceof Error ? caught.message : 'Não conseguimos salvar agora.');

@@ -99,7 +99,7 @@ test.describe('onboarding', () => {
     await page.getByRole('button', { name: 'Começar meu protocolo' }).click();
 
     // o formulário conclui e o app leva para o dia de hoje
-    await page.waitForURL('**/app', { timeout: 15_000 });
+    await page.waitForURL('**/hoje', { timeout: 15_000 });
 
     // o cartão do treino de hoje é o CTA principal; há outros links com o mesmo
     // texto na tela, então o alvo é o de dentro da seção
@@ -158,7 +158,7 @@ test.describe('onboarding', () => {
     await page.goto('/onboarding');
     await page.getByRole('button', { name: 'Pular' }).click();
 
-    await page.waitForURL('**/app', { timeout: 15_000 });
+    await page.waitForURL('**/hoje', { timeout: 15_000 });
     await expect(
       page.getByLabel('Treino de hoje').getByRole('link', { name: 'COMEÇAR TREINO' }),
     ).toBeVisible({ timeout: 20_000 });

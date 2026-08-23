@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
 
   // quem já passou por aqui não precisa ver de novo
   if (!needsOnboarding(profile)) {
-    redirect('/app');
+    redirect('/hoje');
   }
 
   return <OnboardingFlow defaultUsername={profile.username} defaultName={profile.full_name} />;

@@ -31,7 +31,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         </p>
       ) : null}
 
-      <GoogleButton next={redirectTo ?? '/app'} />
+      <GoogleButton next={redirectTo ?? '/hoje'} />
 
       <div className="flex items-center gap-3">
         <Separator className="flex-1" />

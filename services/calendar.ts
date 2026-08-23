@@ -138,6 +138,18 @@ export function weekLabel(monday: DayKey, today: DayKey): string {
     : `${a.date} de ${MONTH_NAMES[a.month - 1]} a ${b.date} de ${MONTH_NAMES[b.month - 1]}`;
 }
 
+/**
+ * Dia do ano, de 1 a 366.
+ *
+ * É a chave da mensagem do dia: todo mundo vê a mesma no mesmo dia, o que faz
+ * dela assunto em comum. Em ano não bissexto o dia 366 nunca é sorteado — e a
+ * tabela tem os 366 justamente para que o bissexto não caia num vazio.
+ */
+export function dayOfYear(day: DayKey): number {
+  const { year } = parseDay(day);
+  return daysBetween(`${year}-01-01`, day) + 1;
+}
+
 export const WEEKDAY_LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const;
 export const WEEKDAY_NAMES = [
   'segunda-feira',

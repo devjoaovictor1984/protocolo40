@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addDays,
+  dayOfYear,
   daysBetween,
   endOfMonth,
   formatDay,
@@ -107,5 +108,22 @@ describe('greeting', () => {
     const evening = new Date('2026-08-22T23:00:00.000Z'); // 20:00 em São Paulo
     expect(greeting('America/Sao_Paulo', morning)).toBe('Bom dia');
     expect(greeting('America/Sao_Paulo', evening)).toBe('Boa noite');
+  });
+});
+
+describe('dia do ano', () => {
+  it('conta de 1 a 365, e 366 no bissexto', () => {
+    expect(dayOfYear('2026-01-01')).toBe(1);
+    expect(dayOfYear('2026-02-01')).toBe(32);
+    expect(dayOfYear('2026-12-31')).toBe(365);
+
+    // 2028 é bissexto: fevereiro tem 29 dias
+    expect(dayOfYear('2028-03-01')).toBe(61);
+    expect(dayOfYear('2028-12-31')).toBe(366);
+  });
+
+  it('não depende do fuso da máquina', () => {
+    expect(dayOfYear('2026-08-24')).toBe(236);
+    expect(dayOfYear('2026-08-25')).toBe(237);
   });
 });

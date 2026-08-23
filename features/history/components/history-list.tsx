@@ -155,7 +155,7 @@ export function HistoryList() {
           action={
             term ? null : (
               <div className="flex flex-col items-center gap-2">
-                <ButtonLink href="/treino/hoje?auto=1" className="h-12">
+                <ButtonLink href="/treinar?auto=1" className="h-12">
                   COMEÇAR TREINO
                 </ButtonLink>
                 <ButtonLink href="/treino/registrar-dias" variant="ghost" className="h-11">

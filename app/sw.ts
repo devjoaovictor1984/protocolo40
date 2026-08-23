@@ -27,7 +27,7 @@ const serwist = new Serwist({
       // para o cache. Melhor uma tela levemente antiga do que nenhuma tela.
       matcher: ({ request, url }) =>
         request.mode === 'navigate' &&
-        ['/app', '/treino', '/treinos'].some(
+        ['/hoje', '/treino', '/treinos'].some(
           (path) => url.pathname === path || url.pathname.startsWith(`${path}/`),
         ),
       handler: new NetworkFirst({

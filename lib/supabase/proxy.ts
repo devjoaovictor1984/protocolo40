@@ -6,7 +6,7 @@ import type { Database } from '@/types/database';
 
 /** Prefixos que exigem sessão. */
 const PRIVATE_PREFIXES = [
-  '/app',
+  '/hoje',
   '/onboarding',
   '/treino',
   '/treinos',
@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isUnder(pathname, AUTH_ONLY_PREFIXES)) {
     const url = request.nextUrl.clone();
-    url.pathname = '/app';
+    url.pathname = '/hoje';
     url.search = '';
     return NextResponse.redirect(url);
   }

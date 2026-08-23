@@ -12,8 +12,8 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
-  const requestedNext = searchParams.get('next') ?? '/app';
-  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/app';
+  const requestedNext = searchParams.get('next') ?? '/hoje';
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/hoje';
 
   const errorDescription = searchParams.get('error_description');
   if (errorDescription) {

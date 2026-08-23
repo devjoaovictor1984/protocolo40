@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: 'pt-BR',
     dir: 'ltr',
     // o app instalado abre direto no dashboard, não na landing
-    start_url: '/app',
+    start_url: '/hoje',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
@@ -25,7 +25,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: 'Começar treino',
         short_name: 'Treinar',
         description: 'Abrir o cronômetro e começar os 20 minutos de hoje',
-        url: '/treino/hoje',
+        url: '/treinar',
       },
       {
         name: 'Registrar peso',

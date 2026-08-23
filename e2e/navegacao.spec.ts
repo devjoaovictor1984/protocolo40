@@ -82,7 +82,7 @@ async function destinosAlcancaveis(page: Page): Promise<Set<string>> {
     }
   };
 
-  await page.goto('/app');
+  await page.goto('/hoje');
   await page.waitForTimeout(2500);
   await coletar();
 
@@ -135,7 +135,7 @@ test.describe('navegação', () => {
     const alcancaveis = await destinosAlcancaveis(page);
 
     const obrigatorias = [
-      '/app',
+      '/hoje',
       '/treinos',
       '/treinos/novo',
       '/historico',
@@ -147,7 +147,7 @@ test.describe('navegação', () => {
       '/recordes',
       '/perfil',
       '/configuracoes',
-      '/treino/hoje',
+      '/treinar',
       '/treino/novo',
     ];
 

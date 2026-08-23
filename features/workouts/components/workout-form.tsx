@@ -88,7 +88,7 @@ export function WorkoutForm({ workout }: { workout?: LocalWorkout }) {
 
       await recarregar(queryClient, ['workouts']);
       toast.success(editing ? 'Treino atualizado.' : 'Treino registrado.');
-      router.replace(editing ? `/treino/${workout.client_id}` : '/app');
+      router.replace(editing ? `/treino/${workout.client_id}` : '/hoje');
     } catch {
       setSaving(false);
       setError('Não conseguimos salvar agora. Tente novamente.');

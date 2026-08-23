@@ -13,7 +13,7 @@ export default function NotFound() {
         </p>
       </div>
 
-      <ButtonLink href="/app" size="lg" className="h-12">
+      <ButtonLink href="/hoje" size="lg" className="h-12">
         Ir para o meu protocolo
       </ButtonLink>
     </main>

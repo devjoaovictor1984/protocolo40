@@ -12,9 +12,9 @@ test.describe('fundação', () => {
   });
 
   test('rota privada sem sessão volta para o login', async ({ page }) => {
-    await page.goto('/app');
+    await page.goto('/hoje');
 
-    await expect(page).toHaveURL(/\/login\?redirect=%2Fapp$/);
+    await expect(page).toHaveURL(/\/login\?redirect=%2Fhoje$/);
     await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible();
   });
 

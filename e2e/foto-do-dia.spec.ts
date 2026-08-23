@@ -210,7 +210,7 @@ test.describe('foto de um dia anterior', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 14 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(app|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
 
     await page.goto('/historico');
     await page.getByText(dia.split('-').reverse().join('/')).first().click();

@@ -133,7 +133,7 @@ export function BackfillScreen() {
         marcados.size === 1 ? '1 dia registrado.' : `${marcados.size} dias registrados.`,
         { description: 'Sua sequência já conta com eles.' },
       );
-      router.replace('/app');
+      router.replace('/hoje');
     } catch {
       setSalvando(false);
       toast.error('Não conseguimos salvar todos os dias.', {

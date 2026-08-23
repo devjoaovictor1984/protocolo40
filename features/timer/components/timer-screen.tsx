@@ -129,7 +129,7 @@ export function TimerScreen({
       if (!confirmed) return;
     }
     await timer.discard();
-    router.replace('/app');
+    router.replace('/hoje');
   }
 
   return (

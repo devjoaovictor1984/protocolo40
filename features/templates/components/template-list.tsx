@@ -218,7 +218,7 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
               : 'Tire um filtro ou comece um treino livre: o cronômetro não exige roteiro.'
           }
           action={
-            <ButtonLink href={onlyFavorites ? '/treinos/novo' : '/treino/hoje?auto=1'} className="h-12">
+            <ButtonLink href={onlyFavorites ? '/treinos/novo' : '/treinar?auto=1'} className="h-12">
               {onlyFavorites ? 'Montar um treino' : 'Treino livre'}
             </ButtonLink>
           }
@@ -240,7 +240,7 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
 
       {!onlyFavorites ? (
         <Link
-          href="/treino/hoje?auto=1"
+          href="/treinar?auto=1"
           className="text-muted-foreground hover:text-foreground self-center text-sm underline underline-offset-4"
         >
           Prefiro só o cronômetro, sem roteiro
@@ -329,7 +329,7 @@ function TemplateCard({
       ) : null}
 
       <ButtonLink
-        href={`/treino/hoje?template=${template.id}&auto=1`}
+        href={`/treinar?template=${template.id}&auto=1`}
         className="h-14 text-base font-bold"
       >
         <Play aria-hidden className="size-4" />

@@ -126,7 +126,7 @@ test.describe('biblioteca de treinos', () => {
     await page.getByRole('button', { name: 'SALVAR E COMEÇAR AGORA' }).click();
 
     // salvou e já abriu o cronômetro com ele
-    await page.waitForURL(/\/treino\/hoje/, { timeout: 25_000 });
+    await page.waitForURL(/\/treinar/, { timeout: 25_000 });
     await expect(page.getByText('Meu circuito')).toBeVisible({ timeout: 15_000 });
 
     // dois rounds e finaliza
@@ -135,7 +135,7 @@ test.describe('biblioteca de treinos', () => {
     await page.getByRole('button', { name: 'Finalizar' }).click();
     await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'CONCLUIR' }).click();
-    await page.waitForURL('**/app', { timeout: 20_000 });
+    await page.waitForURL('**/hoje', { timeout: 20_000 });
 
     // o treino próprio ficou salvo, com o recorde na ficha
     await page.goto('/treinos/favoritos');

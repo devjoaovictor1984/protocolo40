@@ -50,7 +50,7 @@ export function OnboardingFlow({
           onClick={() =>
             startSkip(async () => {
               await skipOnboarding();
-              router.replace('/app');
+              router.replace('/hoje');
             })
           }
         >
@@ -314,14 +314,14 @@ function DayOne() {
         </p>
       </div>
 
-      <ButtonLink href="/treino/hoje?auto=1"
+      <ButtonLink href="/treinar?auto=1"
         className="h-16 w-full max-w-sm text-base font-bold"
       >
         <Play aria-hidden className="size-5" />
         INICIAR MEUS 20 MINUTOS
       </ButtonLink>
 
-      <Link href="/app" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
+      <Link href="/hoje" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
         Prefiro conhecer o app primeiro
       </Link>
     </div>

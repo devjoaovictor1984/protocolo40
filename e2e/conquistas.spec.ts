@@ -101,7 +101,7 @@ test.describe('conquistas', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(app|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
 
     // quem concede é o gatilho no banco, não o cliente
     await expect
@@ -135,7 +135,7 @@ test.describe('conquistas', () => {
     await page.goto('/treino/registrar-dias');
     await page.getByRole('button', { name: 'últimos 7 dias' }).click();
     await page.getByRole('button', { name: /REGISTRAR/ }).click();
-    await page.waitForURL(/\/(app|historico)/, { timeout: 30_000 });
+    await page.waitForURL(/\/(hoje|historico)/, { timeout: 30_000 });
 
     await expect
       .poll(
@@ -153,7 +153,7 @@ test.describe('conquistas', () => {
     await page.goto('/historico');
     await page
       .locator(
-        'main a[href^="/treino/"]:not([href*="?"]):not([href="/treino/hoje"]):not([href^="/treino/novo"]):not([href^="/treino/registrar"])',
+        'main a[href^="/treino/"]:not([href*="?"]):not([href="/treinar"]):not([href^="/treino/novo"]):not([href^="/treino/registrar"])',
       )
       .first()
       .click();

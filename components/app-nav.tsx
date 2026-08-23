@@ -43,7 +43,7 @@ type NavItem = {
 };
 
 const PRIMARY: NavItem[] = [
-  { href: '/app', label: 'Hoje', icon: Home },
+  { href: '/hoje', label: 'Hoje', icon: Home },
   { href: '/historico', label: 'Histórico', icon: History },
   { href: '/evolucao', label: 'Evolução', icon: LineChart },
   { href: '/perfil', label: 'Perfil', icon: User },
@@ -77,7 +77,7 @@ const QUICK_ACTIONS: {
     grupo: 'Treinar agora',
     itens: [
       {
-        href: '/treino/hoje?auto=1',
+        href: '/treinar?auto=1',
         label: 'Começar treino livre',
         description: 'Abre o cronômetro em 20:00',
         icon: Timer,
@@ -146,7 +146,7 @@ const QUICK_ACTIONS: {
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === '/app') return pathname === '/app';
+  if (href === '/hoje') return pathname === '/hoje';
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -259,7 +259,7 @@ export function SideNav() {
   return (
     <aside className="border-border hidden w-60 shrink-0 border-r lg:block">
       <div className="sticky top-0 flex h-dvh flex-col gap-6 px-4 py-6">
-        <Wordmark href="/app" className="px-2" />
+        <Wordmark href="/hoje" className="px-2" />
 
         <nav aria-label="Navegação principal" className="flex flex-col gap-1">
           {PRIMARY.map((item) => (
@@ -291,7 +291,7 @@ export function SideNav() {
           </QuickActions>
 
           <Link
-            href="/treino/hoje?auto=1"
+            href="/treinar?auto=1"
             className="bg-primary text-primary-foreground flex h-12 items-center justify-center gap-2 rounded-xl font-semibold transition-opacity hover:opacity-90"
           >
             <Timer aria-hidden className="size-4" />
