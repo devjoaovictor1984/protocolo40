@@ -8,5 +8,9 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function FotosPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
-  return <PhotoGallery openCameraOnMount={params.nova === '1'} />;
+  const data = typeof params.data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.data)
+    ? params.data
+    : undefined;
+
+  return <PhotoGallery openCameraOnMount={params.nova === '1'} dataInicial={data} />;
 }

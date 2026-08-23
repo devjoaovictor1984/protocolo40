@@ -35,7 +35,13 @@ const BODY_FIELDS = [
   { name: 'body_fat_pct', label: 'Gordura (%)' },
 ] as const;
 
-export function MeasurementsPage({ openFormOnMount = false }: { openFormOnMount?: boolean }) {
+export function MeasurementsPage({
+  openFormOnMount = false,
+  dataInicial,
+}: {
+  openFormOnMount?: boolean;
+  dataInicial?: string;
+}) {
   const { userId } = useSession();
   const today = useToday();
   const queryClient = useQueryClient();
@@ -46,8 +52,9 @@ export function MeasurementsPage({ openFormOnMount = false }: { openFormOnMount?
     staleTime: 10_000,
   });
 
-  const [open, setOpen] = useState(openFormOnMount);
-  const [date, setDate] = useState(today);
+  const [open, setOpen] = useState(openFormOnMount || Boolean(dataInicial));
+  // a data pode vir da URL: é assim que "registrar o peso deste dia" funciona
+  const [date, setDate] = useState(dataInicial ?? today);
 
   const existing = (measurements ?? []).find((item) => item.measured_on === date) ?? null;
   const series = weightSeries(measurements ?? []);

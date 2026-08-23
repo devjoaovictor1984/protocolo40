@@ -98,6 +98,21 @@ export function ProfileForm({ profile }: { profile: ProfileRow }) {
         </div>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="protocol_started_on">Comecei o protocolo em</Label>
+        <Input
+          id="protocol_started_on"
+          name="protocol_started_on"
+          type="date"
+          defaultValue={profile.protocol_started_on}
+          className="h-12 text-base"
+        />
+        <p className="text-muted-foreground text-xs">
+          É a data do seu Dia 1. Se você já treinava antes de instalar o app, coloque o dia em que
+          começou de verdade — as fotos e os treinos antigos entram na contagem certa.
+        </p>
+      </div>
+
       <ChipField label="Objetivo" name="goal" options={GOALS} value={goal} onChange={setGoal} />
       <ChipField
         label="Nível"

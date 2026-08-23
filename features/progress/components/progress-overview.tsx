@@ -111,7 +111,7 @@ export function ProgressOverview() {
         </ButtonLink>
       </header>
 
-      <section aria-label="Resumo" className="grid grid-cols-4 gap-3">
+      <section aria-label="Resumo" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard value={days.length} unit="dias" label="Treinados" icon={CalendarCheck} />
         <StatCard value={totalMinutes} unit="min" label="Tempo" icon={Clock} />
         <StatCard value={streak.current} unit="dias" label="Sequência" icon={Flame} />

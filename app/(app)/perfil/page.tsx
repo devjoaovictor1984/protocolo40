@@ -77,7 +77,7 @@ export default async function PerfilPage() {
 
       {profile.bio ? <p className="text-sm">{profile.bio}</p> : null}
 
-      <section aria-label="Seus números" className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <section aria-label="Seus números" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard value={stats.total_days} unit="dias" label="Dias treinados" icon={CalendarCheck} />
         <StatCard
           value={Math.round(Number(stats.total_seconds) / 60)}

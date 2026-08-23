@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 
 import { EmptyState } from '@/components/stats';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -27,7 +29,13 @@ import { protocolDay } from '@/services/streak';
  * Toda foto é privada. A grade mostra apenas miniaturas — carregar a imagem
  * cheia de cada dia deixaria a tela pesada e não ajudaria a comparar.
  */
-export function PhotoGallery({ openCameraOnMount = false }: { openCameraOnMount?: boolean }) {
+export function PhotoGallery({
+  openCameraOnMount = false,
+  dataInicial,
+}: {
+  openCameraOnMount?: boolean;
+  dataInicial?: string;
+}) {
   const { userId, protocolStartedOn } = useSession();
   const today = useToday();
   const queryClient = useQueryClient();
@@ -35,7 +43,16 @@ export function PhotoGallery({ openCameraOnMount = false }: { openCameraOnMount?
 
   const [selected, setSelected] = useState<GalleryPhoto | null>(null);
   const [saving, setSaving] = useState(false);
+  /**
+   * O dia da foto.
+   *
+   * Quase sempre é hoje, mas quem está trazendo o histórico precisa poder
+   * lançar a foto no dia certo — senão a comparação "dia 1 e dia 60" nasce
+   * com as datas erradas.
+   */
+  const [data, setData] = useState(dataInicial ?? today);
   const fileInput = useRef<HTMLInputElement>(null);
+  const dataInput = useRef<HTMLInputElement>(null);
   const opened = useRef(false);
 
   useEffect(() => {
@@ -51,10 +68,18 @@ export function PhotoGallery({ openCameraOnMount = false }: { openCameraOnMount?
 
     setSaving(true);
     try {
-      await savePhoto({ userId, file, takenOn: today });
+      // ler do DOM, e não do estado: quem escolhe a data antes da página
+      // hidratar não pode ver a foto cair no dia de hoje em silêncio
+      const escolhida = dataInput.current?.value || data;
+      await savePhoto({ userId, file, takenOn: escolhida });
       await queryClient.invalidateQueries({ queryKey: ['photos'] });
       await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
-      toast.success('Foto guardada.', { description: 'Privada — só você vê.' });
+      toast.success('Foto guardada.', {
+        description:
+          (dataInput.current?.value || data) === today
+            ? 'Privada — só você vê.'
+            : `Registrada em ${formatDay(dataInput.current?.value || data)}.`,
+      });
     } catch (error) {
       toast.error('Não foi possível preparar a foto.', {
         description: error instanceof Error ? error.message : 'Tente outra imagem.',
@@ -107,14 +132,50 @@ export function PhotoGallery({ openCameraOnMount = false }: { openCameraOnMount?
         id="nova-foto"
       />
 
-      <Button
-        className="h-14 text-base font-semibold"
-        disabled={saving}
-        onClick={() => fileInput.current?.click()}
-      >
-        <Camera aria-hidden className="size-5" />
-        {saving ? 'Preparando…' : 'Registrar foto de hoje'}
-      </Button>
+      <section className="border-border flex flex-col gap-3 rounded-xl border p-4">
+        <div className="flex items-end gap-3">
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Label htmlFor="data-foto" className="text-muted-foreground text-xs">
+              Dia da foto
+            </Label>
+            <Input
+              ref={dataInput}
+              id="data-foto"
+              type="date"
+              defaultValue={dataInicial ?? today}
+              max={today}
+              // `onInput` além de `onChange`: o Input do Base UI não repassa o
+              // onChange do date picker em toda plataforma, e o rótulo abaixo
+              // precisa acompanhar o campo
+              onInput={(event) => setData(event.currentTarget.value || today)}
+              onChange={(event) => setData(event.target.value || today)}
+              className="h-12 text-base"
+            />
+          </div>
+
+          {data !== today ? (
+            <Button
+              variant="ghost"
+              className="h-12"
+              onClick={() => {
+                if (dataInput.current) dataInput.current.value = today;
+                setData(today);
+              }}
+            >
+              Hoje
+            </Button>
+          ) : null}
+        </div>
+
+        <Button
+          className="h-14 text-base font-semibold"
+          disabled={saving}
+          onClick={() => fileInput.current?.click()}
+        >
+          <Camera aria-hidden className="size-5" />
+          {saving ? 'Preparando…' : data === today ? 'Registrar foto de hoje' : `Registrar foto de ${formatDay(data)}`}
+        </Button>
+      </section>
 
       {isLoading ? (
         <div className="grid grid-cols-3 gap-2">

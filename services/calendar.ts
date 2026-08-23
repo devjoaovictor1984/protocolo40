@@ -117,6 +117,27 @@ export function startOfWeek(day: DayKey): DayKey {
   return addDays(day, -weekdayIndex(day));
 }
 
+/**
+ * Como a semana se apresenta num cabeçalho.
+ *
+ * As duas primeiras têm nome porque é assim que se fala delas; da terceira em
+ * diante só o intervalo distingue uma da outra. O mês entra uma vez só quando
+ * a semana não atravessa a virada.
+ */
+export function weekLabel(monday: DayKey, today: DayKey): string {
+  const atual = startOfWeek(today);
+  if (monday === atual) return 'Esta semana';
+  if (monday === addDays(atual, -7)) return 'Semana passada';
+
+  const sunday = addDays(monday, 6);
+  const a = parseDay(monday);
+  const b = parseDay(sunday);
+
+  return a.month === b.month
+    ? `${a.date} a ${b.date} de ${MONTH_NAMES[a.month - 1]}`
+    : `${a.date} de ${MONTH_NAMES[a.month - 1]} a ${b.date} de ${MONTH_NAMES[b.month - 1]}`;
+}
+
 export const WEEKDAY_LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const;
 export const WEEKDAY_NAMES = [
   'segunda-feira',

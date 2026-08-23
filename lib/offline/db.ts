@@ -184,14 +184,57 @@ export async function listMeasurements(userId: string): Promise<LocalMeasurement
 // Fotos
 // ---------------------------------------------------------------------------
 
+/**
+ * Foto guardada: os bytes viajam como ArrayBuffer, nunca como Blob.
+ *
+ * O IndexedDB do WebKit recusa gravar um Blob — a transação morre e a foto
+ * some sem aviso. ArrayBuffer é estruturado-clonável em todo navegador, então
+ * a conversão acontece na borda e o resto do app continua vendo `Blob`.
+ */
+type StoredPhoto = Omit<LocalPhoto, 'blob' | 'thumbnail'> & {
+  blob: ArrayBuffer;
+  thumbnail: ArrayBuffer;
+  mime: string;
+};
+
+const MIME_PADRAO = 'image/webp';
+
+async function paraBytes(blob: Blob): Promise<ArrayBuffer> {
+  return blob.arrayBuffer();
+}
+
+function paraBlob(bytes: ArrayBuffer, mime: string): Blob {
+  return new Blob([bytes], { type: mime });
+}
+
+/** Bancos gravados antes desta mudança ainda guardam Blob. */
+function reidratar(guardada: StoredPhoto | LocalPhoto): LocalPhoto {
+  if (guardada.blob instanceof Blob) return guardada as LocalPhoto;
+
+  const { mime, ...resto } = guardada as StoredPhoto;
+  return {
+    ...resto,
+    blob: paraBlob((guardada as StoredPhoto).blob, mime ?? MIME_PADRAO),
+    thumbnail: paraBlob((guardada as StoredPhoto).thumbnail, mime ?? MIME_PADRAO),
+  } as LocalPhoto;
+}
+
 export async function putPhoto(photo: LocalPhoto): Promise<void> {
   const db = await getDb();
-  await db.put('photos', photo);
+  const guardada: StoredPhoto = {
+    ...photo,
+    blob: await paraBytes(photo.blob),
+    thumbnail: await paraBytes(photo.thumbnail),
+    mime: photo.blob.type || MIME_PADRAO,
+  };
+
+  await db.put('photos', guardada as unknown as LocalPhoto);
 }
 
 export async function getPhoto(clientId: string): Promise<LocalPhoto | null> {
   const db = await getDb();
-  return (await db.get('photos', clientId)) ?? null;
+  const guardada = await db.get('photos', clientId);
+  return guardada ? reidratar(guardada as StoredPhoto | LocalPhoto) : null;
 }
 
 export async function deletePhoto(clientId: string): Promise<void> {
@@ -204,7 +247,8 @@ export async function listPhotos(userId: string): Promise<LocalPhoto[]> {
   const all = await db.getAll('photos');
   return all
     .filter((photo) => photo.user_id === userId)
-    .sort((a, b) => b.taken_at.localeCompare(a.taken_at));
+    .sort((a, b) => b.taken_at.localeCompare(a.taken_at))
+    .map((photo) => reidratar(photo as StoredPhoto | LocalPhoto));
 }
 
 // ---------------------------------------------------------------------------

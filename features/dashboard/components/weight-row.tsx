@@ -134,7 +134,7 @@ export function WeightRow() {
       </div>
 
       <Link
-        href="/medidas"
+        href="/medidas?novo=1"
         className="text-muted-foreground hover:text-foreground self-start text-xs underline underline-offset-4"
       >
         Registrar um dia anterior ou outras medidas

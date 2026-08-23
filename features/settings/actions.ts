@@ -78,6 +78,7 @@ export async function updateProfile(
     username: formData.get('username'),
     bio: formData.get('bio') ?? undefined,
     birth_date: formData.get('birth_date') ?? undefined,
+    protocol_started_on: formData.get('protocol_started_on') ?? undefined,
     height_cm: formData.get('height_cm'),
     goal: formData.get('goal') || null,
     level: formData.get('level') ?? 'iniciante',
@@ -96,6 +97,10 @@ export async function updateProfile(
       username: parsed.data.username,
       bio: parsed.data.bio,
       birth_date: parsed.data.birth_date,
+      // vazio significa "não mexer": o gatilho no banco já cuida do recuo
+      ...(parsed.data.protocol_started_on
+        ? { protocol_started_on: parsed.data.protocol_started_on }
+        : {}),
       height_cm: parsed.data.height_cm,
       goal: (parsed.data.goal as WorkoutGoal | null) ?? null,
       level: parsed.data.level as WorkoutLevel,

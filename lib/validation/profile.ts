@@ -66,6 +66,15 @@ export const profileSchema = z.object({
       (value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(value),
       'Informe a data no formato dd/mm/aaaa',
     ),
+  // quem já treinava antes de baixar o app precisa poder dizer quando começou
+  protocol_started_on: z
+    .string()
+    .optional()
+    .transform((value) => value || null)
+    .refine(
+      (value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(value),
+      'Informe a data no formato dd/mm/aaaa',
+    ),
   height_cm: optionalNumber(80, 260, 'Altura fora do intervalo esperado (80 a 260 cm)'),
   goal: z.enum(GOALS.map((item) => item.value) as [string, ...string[]]).nullable().optional(),
   level: z.enum(['iniciante', 'intermediario', 'avancado']),

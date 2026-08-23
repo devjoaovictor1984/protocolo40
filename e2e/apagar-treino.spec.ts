@@ -145,6 +145,61 @@ test.describe('apagar treino', () => {
     expect(await page.locator(LINHAS).count()).toBe(6);
   });
 
+  test('o recorde conquistado no treino apagado some junto', async ({ context, page, baseURL }) => {
+    userId = await signIn(context, baseURL!);
+    page.on('dialog', (dialog) => void dialog.accept());
+
+    // um treino de verdade, com rounds: gera recorde de duração e de rounds
+    await page.goto('/treino/hoje?auto=1');
+    await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
+    await page.getByRole('button', { name: 'Adicionar um round' }).click();
+    await page.getByRole('button', { name: 'Finalizar' }).click();
+    await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'CONCLUIR' }).click();
+    await page.waitForURL('**/app', { timeout: 20_000 });
+
+    // o trigger gravou os recordes
+    await expect
+      .poll(
+        async () => {
+          const rows = await (
+            await admin(`/rest/v1/personal_records?user_id=eq.${userId}&select=metric`)
+          ).json();
+          return rows.length;
+        },
+        { timeout: 40_000, message: 'o trigger não registrou os recordes' },
+      )
+      .toBeGreaterThan(0);
+
+    await expect(page.getByText(/1 recorde|2 recordes/)).toBeHidden().catch(() => {});
+
+    // apaga o treino
+    await page.goto('/historico');
+    await page.locator(LINHAS).first().click();
+    await page.waitForURL(/\/treino\/[0-9a-f-]+$/);
+    await page.getByRole('button', { name: 'Apagar treino' }).click();
+    await page.waitForURL('**/historico', { timeout: 20_000 });
+
+    // o recorde não pode sobreviver ao treino que o criou
+    await expect
+      .poll(
+        async () => {
+          const rows = await (
+            await admin(`/rest/v1/personal_records?user_id=eq.${userId}&select=metric`)
+          ).json();
+          return rows.length;
+        },
+        { timeout: 40_000, message: 'sobrou recorde de um treino apagado' },
+      )
+      .toBe(0);
+
+    // e a tela de recordes fica vazia
+    await page.goto('/recordes');
+    await expect(page.getByText('Seu primeiro treino já vira recorde.')).toBeVisible({
+      timeout: 20_000,
+    });
+  });
+
   test('a sequência encolhe quando o dia é apagado', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
     page.on('dialog', (dialog) => void dialog.accept());

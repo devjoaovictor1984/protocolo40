@@ -151,4 +151,30 @@ test.describe('registrar dias anteriores', () => {
     ).json();
     expect(total.length, 'não pode duplicar dia já registrado').toBe(7);
   });
+
+  test('o histórico agrupa por semana e pagina', async ({ context, page, baseURL }) => {
+    test.setTimeout(120_000);
+    userId = await signIn(context, baseURL!);
+
+    // 30 dias cobrem cinco semanas cheias e mais um pedaço: passa do primeiro lote
+    await page.goto('/treino/registrar-dias');
+    await page.getByRole('button', { name: 'últimos 30 dias' }).click();
+    await page.getByRole('button', { name: /REGISTRAR/ }).click();
+    await page.waitForURL(/\/(app|historico)/, { timeout: 30_000 });
+
+    await page.goto('/historico');
+    await page.getByRole('button', { name: 'Tudo' }).click();
+
+    // a semana é a unidade do agrupamento
+    await expect(page.getByText('Esta semana')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Semana passada')).toBeVisible();
+
+    // e a lista não despeja tudo de uma vez
+    const verMais = page.getByRole('button', { name: /Ver mais/ });
+    await expect(verMais).toBeVisible();
+
+    const antes = await page.locator('section h2').count();
+    await verMais.click();
+    expect(await page.locator('section h2').count()).toBeGreaterThan(antes);
+  });
 });

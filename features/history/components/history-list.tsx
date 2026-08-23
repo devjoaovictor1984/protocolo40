@@ -2,16 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, ChevronRight, CloudOff, History, Search } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, CloudOff, History, Search } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
+import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToday } from '@/features/session/session-context';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
 import { cn } from '@/lib/utils';
-import { addDays, formatDay, monthLabel, monthKey } from '@/services/calendar';
+import { addDays, formatDay, startOfWeek, weekLabel } from '@/services/calendar';
 import { formatDurationShort } from '@/services/duration';
 import type { LocalWorkout } from '@/types/offline';
 
@@ -21,6 +22,9 @@ import type { LocalWorkout } from '@/types/offline';
  * Buscar por "Tom Holland" e ver os dias em que aquele circuito foi feito, com
  * quantos rounds, é o caso de uso principal desta tela.
  */
+
+/** Quantas semanas entram de uma vez. Quatro é um mês de treino por tela. */
+const PASSO = 4;
 
 const PERIODS = [
   { value: 7, label: '7 dias' },
@@ -57,14 +61,33 @@ export function HistoryList() {
     });
   }, [period, term, today, workouts]);
 
-  const groups = useMemo(() => {
+  /**
+   * Semana é a unidade em que se treina, e agrupar por ela também é o que
+   * mantém a lista curta: só as semanas visíveis são renderizadas.
+   */
+  const weeks = useMemo(() => {
     const map = new Map<string, LocalWorkout[]>();
     for (const workout of filtered) {
-      const key = monthKey(workout.workout_date);
+      const key = startOfWeek(workout.workout_date);
       map.set(key, [...(map.get(key) ?? []), workout]);
     }
     return [...map.entries()];
   }, [filtered]);
+
+  const [visiveis, setVisiveis] = useState(PASSO);
+
+  // mudar de busca ou de período recomeça a paginação — senão a lista volta
+  // já rolada de um filtro anterior. Ajustar durante a renderização, e não num
+  // efeito, evita o quadro intermediário com o número de semanas errado.
+  const filtro = `${term}|${period}`;
+  const [filtroAnterior, setFiltroAnterior] = useState(filtro);
+  if (filtro !== filtroAnterior) {
+    setFiltroAnterior(filtro);
+    setVisiveis(PASSO);
+  }
+
+  const mostradas = weeks.slice(0, visiveis);
+  const restantes = weeks.length - mostradas.length;
 
   const totalSeconds = filtered.reduce((sum, workout) => sum + workout.duration_seconds, 0);
 
@@ -150,11 +173,16 @@ export function HistoryList() {
           </p>
 
           <div className="flex flex-col gap-6">
-            {groups.map(([month, items]) => (
-              <section key={month} className="flex flex-col gap-2">
-                <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-                  {monthLabel(`${month}-01`)}
-                </h2>
+            {mostradas.map(([monday, items]) => (
+              <section key={monday} className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+                    {weekLabel(monday, today)}
+                  </h2>
+                  <span className="text-muted-foreground tnum text-[11px]">
+                    {items.length} {items.length === 1 ? 'treino' : 'treinos'}
+                  </span>
+                </div>
 
                 <ul className="flex flex-col gap-2">
                   {items.map((workout) => (
@@ -166,6 +194,17 @@ export function HistoryList() {
               </section>
             ))}
           </div>
+
+          {restantes > 0 ? (
+            <Button
+              variant="outline"
+              className="h-12"
+              onClick={() => setVisiveis((atual) => atual + PASSO)}
+            >
+              <ChevronDown aria-hidden className="size-4" />
+              Ver mais {restantes === 1 ? 'semana' : `${Math.min(restantes, PASSO)} semanas`}
+            </Button>
+          ) : null}
         </>
       )}
     </div>

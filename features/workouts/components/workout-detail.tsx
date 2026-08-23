@@ -3,7 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ArrowLeft, BookmarkPlus, CloudOff, Pencil, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BookmarkPlus,
+  Camera,
+  CloudOff,
+  Pencil,
+  Scale,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -206,6 +215,27 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
           </p>
         </section>
       ) : null}
+
+      {/* trazer o histórico junto: a foto e o peso do dia do treino */}
+      <div className="grid grid-cols-2 gap-2">
+        <ButtonLink
+          href={`/evolucao/fotos?data=${workout.workout_date}&nova=1`}
+          variant="outline"
+          className="h-12"
+        >
+          <Camera aria-hidden className="size-4" />
+          Foto deste dia
+        </ButtonLink>
+
+        <ButtonLink
+          href={`/medidas?novo=1&data=${workout.workout_date}`}
+          variant="outline"
+          className="h-12"
+        >
+          <Scale aria-hidden className="size-4" />
+          Peso deste dia
+        </ButtonLink>
+      </div>
 
       {workout.exercises.length > 0 ? (
         templateTitle === null ? (
