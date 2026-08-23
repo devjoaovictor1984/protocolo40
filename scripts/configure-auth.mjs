@@ -55,13 +55,43 @@ const redirectUrls = [
   ...(siteUrl.startsWith('http://localhost')
     ? []
     : [`${siteUrl.replace(/\/$/, '')}/auth/callback`, `${siteUrl.replace(/\/$/, '')}/**`]),
-  ...(flag('extra-redirect') ? [flag('extra-redirect')] : []),
+  // aceita vários: --extra-redirect a --extra-redirect b
+  ...args.reduce((acc, valor, indice) => {
+    if (valor === '--extra-redirect' && args[indice + 1]) acc.push(args[indice + 1]);
+    return acc;
+  }, []),
 ];
 
+/**
+ * A lista de redirecionamento é somada, nunca substituída.
+ *
+ * Trocar de domínio é um processo com dois lados: o DNS leva horas para
+ * propagar, e nesse meio-tempo parte das pessoas ainda chega pelo endereço
+ * antigo. Apagar o antigo da lista deixaria o login dessas pessoas quebrado
+ * exatamente durante a janela mais frágil.
+ */
+const atual = await fetch(`https://api.supabase.com/v1/projects/${ref}/config/auth`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+if (!atual.ok) {
+  console.error(`Não consegui ler a configuração atual (${atual.status}).`);
+  process.exit(1);
+}
+
+const listaAtual = String((await atual.json()).uri_allow_list ?? '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+
 const config = {
-  site_url: siteUrl,
-  uri_allow_list: redirectUrls.join(','),
+  uri_allow_list: [...new Set([...listaAtual, ...redirectUrls])].join(','),
 };
+
+// só troca o endereço principal quando ele é informado de propósito
+if (flag('site-url')) {
+  config.site_url = siteUrl;
+}
 
 // O Google é opcional: sem o JSON, só as URLs são configuradas.
 const googleFile = process.env.GOOGLE_CLIENT_SECRET_FILE;
