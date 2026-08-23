@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, List } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
@@ -61,7 +61,13 @@ export function MonthCalendar() {
   return (
     <div className="flex flex-col gap-6 py-6">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight">Calendário</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-extrabold tracking-tight">Calendário</h1>
+          <ButtonLink href="/historico" variant="ghost" size="sm" className="h-9">
+            <List aria-hidden className="size-4" />
+            Lista
+          </ButtonLink>
+        </div>
 
         <div className="flex items-center gap-1">
           <Button

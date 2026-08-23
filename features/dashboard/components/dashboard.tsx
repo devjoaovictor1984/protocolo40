@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, ChevronRight, Play, Timer } from 'lucide-react';
+import { Check, ChevronRight, ListChecks, Play, Timer } from 'lucide-react';
 
 import { ProgressRing } from '@/components/progress-ring';
 import { EmptyState, StatCard, StreakBadge } from '@/components/stats';
@@ -108,12 +108,21 @@ function TodayCard({ day, goalSeconds }: { day: number; goalSeconds: number }) {
         </span>
       </ProgressRing>
 
-      <ButtonLink href="/treino/hoje?auto=1"
-        className="h-16 w-full text-base font-bold"
-      >
-        <Play aria-hidden className="size-5" />
-        COMEÇAR TREINO
-      </ButtonLink>
+      <div className="flex w-full flex-col items-center gap-3">
+        <ButtonLink href="/treino/hoje?auto=1" className="h-16 w-full text-base font-bold">
+          <Play aria-hidden className="size-5" />
+          COMEÇAR TREINO
+        </ButtonLink>
+
+        {/* quem não sabe o que fazer hoje precisa de um caminho visível */}
+        <Link
+          href="/treinos"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm underline underline-offset-4"
+        >
+          <ListChecks aria-hidden className="size-3.5" />
+          Escolher um treino pronto
+        </Link>
+      </div>
     </section>
   );
 }

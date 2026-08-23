@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, CloudOff, History, Search } from 'lucide-react';
+import { CalendarDays, ChevronRight, CloudOff, History, Search } from 'lucide-react';
 
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
@@ -81,7 +81,13 @@ export function HistoryList() {
   return (
     <div className="flex flex-col gap-6 py-6">
       <header className="flex flex-col gap-4">
-        <h1 className="text-2xl font-extrabold tracking-tight">Histórico</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-extrabold tracking-tight">Histórico</h1>
+          <ButtonLink href="/calendario" variant="outline" size="sm" className="h-10">
+            <CalendarDays aria-hidden className="size-4" />
+            Calendário
+          </ButtonLink>
+        </div>
 
         <div className="relative">
           <Search aria-hidden className="text-muted-foreground absolute top-3.5 left-3 size-4" />

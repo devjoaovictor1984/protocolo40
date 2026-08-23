@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Camera, ChevronRight, LineChart as LineChartIcon } from 'lucide-react';
+import { Camera, ChevronRight, LineChart as LineChartIcon, Scale } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { BarChart, LineChart } from '@/components/charts';
@@ -168,6 +168,18 @@ export function ProgressOverview() {
           />
         </section>
       ) : null}
+
+      <Link
+        href="/medidas"
+        className="border-border hover:bg-muted flex items-center gap-4 rounded-xl border p-4 transition-colors"
+      >
+        <Scale aria-hidden className="text-primary size-5" />
+        <span className="flex-1">
+          <span className="block font-semibold">Peso e medidas</span>
+          <span className="text-muted-foreground text-sm">Registrar e ver o histórico</span>
+        </span>
+        <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+      </Link>
 
       <Link
         href="/evolucao/comparar"

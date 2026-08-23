@@ -7,11 +7,13 @@ import {
   CalendarDays,
   Camera,
   History,
-  LineChart,
   Home,
+  LineChart,
+  ListChecks,
   Plus,
   Scale,
   Timer,
+  Trophy,
   User,
 } from 'lucide-react';
 
@@ -47,39 +49,86 @@ const PRIMARY: NavItem[] = [
 ];
 
 const SECONDARY: NavItem[] = [
-  { href: '/treinos', label: 'Treinos', icon: Timer },
+  { href: '/treinos', label: 'Treinos', icon: ListChecks },
   { href: '/calendario', label: 'Calendário', icon: CalendarDays },
   { href: '/medidas', label: 'Medidas', icon: Scale },
+  { href: '/recordes', label: 'Recordes', icon: Trophy },
 ];
 
-const QUICK_ACTIONS = [
+/**
+ * O que o `+` oferece.
+ *
+ * Dividido em duas perguntas, porque são momentos diferentes: vou treinar
+ * agora, ou vou anotar algo que já aconteceu. No celular esta folha também é o
+ * caminho para as telas que não cabem nos cinco itens da barra.
+ */
+const QUICK_ACTIONS: {
+  grupo: string;
+  itens: {
+    href: string;
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+    primary?: boolean;
+  }[];
+}[] = [
   {
-    href: '/treino/hoje',
-    label: 'Começar treino agora',
-    description: 'Abre o cronômetro em 20:00',
-    icon: Timer,
-    primary: true,
+    grupo: 'Treinar agora',
+    itens: [
+      {
+        href: '/treino/hoje?auto=1',
+        label: 'Começar treino livre',
+        description: 'Abre o cronômetro em 20:00',
+        icon: Timer,
+        primary: true,
+      },
+      {
+        href: '/treinos',
+        label: 'Escolher um treino',
+        description: 'Circuitos prontos de 20 minutos e os seus salvos',
+        icon: ListChecks,
+      },
+    ],
   },
   {
-    href: '/treino/novo',
-    label: 'Registrar treino passado',
-    description: 'Já treinou e quer anotar depois',
-    icon: History,
-    primary: false,
+    grupo: 'Registrar',
+    itens: [
+      {
+        href: '/treino/novo',
+        label: 'Treino passado',
+        description: 'Já treinou e quer anotar depois',
+        icon: History,
+      },
+      {
+        href: '/medidas?novo=1',
+        label: 'Peso e medidas',
+        description: 'Só a data é obrigatória',
+        icon: Scale,
+      },
+      {
+        href: '/evolucao/fotos?nova=1',
+        label: 'Foto de evolução',
+        description: 'Fica privada até você decidir o contrário',
+        icon: Camera,
+      },
+    ],
   },
   {
-    href: '/medidas?novo=1',
-    label: 'Registrar peso',
-    description: 'Peso e medidas de hoje',
-    icon: Scale,
-    primary: false,
-  },
-  {
-    href: '/evolucao/fotos?nova=1',
-    label: 'Foto de evolução',
-    description: 'Fica privada até você decidir o contrário',
-    icon: Camera,
-    primary: false,
+    grupo: 'Ver',
+    itens: [
+      {
+        href: '/calendario',
+        label: 'Calendário',
+        description: 'O mês inteiro, dia a dia',
+        icon: CalendarDays,
+      },
+      {
+        href: '/recordes',
+        label: 'Recordes',
+        description: 'Suas melhores marcas',
+        icon: Trophy,
+      },
+    ],
   },
 ];
 
@@ -96,28 +145,36 @@ function QuickActions({ children }: { children: React.ReactNode }) {
       <DrawerTrigger render={children as React.ReactElement} />
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>O que você quer registrar?</DrawerTitle>
+          <DrawerTitle>O que você quer fazer?</DrawerTitle>
         </DrawerHeader>
 
-        <nav className="flex flex-col gap-2 px-4 pb-8">
-          {QUICK_ACTIONS.map(({ href, label, description, icon: Icon, primary }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className={cn(
-                'flex items-center gap-4 rounded-xl border p-4 transition-colors',
-                primary
-                  ? 'border-primary/40 bg-primary/8 hover:bg-primary/12'
-                  : 'border-border hover:bg-muted',
-              )}
-            >
-              <Icon aria-hidden className={cn('size-5 shrink-0', primary && 'text-primary')} />
-              <span className="flex flex-col">
-                <span className="font-semibold">{label}</span>
-                <span className="text-muted-foreground text-sm">{description}</span>
-              </span>
-            </Link>
+        <nav className="flex max-h-[70vh] flex-col gap-5 overflow-y-auto px-4 pb-8">
+          {QUICK_ACTIONS.map(({ grupo, itens }) => (
+            <section key={grupo} className="flex flex-col gap-2">
+              <h3 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+                {grupo}
+              </h3>
+
+              {itens.map(({ href, label, description, icon: Icon, primary }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    'flex min-h-16 items-center gap-4 rounded-xl border p-4 transition-colors',
+                    primary
+                      ? 'border-primary/40 bg-primary/8 hover:bg-primary/12'
+                      : 'border-border hover:bg-muted',
+                  )}
+                >
+                  <Icon aria-hidden className={cn('size-5 shrink-0', primary && 'text-primary')} />
+                  <span className="flex flex-col">
+                    <span className="font-semibold">{label}</span>
+                    <span className="text-muted-foreground text-sm">{description}</span>
+                  </span>
+                </Link>
+              ))}
+            </section>
           ))}
         </nav>
       </DrawerContent>
@@ -142,7 +199,7 @@ export function BottomNav() {
           <QuickActions>
             <button
               type="button"
-              aria-label="Registrar treino, peso ou foto"
+              aria-label="Começar treino, registrar ou navegar"
               className="bg-primary text-primary-foreground flex size-13 items-center justify-center rounded-2xl shadow-lg transition-transform active:scale-95"
             >
               <Plus aria-hidden className="size-6" />
@@ -206,9 +263,22 @@ export function SideNav() {
           ))}
         </div>
 
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col gap-2">
+          {/* as mesmas ações do botão central do celular: sem isto, registrar um
+              treino passado ou uma foto não teria caminho no desktop */}
+          <QuickActions>
+            <button
+              type="button"
+              aria-label="Começar treino, registrar ou navegar"
+              className="border-border hover:bg-muted flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors"
+            >
+              <Plus aria-hidden className="size-4" />
+              Registrar
+            </button>
+          </QuickActions>
+
           <Link
-            href="/treino/hoje"
+            href="/treino/hoje?auto=1"
             className="bg-primary text-primary-foreground flex h-12 items-center justify-center gap-2 rounded-xl font-semibold transition-opacity hover:opacity-90"
           >
             <Timer aria-hidden className="size-4" />
