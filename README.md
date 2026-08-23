@@ -12,7 +12,8 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · 
 
 ## Estado atual
 
-**Fase 1 — MVP.** O produto existe: dá para treinar, registrar, acompanhar e comparar.
+**Fase 1 — MVP, no ar em [protocolo40.vercel.app](https://protocolo40.vercel.app).**
+Dá para treinar, registrar, acompanhar e comparar.
 
 | Entregue | O que é |
 |---|---|
@@ -29,6 +30,7 @@ Next.js 16 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Supabase · 
 | Cronômetro | Baseado em timestamp: sobrevive a segundo plano, tela bloqueada e fechar o app |
 | Telas | Onboarding, Dia 1, dashboard, treino, histórico, calendário, evolução, fotos, comparação, medidas, recordes, perfil, privacidade |
 | Gráficos | SVG próprio, paleta validada em claro e escuro, tabela equivalente em cada um |
+| Deploy | Vercel, com Google Login e as URLs de redirecionamento configuradas |
 
 Próximo: **Fase 2 — Evolução** (marcos, estatísticas mais finas, melhorias de cache e sync).
 
