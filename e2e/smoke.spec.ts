@@ -23,7 +23,7 @@ test.describe('fundação', () => {
     expect(manifest.ok()).toBeTruthy();
 
     const body = await manifest.json();
-    expect(body.short_name).toBe('P40');
+    expect(body.short_name).toBe('P20X');
     expect(body.display).toBe('standalone');
 
     const icon = await request.get('/icons/512');

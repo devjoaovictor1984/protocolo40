@@ -21,29 +21,29 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
   title: {
-    default: 'PROTOCOLO40 — 20 minutos. Todos os dias.',
-    template: '%s · PROTOCOLO40',
+    default: 'P20X — 20 minutos. Todos os dias.',
+    template: '%s · P20X',
   },
   description:
     'Treine, registre e acompanhe sua evolução um dia de cada vez. 20 minutos por dia, sequência, fotos de progresso e recordes em um só lugar.',
-  applicationName: 'Protocolo40',
+  applicationName: 'P20X',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    title: 'P40',
+    title: 'P20X',
     statusBarStyle: 'black-translucent',
   },
   formatDetection: { telephone: false },
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    siteName: 'PROTOCOLO40',
-    title: 'PROTOCOLO40 — 20 minutos. Todos os dias.',
+    siteName: 'P20X',
+    title: 'P20X — 20 minutos. Todos os dias.',
     description: 'Treine, registre e acompanhe sua evolução um dia de cada vez.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PROTOCOLO40 — 20 minutos. Todos os dias.',
+    title: 'P20X — 20 minutos. Todos os dias.',
     description: 'Treine, registre e acompanhe sua evolução um dia de cada vez.',
   },
 };

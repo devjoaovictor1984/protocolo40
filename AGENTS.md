@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# PROTOCOLO40
+# P20X
 
 **20 minutos. Todos os dias.** Plataforma de treino, consistência e evolução física.
 A arquitetura completa está em `docs/ARQUITETURA.md` — leia antes de mudanças estruturais.

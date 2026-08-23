@@ -2,23 +2,70 @@ import { Flame } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-/** Número grande com rótulo. Usado nas faixas de resumo. */
+/**
+ * Número com rótulo.
+ *
+ * A anatomia é fixa: o rótulo lê primeiro, o ícone ancora à direita, e o número
+ * domina embaixo com a unidade em texto menor ao lado. Repetir essa ordem em
+ * todos os cards é o que faz uma faixa de estatísticas ser lida de relance.
+ */
 export function StatCard({
   value,
   label,
+  unit,
   hint,
+  icon: Icon,
   className,
 }: {
   value: React.ReactNode;
   label: string;
+  unit?: string;
   hint?: string;
+  icon?: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'border-border bg-card flex flex-col justify-between gap-3 rounded-2xl border p-4',
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-muted-foreground text-sm leading-tight font-medium text-balance">
+          {label}
+        </span>
+        {Icon ? (
+          <span className="bg-secondary text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-full">
+            <Icon aria-hidden className="size-4" />
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex items-baseline gap-1.5">
+        <span className="tnum text-3xl leading-none font-extrabold tracking-tight">{value}</span>
+        {unit ? <span className="text-muted-foreground text-sm">{unit}</span> : null}
+      </div>
+
+      {hint ? <span className="text-muted-foreground/80 -mt-1 text-xs">{hint}</span> : null}
+    </div>
+  );
+}
+
+/** Versão sem moldura, para faixas dentro de um card que já tem borda. */
+export function StatInline({
+  value,
+  label,
+  className,
+}: {
+  value: React.ReactNode;
+  label: string;
   className?: string;
 }) {
   return (
     <div className={cn('flex flex-col gap-0.5', className)}>
       <span className="tnum text-2xl leading-none font-extrabold tracking-tight">{value}</span>
       <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      {hint ? <span className="text-muted-foreground/80 text-xs">{hint}</span> : null}
     </div>
   );
 }

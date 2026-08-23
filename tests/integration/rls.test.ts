@@ -34,8 +34,8 @@ describe.skipIf(!configured)('RLS', () => {
     : (null as unknown as Client);
 
   const password = `p40-teste-${crypto.randomUUID()}`;
-  const emailA = `rls-a-${crypto.randomUUID()}@protocolo40.test`;
-  const emailB = `rls-b-${crypto.randomUUID()}@protocolo40.test`;
+  const emailA = `rls-a-${crypto.randomUUID()}@p20x.test`;
+  const emailB = `rls-b-${crypto.randomUUID()}@p20x.test`;
 
   let userA = '';
   let userB = '';

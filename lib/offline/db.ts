@@ -9,12 +9,18 @@ import type {
 } from '@/types/offline';
 
 /**
- * Banco local do PROTOCOLO40.
+ * Banco local do P20X.
  *
  * É aqui que o treino nasce. A rede é um detalhe que acontece depois: nada no
  * fluxo de treinar depende de estar online.
  */
 
+/**
+ * O nome do banco local não acompanha o nome do produto de propósito.
+ *
+ * Renomear criaria um banco vazio e deixaria órfão tudo que ainda não subiu —
+ * inclusive treinos pendentes de quem estava offline na hora da troca.
+ */
 const DB_NAME = 'p40';
 const DB_VERSION = 1;
 

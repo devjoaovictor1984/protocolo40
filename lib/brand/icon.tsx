@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 /**
- * Marca do PROTOCOLO40 em forma de ícone.
+ * Marca do P20X em forma de ícone.
  *
  * Um anel de progresso incompleto sobre fundo escuro: a mesma figura que o
  * cronômetro desenha na tela do treino. Sem texto, para continuar legível a

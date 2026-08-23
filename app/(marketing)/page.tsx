@@ -6,13 +6,13 @@ import { ButtonLink } from '@/components/ui/button-link';
 import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
-  title: 'PROTOCOLO40 — 20 minutos. Todos os dias.',
+  title: 'P20X — 20 minutos. Todos os dias.',
   description:
     'Treine, registre e acompanhe sua evolução um dia de cada vez. Cronômetro, sequência, fotos de progresso e recordes em um só lugar.',
   alternates: { canonical: '/' },
   openGraph: {
     url: '/',
-    title: 'PROTOCOLO40 — 20 minutos. Todos os dias.',
+    title: 'P20X — 20 minutos. Todos os dias.',
     description: 'Treine, registre e acompanhe sua evolução um dia de cada vez.',
   },
 };
@@ -41,7 +41,7 @@ export default function LandingPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'PROTOCOLO40',
+    name: 'P20X',
     applicationCategory: 'HealthApplication',
     operatingSystem: 'Web, Android, iOS',
     url: env.siteUrl,
@@ -115,7 +115,7 @@ export default function LandingPage() {
 
             <p className="text-muted-foreground text-lg">
               Uma foto por dia vira um vídeo no fim do trimestre. Você não precisa lembrar de nada —
-              o PROTOCOLO40 guarda tudo em ordem, e as fotos são privadas até você decidir o
+              o P20X guarda tudo em ordem, e as fotos são privadas até você decidir o
               contrário.
             </p>
 
@@ -157,7 +157,7 @@ export default function LandingPage() {
       <footer className="border-border text-muted-foreground border-t px-5 py-8 text-sm">
         <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Wordmark href={null} showTagline />
-          <p>© {new Date().getFullYear()} PROTOCOLO40</p>
+          <p>© {new Date().getFullYear()} P20X</p>
         </div>
       </footer>
     </div>

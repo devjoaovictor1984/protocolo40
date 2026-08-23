@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Camera, ChevronRight, Settings, Trophy } from 'lucide-react';
+import {
+  CalendarCheck,
+  Camera,
+  ChevronRight,
+  Clock,
+  Flame,
+  Settings,
+  Trophy,
+} from 'lucide-react';
 
 import { StatCard, StreakBadge } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -70,10 +78,15 @@ export default async function PerfilPage() {
       {profile.bio ? <p className="text-sm">{profile.bio}</p> : null}
 
       <section aria-label="Seus números" className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard value={stats.total_days} label="dias treinados" />
-        <StatCard value={Math.round(Number(stats.total_seconds) / 60)} label="minutos" />
-        <StatCard value={stats.current_streak} label="sequência atual" />
-        <StatCard value={stats.longest_streak} label="maior sequência" />
+        <StatCard value={stats.total_days} unit="dias" label="Dias treinados" icon={CalendarCheck} />
+        <StatCard
+          value={Math.round(Number(stats.total_seconds) / 60)}
+          unit="min"
+          label="Tempo total"
+          icon={Clock}
+        />
+        <StatCard value={stats.current_streak} unit="dias" label="Sequência atual" icon={Flame} />
+        <StatCard value={stats.longest_streak} unit="dias" label="Maior sequência" icon={Trophy} />
       </section>
 
       <p className="text-muted-foreground text-sm">

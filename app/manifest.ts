@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Protocolo40',
-    short_name: 'P40',
+    name: 'P20X',
+    short_name: 'P20X',
     description: '20 minutos. Todos os dias. Treine, registre e acompanhe sua evolução.',
     lang: 'pt-BR',
     dir: 'ltr',

@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Camera, ChevronRight, LineChart as LineChartIcon, Scale } from 'lucide-react';
+import {
+  CalendarCheck,
+  Camera,
+  ChevronRight,
+  Clock,
+  Flame,
+  LineChart as LineChartIcon,
+  Scale,
+  Trophy,
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { BarChart, LineChart } from '@/components/charts';
@@ -103,10 +112,10 @@ export function ProgressOverview() {
       </header>
 
       <section aria-label="Resumo" className="grid grid-cols-4 gap-3">
-        <StatCard value={days.length} label="dias" />
-        <StatCard value={totalMinutes} label="minutos" />
-        <StatCard value={streak.current} label="sequência" />
-        <StatCard value={streak.longest} label="recorde" />
+        <StatCard value={days.length} unit="dias" label="Treinados" icon={CalendarCheck} />
+        <StatCard value={totalMinutes} unit="min" label="Tempo" icon={Clock} />
+        <StatCard value={streak.current} unit="dias" label="Sequência" icon={Flame} />
+        <StatCard value={streak.longest} unit="dias" label="Recorde" icon={Trophy} />
       </section>
 
       <LineChart

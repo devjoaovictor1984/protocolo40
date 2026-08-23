@@ -28,7 +28,7 @@ const admin = (path: string, init: RequestInit = {}) =>
   });
 
 async function signIn(context: BrowserContext, baseURL: string) {
-  const email = `avatar-${crypto.randomUUID()}@protocolo40.test`;
+  const email = `avatar-${crypto.randomUUID()}@p20x.test`;
   const password = `Teste-${crypto.randomUUID()}`;
 
   const { id } = await (

@@ -24,7 +24,7 @@ const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const REF = process.env.SUPABASE_PROJECT_REF;
 const APP = process.env.SMOKE_BASE_URL ?? 'http://localhost:3000';
 
-const email = `e2e-${crypto.randomUUID()}@protocolo40.test`;
+const email = `e2e-${crypto.randomUUID()}@p20x.test`;
 const password = `Teste-${crypto.randomUUID()}`;
 let userId = '';
 

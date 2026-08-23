@@ -19,7 +19,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
           color: '#eceef2',
         }}
       >
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>PROTOCOLO40 está fora do ar</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>P20X está fora do ar</h1>
         <p style={{ color: '#8e96a5', maxWidth: '24rem' }}>
           Recarregue a página. Se continuar assim, tente de novo em alguns minutos.
         </p>

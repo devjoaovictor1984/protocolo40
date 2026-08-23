@@ -1,7 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarPlus, Check, ChevronRight, ListChecks, Play, Timer } from 'lucide-react';
+import {
+  CalendarPlus,
+  Check,
+  ChevronRight,
+  Clock,
+  Dumbbell,
+  Flame,
+  ListChecks,
+  Play,
+  Timer,
+} from 'lucide-react';
 
 import { ProgressRing } from '@/components/progress-ring';
 import { EmptyState, StatCard, StreakBadge } from '@/components/stats';
@@ -13,7 +23,14 @@ import { useSession, useToday } from '@/features/session/session-context';
 import { WeightRow } from '@/features/dashboard/components/weight-row';
 import { cn } from '@/lib/utils';
 import { formatClock, formatDurationShort } from '@/services/duration';
-import { greeting, monthLabel, monthGrid, relativeDay, WEEKDAY_LABELS, WEEKDAY_NAMES } from '@/services/calendar';
+import {
+  addDays,
+  formatDay,
+  greeting,
+  relativeDay,
+  startOfWeek,
+  WEEKDAY_LABELS,
+} from '@/services/calendar';
 import type { LocalWorkout } from '@/types/offline';
 
 /**
@@ -59,9 +76,9 @@ export function Dashboard() {
       )}
 
       {isLoading ? (
-        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="h-28 w-full rounded-2xl" />
       ) : (
-        <MonthStrip today={today} days={data!.days} />
+        <WeekStrip today={today} days={data!.days} />
       )}
 
       {!isLoading && data!.lastWorkout ? (
@@ -99,9 +116,14 @@ export function Dashboard() {
 
       {!isLoading && data!.workouts.length > 0 ? (
         <section aria-label="Seus números" className="grid grid-cols-3 gap-4">
-          <StatCard value={data!.workouts.length} label="treinos" />
-          <StatCard value={Math.round(data!.totalSeconds / 60)} label="minutos" />
-          <StatCard value={data!.streak.longest} label="maior sequência" />
+          <StatCard value={data!.workouts.length} label="Treinos" icon={Dumbbell} />
+          <StatCard
+            value={Math.round(data!.totalSeconds / 60)}
+            unit="min"
+            label="Tempo total"
+            icon={Clock}
+          />
+          <StatCard value={data!.streak.longest} unit="dias" label="Maior sequência" icon={Flame} />
         </section>
       ) : null}
     </div>
@@ -173,55 +195,62 @@ function DoneCard({ workouts, day }: { workouts: LocalWorkout[]; day: number }) 
   );
 }
 
-function MonthStrip({ today, days }: { today: string; days: string[] }) {
+/**
+ * A semana corrente, de segunda a domingo.
+ *
+ * O mes inteiro respondia "como foi meu mes", que nao e a pergunta da tela de
+ * hoje. Sete dias cabem numa linha, mostram a sequencia viva e deixam espaco
+ * para o que importa: o botao de comecar.
+ */
+function WeekStrip({ today, days }: { today: string; days: string[] }) {
   const trained = new Set(days);
-  const cells = monthGrid(today);
+  const inicio = startOfWeek(today);
+  const semana = Array.from({ length: 7 }, (_, index) => addDays(inicio, index));
 
   return (
-    <section aria-label={`Calendário de ${monthLabel(today)}`} className="flex flex-col gap-3">
+    <section aria-label="Sua semana" className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xs font-bold tracking-[0.18em] uppercase">{monthLabel(today)}</h2>
+        <h2 className="text-xs font-bold tracking-[0.18em] uppercase">Sua semana</h2>
         <Link
           href="/calendario"
           className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-sm"
         >
-          Ver tudo
+          Ver o mes
           <ChevronRight aria-hidden className="size-3.5" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5">
-        {WEEKDAY_LABELS.map((label, index) => (
-          <span
-            key={`${label}-${index}`}
-            aria-hidden
-            className="text-muted-foreground text-center text-[11px] font-semibold"
-          >
-            {label}
-          </span>
-        ))}
-
-        {cells.map(({ day, inMonth }) => {
+      <div className="border-border bg-card grid grid-cols-7 gap-1 rounded-2xl border p-3">
+        {semana.map((day, index) => {
           const isToday = day === today;
           const done = trained.has(day);
-          const label = `${day.slice(8)} de ${WEEKDAY_NAMES[cells.findIndex((c) => c.day === day) % 7]}`;
+          const futuro = day > today;
 
           return (
-            <span
-              key={day}
-              title={done ? `${label} — treinou` : label}
-              className={cn(
-                'flex aspect-square items-center justify-center rounded-lg text-xs font-medium',
-                !inMonth && 'opacity-30',
-                done && 'bg-primary text-primary-foreground',
-                !done && isToday && 'border-primary text-primary border-2',
-                !done && !isToday && 'bg-secondary text-muted-foreground',
+            <div key={day} className="flex flex-col items-center gap-1.5">
+              <span aria-hidden className="text-muted-foreground text-[11px] font-semibold">
+                {WEEKDAY_LABELS[index]}
+              </span>
+
+              <span
+                title={`${formatDay(day)} - ${done ? 'treinou' : futuro ? 'ainda vem' : 'sem treino'}`}
+                className={cn(
+                  'tnum flex size-9 items-center justify-center rounded-full text-sm font-semibold',
+                  done && 'bg-primary text-primary-foreground',
+                  !done && isToday && 'border-primary text-primary border-2',
+                  !done && !isToday && 'text-muted-foreground',
+                  futuro && 'opacity-40',
+                )}
+              >
+                {Number(day.slice(8))}
+              </span>
+
+              {done ? (
+                <span aria-hidden className="bg-primary size-1 rounded-full" />
+              ) : (
+                <span aria-hidden className="size-1" />
               )}
-            >
-              {/* o dia treinado tem preenchimento e o de hoje tem contorno:
-                  a diferença não depende só de cor */}
-              {Number(day.slice(8))}
-            </span>
+            </div>
           );
         })}
       </div>

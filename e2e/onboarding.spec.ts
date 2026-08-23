@@ -29,7 +29,7 @@ const admin = (path: string, init: RequestInit = {}) =>
 
 /** Monta o cookie de sessão no formato que o @supabase/ssr lê. */
 async function signIn(context: BrowserContext, baseURL: string) {
-  const email = `e2e-${crypto.randomUUID()}@protocolo40.test`;
+  const email = `e2e-${crypto.randomUUID()}@p20x.test`;
   const password = `Teste-${crypto.randomUUID()}`;
 
   const created = await admin('/auth/v1/admin/users', {

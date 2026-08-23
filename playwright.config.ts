@@ -10,7 +10,7 @@ if (existsSync('.env.local')) {
  * Testes de ponta a ponta.
  *
  * Mobile-first também aqui: o projeto padrão é um telefone, porque é onde o
- * PROTOCOLO40 é realmente usado — durante o treino, com uma mão.
+ * P20X é realmente usado — durante o treino, com uma mão.
  *
  * Na primeira execução, instale os navegadores: `npx playwright install`.
  */

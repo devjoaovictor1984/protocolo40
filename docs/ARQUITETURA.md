@@ -1,4 +1,4 @@
-# PROTOCOLO40 — Documento de Arquitetura (Entrega 1)
+# P20X — Documento de Arquitetura (Entrega 1)
 
 > **20 minutos. Todos os dias.**
 > Arquitetura aprovada em 22/08/2026. **Fases 0 e 1 concluídas** — a Fase 2 é a próxima.
@@ -516,7 +516,7 @@ Sempre com ícone e texto, nunca só por cor (§55).
 
 ## 9. PWA
 
-**Manifest** (`app/manifest.ts`): `name: "Protocolo40"` · `short_name: "P40"` · `display: standalone` · `orientation: portrait` · `start_url: /app` · `theme_color` · `background_color` · ícones 192/512 + `maskable` · `shortcuts: [{ name: "Começar treino", url: "/treino/hoje" }]`.
+**Manifest** (`app/manifest.ts`): `name: "P20X"` · `short_name: "P20X"` · `display: standalone` · `orientation: portrait` · `start_url: /app` · `theme_color` · `background_color` · ícones 192/512 + `maskable` · `shortcuts: [{ name: "Começar treino", url: "/treino/hoje" }]`.
 
 **Serwist** (`app/sw.ts` + `serwist.config.mjs`). O service worker é compilado num **passo de build próprio**, `next build && serwist build`, e não como plugin de bundler: a partir do Next 16 o Turbopack é o padrão, e o caminho de plugin do Serwist ainda depende de webpack. O registro no cliente fica com o `SerwistProvider`.
 
@@ -581,7 +581,7 @@ Projetado em 360 / 390 / 430. `sm 640` → listas em 2 colunas · `md 768` → c
 
 ```
 ┌─────────────────────────────┐
-│ PROTOCOLO40          ✓ sync │
+│ P20X          ✓ sync │
 │ Bom dia, João               │
 │ 🔥 15 dias seguidos         │
 │ ┌─────────────────────────┐ │
@@ -715,4 +715,4 @@ Perfil público · seguir e deixar de seguir · feed dos seguidos · curtidas e 
 
 1. **Host do worker de vídeo (Fase 3).** Recomendação: container Node em Railway ou Fly.io fazendo *poll* em `video_exports`. Alternativa sem infraestrutura: `ffmpeg.wasm` no cliente — funciona até ~60 fotos e trava acima disso. A decisão só é necessária na Fase 3.
 2. **Supabase Cloud vs. local (Docker).** Cloud acelera a Fase 0; local dá um ciclo de migrations mais confortável. Recomendação: **Cloud + Supabase CLI**, com migrations versionadas no repositório desde o primeiro dia.
-3. **Domínio e OAuth.** `protocolo40.com` precisa estar registrado para configurar o callback do Google fora do `localhost`.
+3. **Domínio e OAuth.** `p20x.com.br` precisa estar registrado para configurar o callback do Google fora do `localhost`.

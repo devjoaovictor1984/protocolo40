@@ -28,7 +28,7 @@ export function Wordmark({
     <span className="flex items-center gap-2.5">
       <BrandMark />
       <span className="flex flex-col leading-none">
-        <span className="text-[15px] font-extrabold tracking-tight">PROTOCOLO40</span>
+        <span className="text-[15px] font-extrabold tracking-tight">P20X</span>
         {showTagline ? (
           <span className="text-muted-foreground mt-1 text-[11px] font-medium tracking-wide">
             20 minutos. Todos os dias.

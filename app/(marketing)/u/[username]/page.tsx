@@ -45,13 +45,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const name = profile.full_name ?? profile.username;
 
   return {
-    title: `${name} no PROTOCOLO40`,
+    title: `${name} no P20X`,
     description: profile.bio ?? `${name} está construindo consistência, 20 minutos por dia.`,
     alternates: { canonical: `/u/${profile.username}` },
     openGraph: {
       type: 'profile',
       url: `/u/${profile.username}`,
-      title: `${name} no PROTOCOLO40`,
+      title: `${name} no P20X`,
       description: profile.bio ?? '20 minutos. Todos os dias.',
     },
   };
@@ -101,9 +101,9 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
         {stats && stats.total_days > 0 ? (
           <>
             <section className="grid grid-cols-3 gap-4">
-              <StatCard value={stats.total_days} label="dias treinados" />
-              <StatCard value={stats.current_streak} label="sequência" />
-              <StatCard value={stats.longest_streak} label="maior sequência" />
+              <StatCard value={stats.total_days} unit="dias" label="Dias treinados" />
+              <StatCard value={stats.current_streak} unit="dias" label="Sequência" icon={Flame} />
+              <StatCard value={stats.longest_streak} unit="dias" label="Maior sequência" />
             </section>
 
             {stats.current_streak > 0 ? (
@@ -120,7 +120,7 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
         )}
 
         <p className="text-muted-foreground text-sm">
-          No PROTOCOLO40 desde {formatDay(profile.protocol_started_on)}
+          No P20X desde {formatDay(profile.protocol_started_on)}
         </p>
 
         <section className="border-border mt-auto rounded-2xl border p-6 text-center">

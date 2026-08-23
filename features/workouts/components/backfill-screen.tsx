@@ -27,7 +27,7 @@ import {
 /**
  * Registrar dias que já passaram.
  *
- * Quem chega ao PROTOCOLO40 depois de já ter começado precisa poder trazer o
+ * Quem chega ao P20X depois de já ter começado precisa poder trazer o
  * histórico junto — a sequência é o coração do produto, e começar do zero
  * quando você já tem 16 dias é desanimador.
  *

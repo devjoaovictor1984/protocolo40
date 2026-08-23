@@ -6,7 +6,7 @@ import { Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * Gráficos do PROTOCOLO40.
+ * Gráficos do P20X.
  *
  * Todos são de série única: o título nomeia a série, então não existe legenda —
  * e nenhuma identidade depende de cor. Cada gráfico traz uma tabela equivalente

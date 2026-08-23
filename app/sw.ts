@@ -11,7 +11,7 @@ declare global {
 declare const self: ServiceWorkerGlobalScope;
 
 /**
- * Service worker do PROTOCOLO40.
+ * Service worker do P20X.
  *
  * A regra que organiza tudo: o que é necessário para treinar precisa abrir sem
  * rede; o que é social ou sensível nunca entra em cache.
