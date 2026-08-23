@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, LifeBuoy, Shield } from 'lucide-react';
 
 import {
   DailyGoalField,
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ConfiguracoesPage() {
-  const { settings } = await requireSession();
+  const { profile, settings } = await requireSession();
 
   return (
     <div className="flex flex-col gap-8 py-6">
@@ -60,6 +60,32 @@ export default async function ConfiguracoesPage() {
         </Link>
 
         <SignOutButton />
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+          Suporte
+        </h2>
+
+        <Link
+          href="/ajuda"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <LifeBuoy aria-hidden className="text-muted-foreground size-5" />
+          <span className="flex-1 font-medium">Ajuda e sugestões</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
+        {profile.is_admin ? (
+          <Link
+            href="/admin"
+            className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+          >
+            <Shield aria-hidden className="text-muted-foreground size-5" />
+            <span className="flex-1 font-medium">Administração</span>
+            <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+          </Link>
+        ) : null}
       </section>
     </div>
   );

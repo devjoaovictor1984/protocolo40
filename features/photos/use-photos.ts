@@ -26,7 +26,16 @@ export type GalleryPhoto = {
   weightKg: number | null;
   notes: string | null;
   pending: boolean;
-  /** miniatura pronta para exibir */
+  /**
+   * Miniatura local, guardada como Blob e nunca como object URL.
+   *
+   * Uma object URL vive presa ao componente que a criou: quando a galeria sai
+   * de cena e revoga as suas, quem estivesse lendo o mesmo cache do React Query
+   * — a tela de comparar, por exemplo — ficava com URLs mortas e sem imagem.
+   * O Blob é reutilizável; a URL é criada por quem vai exibir.
+   */
+  thumbBlob: Blob | null;
+  /** miniatura remota, já assinada */
   thumbUrl: string | null;
   /** caminho no storage, para assinar a versão grande sob demanda */
   storagePath: string | null;
@@ -36,18 +45,13 @@ export type GalleryPhoto = {
 
 export function usePhotos() {
   const { userId } = useSession();
-  const [objectUrls, setObjectUrls] = useState<string[]>([]);
 
-  const query = useQuery({
+  return useQuery({
     queryKey: ['photos', userId],
     queryFn: async (): Promise<GalleryPhoto[]> => {
       const local = await localPhotos(userId);
-      const created: string[] = [];
 
       const localItems: GalleryPhoto[] = local.map((photo) => {
-        const url = URL.createObjectURL(photo.thumbnail);
-        created.push(url);
-
         return {
           key: photo.client_id,
           clientId: photo.client_id,
@@ -58,7 +62,8 @@ export function usePhotos() {
           weightKg: photo.weight_kg,
           notes: photo.notes,
           pending: photo.sync_state !== 'synced',
-          thumbUrl: url,
+          thumbBlob: photo.thumbnail,
+          thumbUrl: null,
           storagePath: null,
           fullBlob: photo.blob,
         };
@@ -91,29 +96,41 @@ export function usePhotos() {
         weightKg: row.weight_kg,
         notes: row.notes,
         pending: false,
+        thumbBlob: null,
         thumbUrl: signed.get(row.thumbnail_path) ?? null,
         storagePath: row.storage_path,
         fullBlob: null,
       }));
 
-      setObjectUrls((current) => {
-        for (const url of current) URL.revokeObjectURL(url);
-        return created;
-      });
-
       return [...localItems, ...remoteItems].sort((a, b) => b.takenAt.localeCompare(a.takenAt));
     },
     staleTime: 60_000,
   });
+}
 
-  // libera as URLs de blob quando o componente sai de cena
+/**
+ * URL exibível de um Blob, criada e revogada junto com o componente.
+ *
+ * Cada tela cria a sua: assim ninguém revoga a URL que outra ainda usa.
+ */
+export function useBlobUrl(blob: Blob | null): string | null {
+  // criada na renderização e devolvida na limpeza: a imagem aparece no
+  // primeiro quadro, sem o piscar de um estado que só chega depois
+  const url = useMemo(() => (blob ? URL.createObjectURL(blob) : null), [blob]);
+
   useEffect(() => {
     return () => {
-      for (const url of objectUrls) URL.revokeObjectURL(url);
+      if (url) URL.revokeObjectURL(url);
     };
-  }, [objectUrls]);
+  }, [url]);
 
-  return query;
+  return url;
+}
+
+/** Miniatura de uma foto: blob local quando existe, senão a URL assinada. */
+export function useThumbUrl(photo: GalleryPhoto | null): string | null {
+  const local = useBlobUrl(photo?.thumbBlob ?? null);
+  return local ?? photo?.thumbUrl ?? null;
 }
 
 /** Versão grande de uma foto: blob local quando existe, senão URL assinada. */

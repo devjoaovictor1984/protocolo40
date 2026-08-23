@@ -226,4 +226,68 @@ test.describe('foto de um dia anterior', () => {
     await page.waitForURL(/\/evolucao\/fotos/, { timeout: 20_000 });
     await expect(page.getByLabel('Dia da foto')).toHaveValue(dia);
   });
+
+  test('as miniaturas do comparar aparecem depois de passar pela galeria', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    test.setTimeout(120_000);
+    userId = await signIn(context, baseURL!);
+
+    // duas fotos em dias diferentes, como quem está montando a comparação
+    for (const [indice, dias] of [12, 0].entries()) {
+      const dia = new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 10);
+
+      await page.goto('/evolucao/fotos');
+      const campo = page.getByLabel('Dia da foto');
+      await expect(campo).toBeVisible({ timeout: 20_000 });
+      await campo.fill(dia);
+
+      const [seletor] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.getByRole('button', { name: /Registrar foto/ }).click(),
+      ]);
+      await seletor.setFiles({
+        name: `foto-${indice}.png`,
+        mimeType: 'image/png',
+        buffer: FOTO,
+      });
+      await expect(page.getByText('Foto guardada.')).toBeVisible({ timeout: 30_000 });
+    }
+
+    // as duas chegaram ao servidor
+    await expect
+      .poll(
+        async () => {
+          const linhas = await (
+            await admin(`/rest/v1/progress_photos?user_id=eq.${userId}&select=id`)
+          ).json();
+          return (linhas as unknown[]).length;
+        },
+        { timeout: 40_000, message: 'as duas fotos não subiram' },
+      )
+      .toBe(2);
+
+    // a galeria mostra as duas sem precisar recarregar
+    await expect(page.locator('main img')).toHaveCount(2, { timeout: 20_000 });
+
+    // sair da galeria revogava as object URLs guardadas no cache; a tela de
+    // comparar recebia o mesmo cache e ficava com os seletores em branco
+    await page.getByRole('link', { name: 'Comparar' }).click();
+    await page.waitForURL('**/evolucao/comparar', { timeout: 20_000 });
+
+    const seletorA = page.getByRole('group', { name: 'Foto A' });
+    await expect(seletorA.locator('img')).toHaveCount(2, { timeout: 20_000 });
+
+    // decodificadas de verdade, e não uma <img> com src morto
+    for (const miniatura of await seletorA.locator('img').all()) {
+      await expect
+        .poll(async () => miniatura.evaluate((el: HTMLImageElement) => el.naturalWidth), {
+          timeout: 15_000,
+          message: 'a miniatura não carregou',
+        })
+        .toBeGreaterThan(0);
+    }
+  });
 });

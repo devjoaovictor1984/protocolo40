@@ -24,6 +24,7 @@ import { formatDurationShort } from '@/services/duration';
 import { detectRecords, metricLabel } from '@/services/records';
 import { protocolDay } from '@/services/streak';
 import type { LocalWorkoutExercise } from '@/types/offline';
+import { recarregar } from '@/lib/query/refresh';
 
 /**
  * Depois do treino.
@@ -130,8 +131,7 @@ export function FinishScreen({ clientId }: { clientId: string }) {
         await saveMeasurement({ userId, measuredOn: today, weightKg: Number(weight) });
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['workouts'] });
-      await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
+      await recarregar(queryClient, ['workouts'], ['sync', 'queue']);
 
       router.replace('/app');
     } catch {

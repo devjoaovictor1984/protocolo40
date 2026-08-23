@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { localMeasurements, saveMeasurement } from '@/features/measurements/repository';
 import { useSession, useToday } from '@/features/session/session-context';
 import { relativeDay } from '@/services/calendar';
+import { recarregar } from '@/lib/query/refresh';
 
 /**
  * Peso do dia, direto na tela de hoje.
@@ -61,8 +62,7 @@ export function WeightRow() {
 
     try {
       await saveMeasurement({ userId, measuredOn: today, weightKg: peso });
-      await queryClient.invalidateQueries({ queryKey: ['measurements'] });
-      await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
+      await recarregar(queryClient, ['measurements'], ['sync', 'queue']);
       setValor(null);
       toast.success('Peso registrado.');
     } catch {

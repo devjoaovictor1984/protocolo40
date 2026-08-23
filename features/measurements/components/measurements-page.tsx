@@ -18,6 +18,7 @@ import { measurementSchema } from '@/lib/validation/profile';
 import { formatDay } from '@/services/calendar';
 import { weightSeries } from '@/services/progress';
 import type { LocalMeasurement } from '@/types/offline';
+import { recarregar } from '@/lib/query/refresh';
 
 /**
  * Peso e medidas.
@@ -60,8 +61,7 @@ export function MeasurementsPage({
   const series = weightSeries(measurements ?? []);
 
   async function handleSaved() {
-    await queryClient.invalidateQueries({ queryKey: ['measurements'] });
-    await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
+    await recarregar(queryClient, ['measurements'], ['sync', 'queue']);
     setOpen(false);
   }
 

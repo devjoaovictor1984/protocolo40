@@ -6,11 +6,14 @@ import {
   ChevronRight,
   Clock,
   Flame,
+  Medal,
   Settings,
   Trophy,
 } from 'lucide-react';
 
 import { StatCard, StreakBadge } from '@/components/stats';
+import { Emblem } from '@/features/badges/components/emblem';
+import { conquistasDoUsuario } from '@/features/badges/repository';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ButtonLink } from '@/components/ui/button-link';
 import { requireSession } from '@/lib/auth/session';
@@ -25,7 +28,10 @@ export default async function PerfilPage() {
   const { user, profile, settings } = await requireSession();
   const supabase = await createClient();
 
-  const { data } = await supabase.rpc('get_user_stats', { p_user: user.id });
+  const [{ data }, conquistas] = await Promise.all([
+    supabase.rpc('get_user_stats', { p_user: user.id }),
+    conquistasDoUsuario(user.id),
+  ]);
   const stats = data?.[0] ?? {
     current_streak: 0,
     longest_streak: 0,
@@ -94,7 +100,42 @@ export default async function PerfilPage() {
         {stats.last_workout ? ` · último treino em ${formatDay(stats.last_workout)}` : ''}
       </p>
 
+      {conquistas.conquistadas.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+            Insígnias
+          </h2>
+          {/* as mais recentes primeiro; a lista inteira fica em /conquistas */}
+          <Link
+            href="/conquistas"
+            aria-label="Ver todas as conquistas"
+            className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1"
+          >
+            {conquistas.conquistadas.slice(0, 8).map((badge) => (
+              <span key={badge.slug} className="flex w-16 shrink-0 flex-col items-center gap-1">
+                <Emblem emblem={badge.emblem} tier={badge.tier} className="size-12" />
+                <span className="text-center text-[10px] leading-tight font-medium">
+                  {badge.name}
+                </span>
+              </span>
+            ))}
+          </Link>
+        </section>
+      ) : null}
+
       <nav className="flex flex-col gap-2">
+        <Link
+          href="/conquistas"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <Medal aria-hidden className="text-primary size-5" />
+          <span className="flex-1 font-medium">Conquistas</span>
+          <span className="text-muted-foreground tnum text-sm">
+            {conquistas.conquistadas.length}
+          </span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
         <Link
           href="/recordes"
           className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"

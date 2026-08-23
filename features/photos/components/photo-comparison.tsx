@@ -6,7 +6,12 @@ import { Camera, Columns2, SlidersHorizontal } from 'lucide-react';
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFullPhoto, usePhotos, type GalleryPhoto } from '@/features/photos/use-photos';
+import {
+  useFullPhoto,
+  usePhotos,
+  useThumbUrl,
+  type GalleryPhoto,
+} from '@/features/photos/use-photos';
 import { useSession } from '@/features/session/session-context';
 import { cn } from '@/lib/utils';
 import { daysBetween, formatDay } from '@/services/calendar';
@@ -246,15 +251,22 @@ function PhotoPicker({
               selected?.key === photo.key ? 'border-primary' : 'border-border',
             )}
           >
-            {photo.thumbUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- blob local ou URL assinada
-              <img src={photo.thumbUrl} alt={formatDay(photo.takenOn)} className="size-full object-cover" />
-            ) : (
-              <span className="bg-secondary block size-full" />
-            )}
+            <Miniatura photo={photo} />
           </button>
         ))}
       </div>
     </div>
+  );
+}
+
+/** Miniatura do seletor. A object URL nasce e morre com este componente. */
+function Miniatura({ photo }: { photo: GalleryPhoto }) {
+  const url = useThumbUrl(photo);
+
+  return url ? (
+    // eslint-disable-next-line @next/next/no-img-element -- blob local ou URL assinada
+    <img src={url} alt={formatDay(photo.takenOn)} className="size-full object-cover" />
+  ) : (
+    <span className="bg-secondary block size-full" />
   );
 }

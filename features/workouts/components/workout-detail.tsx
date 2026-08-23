@@ -27,6 +27,7 @@ import { useWorkout } from '@/features/workouts/use-workout';
 import { formatDay } from '@/services/calendar';
 import { formatDurationShort } from '@/services/duration';
 import { protocolDay } from '@/services/streak';
+import { recarregar } from '@/lib/query/refresh';
 
 /** Detalhe de um treino: o que foi feito, quando e por quanto tempo. */
 export function WorkoutDetail({ clientId }: { clientId: string }) {
@@ -68,7 +69,7 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
     setRemoving(true);
     try {
       await removeWorkout(clientId);
-      await queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      await recarregar(queryClient, ['workouts']);
       toast.success('Treino apagado.');
       router.replace('/historico');
     } catch {
@@ -83,7 +84,7 @@ export function WorkoutDetail({ clientId }: { clientId: string }) {
     setSavingTemplate(true);
     try {
       await saveWorkoutAsTemplate(workout, { userId, title: templateTitle });
-      await queryClient.invalidateQueries({ queryKey: ['catalog', 'templates'] });
+      await recarregar(queryClient, ['catalog', 'templates']);
       toast.success('Treino salvo.', { description: 'Agora ele aparece em Treinos.' });
       setTemplateTitle(null);
     } catch (error) {

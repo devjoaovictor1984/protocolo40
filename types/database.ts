@@ -38,6 +38,10 @@ export type ExportStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'c
 export type FollowStatus = 'pending' | 'accepted';
 export type PhotoPose = 'frente' | 'lado' | 'costas' | 'outro';
 export type ThemePref = 'light' | 'dark' | 'system';
+export type TicketKind = 'sugestao' | 'erro' | 'duvida' | 'outro';
+export type TicketStatus = 'aberto' | 'em_analise' | 'resolvido' | 'fechado';
+export type BadgeMetric = 'dias' | 'barras' | 'flexoes' | 'fundador';
+export type BadgeTier = 'bronze' | 'ferro' | 'prata' | 'ouro' | 'imperial';
 
 type Timestamps = { created_at: string; updated_at: string };
 
@@ -57,6 +61,7 @@ export type ProfileRow = Timestamps & {
   locale: string;
   protocol_started_on: string;
   onboarding_completed_at: string | null;
+  is_admin: boolean;
   deleted_at: string | null;
 };
 
@@ -266,6 +271,41 @@ export type UserStats = {
   last_workout: string | null;
 };
 
+export type SupportTicketRow = Timestamps & {
+  id: string;
+  user_id: string;
+  kind: TicketKind;
+  title: string;
+  body: string;
+  screenshot_path: string | null;
+  status: TicketStatus;
+  answer: string | null;
+  answered_at: string | null;
+  answered_by: string | null;
+  page_url: string | null;
+  user_agent: string | null;
+  app_version: string | null;
+};
+
+export type BadgeRow = {
+  slug: string;
+  name: string;
+  description: string;
+  metric: BadgeMetric;
+  threshold: number;
+  tier: BadgeTier;
+  emblem: string;
+  sort_order: number;
+};
+
+export type UserBadgeRow = {
+  user_id: string;
+  badge_slug: string;
+  earned_on: string;
+  value: number | null;
+  created_at: string;
+};
+
 /**
  * Forma que o supabase-js espera de cada tabela.
  *
@@ -378,12 +418,42 @@ export interface Database {
       notifications: TableDef<NotificationRow, InsertOf<NotificationRow, 'user_id' | 'type'>>;
       video_exports: TableDef<VideoExportRow, InsertOf<VideoExportRow, 'user_id'>>;
       analytics_events: TableDef<AnalyticsEventRow, InsertOf<AnalyticsEventRow, 'name'>>;
+      support_tickets: TableDef<
+        SupportTicketRow,
+        InsertOf<SupportTicketRow, 'user_id' | 'title' | 'body'>,
+        Partial<SupportTicketRow>,
+        [
+          FK<'support_tickets_user_id_fkey', 'user_id', 'profiles'>,
+          FK<'support_tickets_answered_by_fkey', 'answered_by', 'profiles'>,
+        ]
+      >;
+      badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
+      // Sem policy de INSERT: quem concede é `conceder_conquistas`, no banco.
+      user_badges: TableDef<
+        UserBadgeRow,
+        InsertOf<UserBadgeRow, 'user_id' | 'badge_slug'>,
+        Partial<UserBadgeRow>,
+        [
+          FK<'user_badges_user_id_fkey', 'user_id', 'profiles'>,
+          {
+            foreignKeyName: 'user_badges_badge_slug_fkey';
+            columns: ['badge_slug'];
+            isOneToOne: false;
+            referencedRelation: 'badges';
+            referencedColumns: ['slug'];
+          },
+        ]
+      >;
     };
     Views: { [_ in never]: never };
     Functions: {
       get_user_stats: {
         Args: { p_user: string };
         Returns: UserStats[];
+      };
+      eh_admin: {
+        Args: { p_user?: string };
+        Returns: boolean;
       };
     };
     Enums: {
@@ -399,6 +469,10 @@ export interface Database {
       follow_status: FollowStatus;
       photo_pose: PhotoPose;
       theme_pref: ThemePref;
+      ticket_kind: TicketKind;
+      ticket_status: TicketStatus;
+      badge_metric: BadgeMetric;
+      badge_tier: BadgeTier;
     };
     CompositeTypes: { [_ in never]: never };
   };

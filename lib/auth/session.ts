@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { cache } from 'react';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
 import type { ProfileRow, UserSettingsRow } from '@/types/database';
@@ -94,6 +94,21 @@ export const requireSession = cache(async (): Promise<SessionContext> => {
 
   return { user, profile: profile as unknown as ProfileRow, settings: resolved };
 });
+
+/**
+ * Exige admin master.
+ *
+ * A RLS já recusaria a leitura de dados de terceiros, mas devolver uma tela
+ * vazia para quem não é admin seria pior do que devolver 404: esconder que a
+ * área existe é parte da proteção.
+ */
+export async function requireAdmin(): Promise<SessionContext> {
+  const session = await requireSession();
+  if (!session.profile.is_admin) {
+    notFound();
+  }
+  return session;
+}
 
 /** Onboarding é opcional, mas o primeiro acesso passa por ele. */
 export function needsOnboarding(profile: ProfileRow): boolean {

@@ -18,10 +18,16 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { removePhoto, savePhoto } from '@/features/photos/repository';
-import { useFullPhoto, useGroupedPhotos, type GalleryPhoto } from '@/features/photos/use-photos';
+import {
+  useFullPhoto,
+  useGroupedPhotos,
+  useThumbUrl,
+  type GalleryPhoto,
+} from '@/features/photos/use-photos';
 import { useSession, useToday } from '@/features/session/session-context';
 import { formatDay } from '@/services/calendar';
 import { protocolDay } from '@/services/streak';
+import { recarregar } from '@/lib/query/refresh';
 
 /**
  * Galeria de evolução.
@@ -72,8 +78,7 @@ export function PhotoGallery({
       // hidratar não pode ver a foto cair no dia de hoje em silêncio
       const escolhida = dataInput.current?.value || data;
       await savePhoto({ userId, file, takenOn: escolhida });
-      await queryClient.invalidateQueries({ queryKey: ['photos'] });
-      await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
+      await recarregar(queryClient, ['photos'], ['sync', 'queue']);
       toast.success('Foto guardada.', {
         description:
           (dataInput.current?.value || data) === today
@@ -96,7 +101,7 @@ export function PhotoGallery({
     if (!confirmed) return;
 
     await removePhoto(photo.clientId);
-    await queryClient.invalidateQueries({ queryKey: ['photos'] });
+    await recarregar(queryClient, ['photos']);
     setSelected(null);
     toast.success('Foto apagada.');
   }
@@ -205,19 +210,7 @@ export function PhotoGallery({
                       onClick={() => setSelected(photo)}
                       className="group border-border relative block aspect-3/4 w-full overflow-hidden rounded-lg border"
                     >
-                      {photo.thumbUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- blob local ou URL assinada de curta duração
-                        <img
-                          src={photo.thumbUrl}
-                          alt={`Foto de ${formatDay(photo.takenOn)}`}
-                          className="size-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span className="bg-secondary flex size-full items-center justify-center">
-                          <Camera aria-hidden className="text-muted-foreground size-5" />
-                        </span>
-                      )}
+                      <Miniatura photo={photo} />
 
                       {photo.pending ? (
                         <span
@@ -278,5 +271,24 @@ function PhotoDetail({ photo, onDelete }: { photo: GalleryPhoto; onDelete: () =>
         </Button>
       </div>
     </div>
+  );
+}
+
+/** Miniatura da grade. Cria a própria object URL e a devolve ao sair. */
+function Miniatura({ photo }: { photo: GalleryPhoto }) {
+  const url = useThumbUrl(photo);
+
+  return url ? (
+    // eslint-disable-next-line @next/next/no-img-element -- blob local ou URL assinada de curta duração
+    <img
+      src={url}
+      alt={`Foto de ${formatDay(photo.takenOn)}`}
+      className="size-full object-cover"
+      loading="lazy"
+    />
+  ) : (
+    <span className="bg-secondary flex size-full items-center justify-center">
+      <Camera aria-hidden className="text-muted-foreground size-5" />
+    </span>
   );
 }

@@ -16,6 +16,7 @@ import { ExerciseEditor } from '@/features/workouts/components/exercise-editor';
 import { cn } from '@/lib/utils';
 import type { WorkoutLevel } from '@/types/database';
 import type { LocalWorkoutExercise } from '@/types/offline';
+import { recarregar } from '@/lib/query/refresh';
 
 /*
  * Sem autoFocus de propósito: no celular ele abre o teclado antes de a pessoa
@@ -93,7 +94,7 @@ export function TemplateForm() {
         exercises: exercicios,
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['catalog', 'templates'] });
+      await recarregar(queryClient, ['catalog', 'templates']);
       toast.success('Treino salvo.', { description: 'Ele já aparece em Treinos.' });
 
       router.replace(iniciarDepois ? `/treino/hoje?template=${id}&auto=1` : '/treinos/favoritos');

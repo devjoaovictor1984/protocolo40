@@ -16,6 +16,7 @@ import { PLACES } from '@/lib/validation/profile';
 import { cn } from '@/lib/utils';
 import type { WorkoutPlace } from '@/types/database';
 import type { LocalWorkout, LocalWorkoutExercise } from '@/types/offline';
+import { recarregar } from '@/lib/query/refresh';
 
 /**
  * Registro manual de treino.
@@ -85,7 +86,7 @@ export function WorkoutForm({ workout }: { workout?: LocalWorkout }) {
         exercises,
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      await recarregar(queryClient, ['workouts']);
       toast.success(editing ? 'Treino atualizado.' : 'Treino registrado.');
       router.replace(editing ? `/treino/${workout.client_id}` : '/app');
     } catch {

@@ -16,6 +16,7 @@ import {
 import { useSession } from '@/features/session/session-context';
 import { cn } from '@/lib/utils';
 import type { ExerciseCategory, ExerciseModality } from '@/types/database';
+import { recarregar } from '@/lib/query/refresh';
 
 /**
  * Criar um exercício que não está na biblioteca.
@@ -50,7 +51,7 @@ export function NewExerciseForm({ onCreated }: { onCreated: (exercise: CatalogEx
 
     try {
       const exercise = await createCustomExercise({ userId, name, category, modality });
-      await queryClient.invalidateQueries({ queryKey: ['catalog', 'exercises'] });
+      await recarregar(queryClient, ['catalog', 'exercises']);
       onCreated(exercise);
       setOpen(false);
       setName('');

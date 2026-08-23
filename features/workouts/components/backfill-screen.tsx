@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSession, useToday } from '@/features/session/session-context';
 import { saveWorkout } from '@/features/workouts/repository';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
+import { recarregar } from '@/lib/query/refresh';
 import { cn } from '@/lib/utils';
 import {
   addDays,
@@ -126,8 +127,7 @@ export function BackfillScreen() {
         });
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['workouts'] });
-      await queryClient.invalidateQueries({ queryKey: ['sync', 'queue'] });
+      await recarregar(queryClient, ['workouts'], ['sync', 'queue']);
 
       toast.success(
         marcados.size === 1 ? '1 dia registrado.' : `${marcados.size} dias registrados.`,

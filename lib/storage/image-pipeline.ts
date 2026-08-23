@@ -18,7 +18,23 @@ export type ProcessedImage = {
 
 const MAX_EDGE = 1440;
 const THUMB_EDGE = 320;
-const QUALITY = 0.8;
+const QUALITY = 0.82;
+
+/**
+ * Teto de tamanho da foto grande.
+ *
+ * O tamanho de um arquivo comprimido depende do conteúdo, não só da resolução:
+ * uma foto com muita textura — cabelo, tecido estampado, fundo cheio — sai
+ * várias vezes maior que uma parede lisa no mesmo 1440px. Sem um teto, é
+ * exatamente a foto de celular boa que enche o storage.
+ *
+ * 400 KB numa imagem de 1440px é qualidade de sobra para comparar corpo; o
+ * limite só entra em ação quando a qualidade padrão não coube.
+ */
+const TARGET_BYTES = 400 * 1024;
+
+/** Qualidades tentadas em ordem, até caber no teto. Nenhuma reduz resolução. */
+const QUALITY_STEPS = [QUALITY, 0.72, 0.62, 0.55];
 
 function scaleTo(width: number, height: number, maxEdge: number) {
   const longest = Math.max(width, height);
@@ -53,6 +69,25 @@ async function canvasToBlob(canvas: Canvas, type: string, quality: number): Prom
   });
 }
 
+/**
+ * Comprime até caber no teto, sem mexer na resolução.
+ *
+ * Reduzir qualidade preserva a nitidez das bordas — que é o que se olha numa
+ * foto de progresso — enquanto reduzir resolução destruiria justamente isso.
+ */
+async function comprimir(canvas: Canvas, type: string, teto: number): Promise<Blob> {
+  let ultimo: Blob | null = null;
+
+  for (const quality of QUALITY_STEPS) {
+    const blob = await canvasToBlob(canvas, type, quality);
+    ultimo = blob;
+    if (blob.size <= teto) return blob;
+  }
+
+  // JPEG/WebP sempre devolvem alguma coisa; o último é o menor que conseguimos
+  return ultimo as Blob;
+}
+
 async function render(source: ImageBitmap, maxEdge: number, type: string): Promise<Blob> {
   const { width, height } = scaleTo(source.width, source.height, maxEdge);
   const canvas = createCanvas(width, height);
@@ -64,7 +99,11 @@ async function render(source: ImageBitmap, maxEdge: number, type: string): Promi
   if (!context) throw new Error('Não foi possível processar a imagem neste aparelho.');
 
   context.drawImage(source, 0, 0, width, height);
-  return canvasToBlob(canvas, type, QUALITY);
+
+  // a miniatura já é pequena por definição; o teto vale para a foto grande
+  return maxEdge === THUMB_EDGE
+    ? canvasToBlob(canvas, type, QUALITY)
+    : comprimir(canvas, type, TARGET_BYTES);
 }
 
 /** WebP é o padrão; AVIF não é gerado pelo canvas em todos os navegadores. */
