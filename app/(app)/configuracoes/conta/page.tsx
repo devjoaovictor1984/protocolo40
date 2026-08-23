@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import { ArrowLeft } from 'lucide-react';
 
 import { ButtonLink } from '@/components/ui/button-link';
+import { AvatarUpload } from '@/features/profile/components/avatar-upload';
 import { ProfileForm } from '@/features/settings/components/profile-form';
 import { DeleteAccountSection } from '@/features/settings/components/settings-controls';
 import { requireSession } from '@/lib/auth/session';
+import { env } from '@/lib/env';
+import { avatarUrl } from '@/lib/storage/avatar';
 
 export const metadata: Metadata = {
   title: 'Perfil e dados',
@@ -24,6 +27,13 @@ export default async function ContaPage() {
       </div>
 
       <h1 className="text-2xl font-extrabold tracking-tight">Perfil e dados</h1>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+          Foto
+        </h2>
+        <AvatarUpload initialUrl={avatarUrl(profile, env.supabaseUrl)} size="lg" />
+      </section>
 
       <ProfileForm profile={profile} />
 

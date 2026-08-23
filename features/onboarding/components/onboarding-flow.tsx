@@ -71,7 +71,18 @@ export function OnboardingFlow({
       </div>
       <p className="text-muted-foreground mt-2 text-xs">Passo {step + 1} de 3</p>
 
-      <form action={action} className="mt-6 flex flex-1 flex-col">
+      <form
+        action={action}
+        // Segunda barreira: nenhum caminho — toque acidental, Enter num campo,
+        // teclado do celular — envia o formulário antes do último passo.
+        onSubmit={(event) => {
+          if (step < 2) {
+            event.preventDefault();
+            setStep(2);
+          }
+        }}
+        className="mt-6 flex flex-1 flex-col"
+      >
         <input type="hidden" name="timezone" value={timezone} />
 
         {/* Todos os passos ficam montados: o formulário é enviado inteiro no fim,
@@ -187,6 +198,7 @@ export function OnboardingFlow({
 
           {step < 2 ? (
             <Button
+              key="avancar"
               type="button"
               className="h-12 flex-1 text-base"
               onClick={() => setStep((value) => value + 1)}
@@ -195,7 +207,7 @@ export function OnboardingFlow({
               <ArrowRight aria-hidden className="size-4" />
             </Button>
           ) : (
-            <Button type="submit" className="h-12 flex-1 text-base font-semibold">
+            <Button key="enviar" type="submit" className="h-12 flex-1 text-base font-semibold">
               Começar meu protocolo
             </Button>
           )}

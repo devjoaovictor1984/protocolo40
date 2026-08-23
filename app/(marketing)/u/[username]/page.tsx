@@ -6,6 +6,8 @@ import { Wordmark } from '@/components/brand/wordmark';
 import { StatCard } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ButtonLink } from '@/components/ui/button-link';
+import { env } from '@/lib/env';
+import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { createClient } from '@/lib/supabase/server';
 import { formatDay } from '@/services/calendar';
 
@@ -24,7 +26,7 @@ async function loadProfile(username: string) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, username, full_name, bio, avatar_url, protocol_started_on')
+    .select('id, username, full_name, bio, avatar_path, avatar_url, updated_at, protocol_started_on')
     .eq('username', username.toLowerCase())
     .maybeSingle();
 
@@ -69,7 +71,8 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
   const { data } = await supabase.rpc('get_user_stats', { p_user: profile.id });
   const stats = data?.[0] ?? null;
   const name = profile.full_name ?? profile.username;
-  const initials = name.slice(0, 2).toUpperCase();
+  const initials = initialsOf(profile.full_name, profile.username);
+  const foto = avatarUrl(profile, env.supabaseUrl);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -83,7 +86,7 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-5 py-8">
         <div className="flex items-center gap-4">
           <Avatar className="size-20">
-            {profile.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
+            {foto ? <AvatarImage src={foto} alt="" /> : null}
             <AvatarFallback className="text-xl font-bold">{initials}</AvatarFallback>
           </Avatar>
 

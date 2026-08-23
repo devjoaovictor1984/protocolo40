@@ -125,6 +125,33 @@ test.describe('onboarding', () => {
     expect(Number(measurements[0]?.weight_kg)).toBeCloseTo(86.4);
   });
 
+  test('um segundo toque acidental não pula os passos', async ({ context, page, baseURL }) => {
+    userId = await signIn(context, baseURL!);
+
+    // O botão "Continuar" e o "Começar meu protocolo" ocupam o mesmo lugar. Sem
+    // chaves distintas, o React reaproveitava o nó do DOM: o clique avançava o
+    // passo, o botão virava submit no meio do evento, e a ação padrão do
+    // navegador enviava o formulário — pulando o passo de altura e peso.
+    await page.goto('/onboarding');
+    await page.getByLabel('Nome', { exact: true }).fill('João');
+
+    const continuar = page.getByRole('button', { name: 'Continuar' });
+    const box = await continuar.boundingBox();
+    await continuar.click();
+    // o segundo toque cai no mesmo ponto da tela; onde ele acerta depende da
+    // largura, mas em nenhum caso pode enviar o formulário
+    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.waitForTimeout(2000);
+
+    await expect(page).toHaveURL(/\/onboarding$/);
+    await expect(page.getByText(/Passo \d de 3/)).toBeVisible();
+
+    const [profile] = await (
+      await admin(`/rest/v1/profiles?id=eq.${userId}&select=onboarding_completed_at`)
+    ).json();
+    expect(profile.onboarding_completed_at, 'o formulário não pode enviar sozinho').toBeNull();
+  });
+
   test('pular o onboarding também leva ao app', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
 

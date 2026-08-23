@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight, Settings, Trophy } from 'lucide-react';
+import { Camera, ChevronRight, Settings, Trophy } from 'lucide-react';
 
 import { StatCard, StreakBadge } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ButtonLink } from '@/components/ui/button-link';
 import { requireSession } from '@/lib/auth/session';
+import { env } from '@/lib/env';
+import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { createClient } from '@/lib/supabase/server';
 import { formatDay } from '@/services/calendar';
 
@@ -24,16 +26,29 @@ export default async function PerfilPage() {
     last_workout: null,
   };
 
-  const initials = (profile.full_name ?? profile.username).slice(0, 2).toUpperCase();
+  const initials = initialsOf(profile.full_name, profile.username);
+  const foto = avatarUrl(profile, env.supabaseUrl);
   const isPublic = settings.profile_visibility === 'public';
 
   return (
     <div className="flex flex-col gap-8 py-6">
       <header className="flex items-start gap-4">
-        <Avatar className="size-16">
-          {profile.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
-          <AvatarFallback className="text-lg font-bold">{initials}</AvatarFallback>
-        </Avatar>
+        <Link
+          href="/configuracoes/conta"
+          aria-label="Trocar foto de perfil"
+          className="relative shrink-0 rounded-full"
+        >
+          <Avatar className="size-16">
+            {foto ? <AvatarImage src={foto} alt="" /> : null}
+            <AvatarFallback className="text-lg font-bold">{initials}</AvatarFallback>
+          </Avatar>
+          <span
+            aria-hidden
+            className="bg-primary text-primary-foreground border-background absolute right-0 bottom-0 flex size-6 items-center justify-center rounded-full border-2"
+          >
+            <Camera className="size-3" />
+          </span>
+        </Link>
 
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-extrabold tracking-tight">

@@ -104,6 +104,52 @@ export async function processPhoto(file: File | Blob): Promise<ProcessedImage> {
   }
 }
 
+const AVATAR_EDGE = 512;
+
+/**
+ * Foto de perfil: recorte quadrado pelo centro.
+ *
+ * O avatar aparece sempre num círculo. Redimensionar sem recortar deixaria a
+ * imagem esticada ou com faixas — recortar pelo centro é o que a pessoa espera
+ * ao ver a própria foto num círculo.
+ */
+export async function processAvatar(file: File | Blob): Promise<{ blob: Blob; size: number }> {
+  if (file.size > 25 * 1024 * 1024) {
+    throw new Error('Esta imagem é grande demais. Tente uma foto menor que 25 MB.');
+  }
+
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+
+  try {
+    const edge = Math.min(bitmap.width, bitmap.height);
+    const offsetX = (bitmap.width - edge) / 2;
+    const offsetY = (bitmap.height - edge) / 2;
+
+    const canvas = createCanvas(AVATAR_EDGE, AVATAR_EDGE);
+    const context = canvas.getContext('2d') as
+      | OffscreenCanvasRenderingContext2D
+      | CanvasRenderingContext2D
+      | null;
+
+    if (!context) throw new Error('Não foi possível processar a imagem neste aparelho.');
+
+    context.drawImage(bitmap, offsetX, offsetY, edge, edge, 0, 0, AVATAR_EDGE, AVATAR_EDGE);
+
+    const type = await pickType();
+    const blob = await canvasToBlob(canvas, type, QUALITY);
+
+    // o bucket recusa acima de 512 KB; com WebP a 512px isso não costuma acontecer
+    if (blob.size > 512 * 1024) {
+      const menor = await canvasToBlob(canvas, type, 0.6);
+      return { blob: menor, size: menor.size };
+    }
+
+    return { blob, size: blob.size };
+  } finally {
+    bitmap.close();
+  }
+}
+
 /** URL temporária para pré-visualizar um Blob guardado localmente. */
 export function previewUrl(blob: Blob): string {
   return URL.createObjectURL(blob);
