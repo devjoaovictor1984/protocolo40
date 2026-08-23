@@ -43,6 +43,17 @@ export type TicketStatus = 'aberto' | 'em_analise' | 'resolvido' | 'fechado';
 export type BadgeMetric = 'dias' | 'barras' | 'flexoes' | 'fundador';
 export type BadgeTier = 'bronze' | 'ferro' | 'prata' | 'ouro' | 'imperial';
 export type BiologicalSex = 'feminino' | 'masculino' | 'nao_informado';
+export type SubscriptionStatus =
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'canceled'
+  | 'incomplete'
+  | 'incomplete_expired'
+  | 'unpaid';
+export type BillingInterval = 'mes' | 'ano' | 'vitalicio';
+/** Recursos que um plano pode liberar. O núcleo do produto nunca entra aqui. */
+export type Recurso = 'analise' | 'saude' | 'video';
 
 type Timestamps = { created_at: string; updated_at: string };
 
@@ -295,6 +306,41 @@ export type WaterLogRow = Timestamps & {
   ml: number;
 };
 
+export type PlanRow = Timestamps & {
+  slug: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  price_cents: number;
+  currency: string;
+  interval: BillingInterval;
+  stripe_price_id: string | null;
+  features: string[];
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type SubscriptionRow = Timestamps & {
+  user_id: string;
+  plan_slug: string;
+  status: SubscriptionStatus;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  granted_by: string | null;
+  granted_reason: string | null;
+};
+
+export type AdminAuditRow = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  target_id: string | null;
+  detail: Json;
+  created_at: string;
+};
+
 export type DailyMessageRow = {
   day_of_year: number;
   reference: string;
@@ -445,6 +491,25 @@ export interface Database {
       >;
       badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
       daily_messages: TableDef<DailyMessageRow, InsertOf<DailyMessageRow, 'day_of_year'>>;
+      plans: TableDef<PlanRow, InsertOf<PlanRow, 'slug' | 'name'>>;
+      // Sem policy de escrita para o cliente: quem grava é o webhook ou uma
+      // função auditada. O tipo descreve a tabela; a autorização é do banco.
+      subscriptions: TableDef<
+        SubscriptionRow,
+        InsertOf<SubscriptionRow, 'user_id' | 'plan_slug'>,
+        Partial<SubscriptionRow>,
+        [
+          FK<'subscriptions_user_id_fkey', 'user_id', 'profiles'>,
+          {
+            foreignKeyName: 'subscriptions_plan_slug_fkey';
+            columns: ['plan_slug'];
+            isOneToOne: false;
+            referencedRelation: 'plans';
+            referencedColumns: ['slug'];
+          },
+        ]
+      >;
+      admin_audit_log: TableDef<AdminAuditRow, InsertOf<AdminAuditRow, 'action'>>;
       water_logs: TableDef<
         WaterLogRow,
         InsertOf<WaterLogRow, 'user_id' | 'day'>,
@@ -482,6 +547,18 @@ export interface Database {
         Args: { p_day: string; p_ml: number };
         Returns: number;
       };
+      tem_acesso: {
+        Args: { p_recurso: string; p_user?: string };
+        Returns: boolean;
+      };
+      conceder_plano: {
+        Args: { p_user: string; p_plan: string; p_ate: string | null; p_motivo: string | null };
+        Returns: undefined;
+      };
+      revogar_plano: {
+        Args: { p_user: string; p_motivo: string | null };
+        Returns: undefined;
+      };
     };
     Enums: {
       visibility: Visibility;
@@ -501,6 +578,8 @@ export interface Database {
       badge_metric: BadgeMetric;
       badge_tier: BadgeTier;
       biological_sex: BiologicalSex;
+      subscription_status: SubscriptionStatus;
+      billing_interval: BillingInterval;
     };
     CompositeTypes: { [_ in never]: never };
   };

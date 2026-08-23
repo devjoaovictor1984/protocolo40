@@ -69,6 +69,19 @@ async function signIn(context: BrowserContext, baseURL: string) {
   return id as string;
 }
 
+/** Libera os recursos pagos: estes testes são sobre o conteúdo, não sobre o paywall. */
+async function liberarPlano(userId: string) {
+  await admin('/rest/v1/subscriptions', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      plan_slug: 'mensal',
+      status: 'active',
+      granted_reason: 'teste automatizado',
+    }),
+  });
+}
+
 test.describe('saúde', () => {
   test.skip(!configured, 'precisa das credenciais do Supabase');
 
@@ -87,6 +100,7 @@ test.describe('saúde', () => {
     baseURL,
   }) => {
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
 
     await page.goto('/saude');
     await expect(page.getByText('Faltam dois números para começar.')).toBeVisible({
@@ -98,6 +112,7 @@ test.describe('saúde', () => {
   test('com peso, altura, nascimento e sexo, calcula tudo', async ({ context, page, baseURL }) => {
     test.setTimeout(120_000);
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
 
     await admin(`/rest/v1/profiles?id=eq.${userId}`, {
       method: 'PATCH',
@@ -150,6 +165,7 @@ test.describe('saúde', () => {
   }) => {
     test.setTimeout(120_000);
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
 
     await admin(`/rest/v1/profiles?id=eq.${userId}`, {
       method: 'PATCH',
@@ -196,6 +212,7 @@ test.describe('saúde', () => {
 
   test('a água de outra pessoa não é somada na minha', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
 
     // um segundo usuário com água registrada hoje
     const outro = await (

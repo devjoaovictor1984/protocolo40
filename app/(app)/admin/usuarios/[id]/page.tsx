@@ -7,6 +7,8 @@ import { StatCard } from '@/components/stats';
 import { BadgeGrid } from '@/features/badges/components/badge-grid';
 import { conquistasDoUsuario } from '@/features/badges/repository';
 import { verUsuario } from '@/features/admin/repository';
+import { GrantPlan } from '@/features/billing/components/grant-plan';
+import { assinaturaAtual } from '@/features/billing/repository';
 import { PerigoDaConta } from '@/features/admin/components/perigo-da-conta';
 import { requireAdmin } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
@@ -26,9 +28,11 @@ export default async function UsuarioPage({ params }: { params: Promise<{ id: st
   if (!usuario) notFound();
 
   const supabase = await createClient();
-  const [{ data: stats }, conquistas] = await Promise.all([
+  const [{ data: stats }, conquistas, assinatura, { data: planosPagos }] = await Promise.all([
     supabase.rpc('get_user_stats', { p_user: id }),
     conquistasDoUsuario(id),
+    assinaturaAtual(id),
+    supabase.from('plans').select('slug, name').gt('price_cents', 0).order('sort_order'),
   ]);
 
   const numeros = stats?.[0] ?? {
@@ -107,6 +111,21 @@ export default async function UsuarioPage({ params }: { params: Promise<{ id: st
         </h2>
         <BadgeGrid badges={conquistas.conquistadas} vazio="Nenhuma conquista ainda." />
       </section>
+
+      <GrantPlan
+        userId={id}
+        planos={(planosPagos ?? []) as { slug: string; name: string }[]}
+        atual={
+          assinatura
+            ? {
+                plan_slug: assinatura.plan_slug,
+                status: assinatura.status,
+                current_period_end: assinatura.current_period_end,
+                granted_reason: assinatura.granted_reason,
+              }
+            : null
+        }
+      />
 
       <PerigoDaConta
         id={usuario.id}

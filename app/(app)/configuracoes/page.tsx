@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight, LifeBuoy, Shield } from 'lucide-react';
+import { ChevronRight, CreditCard, LifeBuoy, Shield } from 'lucide-react';
 
 import {
   DailyGoalField,
@@ -66,6 +66,15 @@ export default async function ConfiguracoesPage() {
         <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
           Suporte
         </h2>
+
+        <Link
+          href="/planos"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <CreditCard aria-hidden className="text-muted-foreground size-5" />
+          <span className="flex-1 font-medium">Plano e cobrança</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
 
         <Link
           href="/ajuda"

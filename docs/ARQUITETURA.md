@@ -716,3 +716,31 @@ Perfil público · seguir e deixar de seguir · feed dos seguidos · curtidas e 
 1. **Host do worker de vídeo (Fase 3).** Recomendação: container Node em Railway ou Fly.io fazendo *poll* em `video_exports`. Alternativa sem infraestrutura: `ffmpeg.wasm` no cliente — funciona até ~60 fotos e trava acima disso. A decisão só é necessária na Fase 3.
 2. **Supabase Cloud vs. local (Docker).** Cloud acelera a Fase 0; local dá um ciclo de migrations mais confortável. Recomendação: **Cloud + Supabase CLI**, com migrations versionadas no repositório desde o primeiro dia.
 3. **Domínio e OAuth.** `p20x.com.br` precisa estar registrado para configurar o callback do Google fora do `localhost`.
+
+---
+
+## Cobrança e acesso
+
+O núcleo é livre para sempre: treinar, registrar, histórico, calendário, fotos,
+recordes e conquistas. O plano pago libera `analise`, `saude` e `video`.
+
+```
+plans          catálogo editável pelo admin, sem deploy
+subscriptions  uma linha por usuário; escrita só pelo webhook ou por função auditada
+tem_acesso()   SECURITY DEFINER — única resposta que vale sobre liberação
+```
+
+Três invariantes:
+
+- **A liberação mora no banco.** `tem_acesso(recurso)` é chamada pelo servidor e
+  é a mesma função que a RLS usaria. Se a regra vivesse no TypeScript, a mesma
+  pergunta teria duas respostas possíveis e um dia elas divergiriam.
+- **O cliente nunca escreve assinatura.** `subscriptions` não tem policy de
+  INSERT nem de UPDATE para `authenticated` — nem o próprio dono altera a sua.
+  Quem grava é o webhook do Stripe, com service role, ou `conceder_plano()`.
+- **Ação de admin fica registrada.** Conceder e revogar passam por funções que
+  escrevem em `admin_audit_log` com quem fez, quando e por quê.
+
+Sem `STRIPE_SECRET_KEY` a cobrança fica desligada: os planos aparecem, o botão
+de assinar diz "em breve", e o admin ainda concede acesso à mão. Nenhuma parte
+do app depende do Stripe estar configurado.

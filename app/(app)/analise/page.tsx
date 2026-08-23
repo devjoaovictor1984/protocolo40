@@ -11,6 +11,8 @@ import {
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { analiseDoUsuario } from '@/features/analysis/repository';
+import { Paywall } from '@/features/billing/components/paywall';
+import { temAcesso } from '@/features/billing/repository';
 import { requireSession } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
 import { todayIn } from '@/services/calendar';
@@ -41,6 +43,21 @@ const ESTILO: Record<Severidade, { icon: typeof AlertTriangle; classe: string; r
 
 export default async function AnalisePage() {
   const { user, profile } = await requireSession();
+
+  if (!(await temAcesso('analise'))) {
+    return (
+      <Paywall
+        titulo="Análise do seu treino"
+        descricao="A leitura do que você já fez, exercício por exercício, com o que mudar e por quê."
+        amostra={[
+          'Cruza esforço, volume e frequência das últimas quatro semanas com as quatro anteriores.',
+          'Diz o que fazer em uma frase executável — número de séries, tipo de progressão, dias de descanso.',
+          'Explica a razão de cada recomendação, com a faixa de treinamento em que ela se apoia.',
+        ]}
+      />
+    );
+  }
+
   const hoje = todayIn(profile.timezone);
   const analise = await analiseDoUsuario(user.id, hoje);
 

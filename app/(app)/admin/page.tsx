@@ -1,6 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Activity, ChevronRight, Dumbbell, LifeBuoy, UserPlus, Users } from 'lucide-react';
+import {
+  Activity,
+  ChevronRight,
+  CreditCard,
+  Dumbbell,
+  LifeBuoy,
+  ScrollText,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 
 import { BarChart } from '@/components/charts';
 import { StatCard } from '@/components/stats';
@@ -65,6 +74,24 @@ export default async function AdminPage() {
         >
           <Users aria-hidden className="text-muted-foreground size-5" />
           <span className="flex-1 font-medium">Usuários</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
+        <Link
+          href="/admin/planos"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <CreditCard aria-hidden className="text-muted-foreground size-5" />
+          <span className="flex-1 font-medium">Planos</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
+        <Link
+          href="/admin/auditoria"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <ScrollText aria-hidden className="text-muted-foreground size-5" />
+          <span className="flex-1 font-medium">Auditoria</span>
           <ChevronRight aria-hidden className="text-muted-foreground size-4" />
         </Link>
 

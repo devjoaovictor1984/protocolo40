@@ -6,6 +6,8 @@ import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { BmiScale } from '@/features/health/components/bmi-scale';
 import { WaterTracker } from '@/features/health/components/water-tracker';
+import { Paywall } from '@/features/billing/components/paywall';
+import { temAcesso } from '@/features/billing/repository';
 import { painelDeSaude } from '@/features/health/repository';
 import { requireSession } from '@/lib/auth/session';
 import { formatDay, todayIn } from '@/services/calendar';
@@ -24,6 +26,21 @@ const COMO_PREENCHER: Record<string, { texto: string; href: string }> = {
 
 export default async function SaudePage() {
   const { profile } = await requireSession();
+
+  if (!(await temAcesso('saude'))) {
+    return (
+      <Paywall
+        titulo="Saúde e metas do dia"
+        descricao="Água, calorias, proteína e faixa de peso calculados a partir do que você já registra aqui."
+        amostra={[
+          'Meta de água do dia, com o acréscimo do que você suou no treino de hoje.',
+          'Gasto calórico estimado pela sua frequência real de treino, e não por uma pergunta.',
+          'Faixa de peso para a sua altura e quanto falta para entrar nela, sem prometer número mágico.',
+        ]}
+      />
+    );
+  }
+
   const hoje = todayIn(profile.timezone);
   const painel = await painelDeSaude(profile, hoje);
   const { metas } = painel;

@@ -112,6 +112,19 @@ async function semear(
   }
 }
 
+/** Libera os recursos pagos: estes testes são sobre o conteúdo, não sobre o paywall. */
+async function liberarPlano(userId: string) {
+  await admin('/rest/v1/subscriptions', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      plan_slug: 'mensal',
+      status: 'active',
+      granted_reason: 'teste automatizado',
+    }),
+  });
+}
+
 test.describe('análise', () => {
   test.skip(!configured, 'precisa das credenciais do Supabase');
 
@@ -130,6 +143,7 @@ test.describe('análise', () => {
     baseURL,
   }) => {
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
 
     await page.goto('/analise');
     await expect(page.getByText('Ainda não há o que analisar.')).toBeVisible({ timeout: 20_000 });
@@ -145,6 +159,7 @@ test.describe('análise', () => {
   }) => {
     test.setTimeout(120_000);
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
 
     await semear(userId, [
       // quatro semanas anteriores: volume maior
@@ -182,6 +197,7 @@ test.describe('análise', () => {
   test('esforço declarado no fim do treino chega à análise', async ({ context, page, baseURL }) => {
     test.setTimeout(120_000);
     userId = await signIn(context, baseURL!);
+    await liberarPlano(userId);
     // treino de poucos segundos pede confirmação
     page.on('dialog', (dialog) => void dialog.accept());
 
