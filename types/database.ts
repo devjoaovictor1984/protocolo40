@@ -304,7 +304,12 @@ export interface Database {
   public: {
     Tables: {
       profiles: TableDef<ProfileRow, InsertOf<ProfileRow, 'id' | 'username'>>;
-      user_settings: TableDef<UserSettingsRow, InsertOf<UserSettingsRow, 'user_id'>>;
+      user_settings: TableDef<
+        UserSettingsRow,
+        InsertOf<UserSettingsRow, 'user_id'>,
+        Partial<UserSettingsRow>,
+        [FK<'user_settings_user_id_fkey', 'user_id', 'profiles'>]
+      >;
       exercises: TableDef<ExerciseRow, InsertOf<ExerciseRow, 'name' | 'category' | 'modality'>>;
       workout_templates: TableDef<WorkoutTemplateRow, InsertOf<WorkoutTemplateRow, 'title'>>;
       workout_template_exercises: TableDef<

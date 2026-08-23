@@ -52,11 +52,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // getUser() revalida o token no servidor. Não troque por getSession() aqui:
-  // getSession() confia no cookie sem verificar a assinatura.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifica a assinatura do token localmente, com as chaves
+  // públicas do projeto. getUser() faria o mesmo com uma ida à rede de ~250ms
+  // em toda navegação. Não troque por getSession(), que aceita o cookie sem
+  // verificar assinatura nenhuma.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims?.sub ? { id: claims.claims.sub } : null;
 
   const { pathname, search } = request.nextUrl;
 
