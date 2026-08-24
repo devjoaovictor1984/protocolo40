@@ -290,16 +290,17 @@ function TemplateCard({
             {template.exercises.map((item) => (
               <li
                 key={`${template.id}-${item.exerciseId}-${item.orderIndex}`}
-                className="flex items-baseline gap-2"
+                className="flex items-center gap-2"
               >
-                <span className="tnum text-primary min-w-12 font-bold">
+                <span className="tnum text-primary min-w-12 self-baseline font-bold">
                   {item.repetitions !== null
                     ? `${item.repetitions} ×`
                     : item.durationSeconds !== null
                       ? `${item.durationSeconds}s`
                       : ''}
                 </span>
-                <span>{item.name}</span>
+                <span className="flex-1">{item.name}</span>
+
               </li>
             ))}
           </ul>

@@ -21,6 +21,8 @@ import type {
 
 export type CatalogExercise = {
   id: string;
+  /** identificador estável do exercício do sistema; é a chave da ilustração */
+  slug: string | null;
   name: string;
   category: ExerciseCategory;
   modality: ExerciseModality;
@@ -30,6 +32,7 @@ export type CatalogExercise = {
 
 export type CatalogTemplateExercise = {
   exerciseId: string;
+  slug: string | null;
   name: string;
   modality: ExerciseModality;
   sets: number | null;
@@ -63,7 +66,7 @@ async function fetchExercises(): Promise<CatalogExercise[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('exercises')
-    .select('id, name, category, modality, equipment, owner_id')
+    .select('id, slug, name, category, modality, equipment, owner_id')
     .is('deleted_at', null)
     .eq('is_active', true)
     .order('name');
@@ -77,6 +80,7 @@ async function fetchExercises(): Promise<CatalogExercise[]> {
 
   const exercises = data.map((row) => ({
     id: row.id,
+    slug: row.slug,
     name: row.name,
     category: row.category,
     modality: row.modality,
@@ -93,7 +97,7 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
   const { data, error } = await supabase
     .from('workout_templates')
     .select(
-      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, sort_order, is_favorite, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(name, modality))',
+      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, sort_order, is_favorite, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(slug, name, modality))',
     )
     .is('deleted_at', null)
     .eq('is_active', true)
@@ -121,6 +125,7 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
     exercises: (row.workout_template_exercises ?? [])
       .map((item) => ({
         exerciseId: item.exercise_id,
+        slug: item.exercises?.slug ?? null,
         name: item.exercises?.name ?? 'Exercício',
         modality: item.exercises?.modality ?? ('reps' as ExerciseModality),
         sets: item.sets,
@@ -176,6 +181,9 @@ export async function createCustomExercise(input: {
 
   return {
     id: data.id,
+    // exercício próprio não tem slug: os do sistema é que têm, e é neles que
+    // as ilustrações se apoiam
+    slug: null,
     name: data.name,
     category: data.category,
     modality: data.modality,

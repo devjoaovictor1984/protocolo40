@@ -158,4 +158,36 @@ test.describe('biblioteca de treinos', () => {
     expect(templates[0].title).toBe('Meu circuito');
     expect(templates[0].method).toBe('amrap');
   });
+
+  test('os treinos de burpee e mountain climber existem nos três níveis', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    test.setTimeout(120_000);
+    userId = await signIn(context, baseURL!);
+
+    await page.goto('/treinos');
+    await expect(page.getByRole('heading', { name: 'Escolher um treino' })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // burpee e mountain climber estavam só em treinos antigos, no fim da lista
+    for (const [nivel, treino] of [
+      ['Iniciante', 'P20X Ritmo'],
+      ['Moderado', 'P20X Burpee 10'],
+      ['Avançado', 'P20X Metcon'],
+    ]) {
+      await page.getByRole('button', { name: nivel, exact: true }).click();
+      await expect(
+        page.locator('article').filter({ hasText: treino }),
+        `${treino} deveria estar em ${nivel}`,
+      ).toHaveCount(1, { timeout: 20_000 });
+    }
+
+    // o duplicado do 5•10•15 saiu da lista
+    await page.getByRole('button', { name: 'Todos', exact: true }).click();
+    await expect(page.locator('article').filter({ hasText: 'Tom Holland' })).toHaveCount(0);
+    await expect(page.locator('article').filter({ hasText: 'P20X 5•10•15' }).first()).toBeVisible();
+  });
 });
