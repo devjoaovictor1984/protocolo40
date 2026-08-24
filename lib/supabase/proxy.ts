@@ -61,6 +61,25 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl;
 
+  /**
+   * O convite chega pela URL e precisa sobreviver até existir uma sessão.
+   *
+   * Gravar aqui, e não na página, porque cookie só pode ser escrito em
+   * resposta — durante a renderização de um Server Component o Next recusa.
+   * E é aqui também que ele sobrevive ao desvio pelo Google: `sameSite=lax`
+   * mantém o cookie na volta do OAuth.
+   */
+  const convite = pathname.match(/^\/convite\/([a-zA-Z0-9_.-]{2,30})$/);
+  if (convite) {
+    response.cookies.set('p20x_convite', convite[1].toLowerCase(), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+
   if (!user && isUnder(pathname, PRIVATE_PREFIXES)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';

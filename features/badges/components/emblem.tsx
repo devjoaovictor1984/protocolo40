@@ -343,6 +343,52 @@ function Sol({ cor, brilho }: { cor: string; brilho: string }) {
   );
 }
 
+/** Corneta: quem anuncia. O primeiro convite. */
+function Corneta({ cor, brilho }: { cor: string; brilho: string }) {
+  return (
+    <g fill="none" stroke={cor} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
+      <path d="M12 24 H28 L36 17 V37 L28 30 H12 Z" fill={brilho} fillOpacity="0.18" />
+      <path d="M18 30 V38" />
+      <path d="M14 38 H22" />
+    </g>
+  );
+}
+
+/** Estandarte: o ponto de encontro de um grupo. */
+function Estandarte({ cor, brilho }: { cor: string; brilho: string }) {
+  return (
+    <g fill="none" stroke={cor} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
+      <path d="M24 11 V42" />
+      <path d="M24 15 H36 L33 21 L36 27 H24 Z" fill={brilho} fillOpacity="0.25" />
+      <path d="M24 15 H14 L17 21 L14 27 H24" />
+      <circle cx="24" cy="10" r="2.4" fill={cor} />
+      <path d="M19 42 H29" />
+    </g>
+  );
+}
+
+/** Legião: fileiras de escudos. Dez pessoas já são formação. */
+function Legiao({ cor, brilho }: { cor: string; brilho: string }) {
+  return (
+    <g fill="none" stroke={cor} strokeWidth="1.8">
+      {[0, 1].map((linha) =>
+        [11, 20, 29, 38].slice(0, linha === 0 ? 4 : 3).map((x, indice) => (
+          <rect
+            key={`${linha}-${x}`}
+            x={linha === 0 ? x - 4 : x - 4 + 4}
+            y={linha === 0 ? 16 : 30}
+            width="8"
+            height="11"
+            rx="1.5"
+            fill={brilho}
+            fillOpacity={indice % 2 === 0 ? 0.25 : 0.12}
+          />
+        )),
+      )}
+    </g>
+  );
+}
+
 const DESENHOS: Record<string, (p: Paleta) => React.ReactNode> = {
   recruta: (p) => <Galoes quantidade={1} cor={p.traco} />,
   legionario: (p) => <Galoes quantidade={2} cor={p.traco} />,
@@ -383,6 +429,11 @@ const DESENHOS: Record<string, (p: Paleta) => React.ReactNode> = {
   pergaminho: (p) => <Pergaminho cor={p.traco} brilho={p.brilho} />,
   sol: (p) => <Sol cor={p.traco} brilho={p.brilho} />,
   lancas: (p) => <Lanca cor={p.traco} quantidade={2} />,
+
+  // convites
+  corneta: (p) => <Corneta cor={p.traco} brilho={p.brilho} />,
+  estandarte: (p) => <Estandarte cor={p.traco} brilho={p.brilho} />,
+  legiao: (p) => <Legiao cor={p.traco} brilho={p.brilho} />,
 };
 
 export function Emblem({

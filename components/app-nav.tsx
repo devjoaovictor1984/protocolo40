@@ -17,6 +17,7 @@ import {
   Timer,
   Trophy,
   User,
+  UserPlus,
   Users,
 } from 'lucide-react';
 
@@ -155,6 +156,12 @@ const QUICK_ACTIONS: {
         label: 'Comunidade',
         description: 'Siga quem também está fazendo os 20 minutos',
         icon: Users,
+      },
+      {
+        href: '/convidar',
+        label: 'Convidar um amigo',
+        description: 'Seu link, e uma insígnia a cada pessoa que entra',
+        icon: UserPlus,
       },
     ],
   },

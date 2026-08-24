@@ -6,6 +6,7 @@ import type { AuthError } from '@supabase/supabase-js';
 
 import { env } from '@/lib/env';
 import { invalidState, type ActionState } from '@/lib/forms/action-state';
+import { aplicarConvitePendente } from '@/lib/invites/cookie';
 import { createClient } from '@/lib/supabase/server';
 import {
   forgotPasswordSchema,
@@ -94,6 +95,9 @@ export async function signUpWithPassword(
   // Com confirmação de e-mail ligada ainda não existe sessão: o usuário precisa
   // clicar no link. Sem confirmação, já entra direto.
   if (data.session) {
+    // com sessão na mão, o convite guardado no cookie já pode ser creditado;
+    // pelo link de e-mail isso acontece no /auth/callback
+    await aplicarConvitePendente();
     revalidatePath('/', 'layout');
     redirect('/onboarding');
   }

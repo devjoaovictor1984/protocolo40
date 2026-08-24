@@ -69,6 +69,19 @@ export default async function ComunidadePage({ searchParams }: { searchParams: S
 
       <VisibilityCard visivel={visivel} />
 
+      <Link
+        href="/convidar"
+        className="border-primary/40 bg-primary/5 hover:bg-primary/10 flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+      >
+        <UserPlus aria-hidden className="text-primary size-5 shrink-0" />
+        <span className="flex-1">
+          <span className="block text-sm font-semibold">Convidar um amigo</span>
+          <span className="text-muted-foreground text-sm">
+            Cada pessoa que entra pelo seu link vira insígnia
+          </span>
+        </span>
+      </Link>
+
       {termo ? (
         <section className="flex flex-col gap-3">
           <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">

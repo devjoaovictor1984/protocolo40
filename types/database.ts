@@ -40,7 +40,19 @@ export type PhotoPose = 'frente' | 'lado' | 'costas' | 'outro';
 export type ThemePref = 'light' | 'dark' | 'system';
 export type TicketKind = 'sugestao' | 'erro' | 'duvida' | 'outro';
 export type TicketStatus = 'aberto' | 'em_analise' | 'resolvido' | 'fechado';
-export type BadgeMetric = 'dias' | 'barras' | 'flexoes' | 'fundador';
+export type BadgeMetric =
+  | 'dias'
+  | 'sequencia'
+  | 'minutos'
+  | 'barras'
+  | 'flexoes'
+  | 'agachamentos'
+  | 'abdominais'
+  | 'fotos'
+  | 'madrugada'
+  | 'fim_de_semana'
+  | 'convites'
+  | 'fundador';
 export type BadgeTier = 'bronze' | 'ferro' | 'prata' | 'ouro' | 'imperial';
 export type BiologicalSex = 'feminino' | 'masculino' | 'nao_informado';
 export type SubscriptionStatus =
@@ -77,6 +89,7 @@ export type ProfileRow = Timestamps & {
   biological_sex: BiologicalSex;
   showcase_before_id: string | null;
   showcase_after_id: string | null;
+  referred_by: string | null;
   deleted_at: string | null;
 };
 
@@ -595,6 +608,24 @@ export interface Database {
           sequencia: number | null;
           desde: string;
         }[];
+      };
+      perfil_do_convite: {
+        Args: { p_username: string };
+        Returns: {
+          username: string;
+          full_name: string | null;
+          avatar_path: string | null;
+          avatar_url: string | null;
+          updated_at: string;
+        }[];
+      };
+      registrar_convite: {
+        Args: { p_username: string };
+        Returns: string;
+      };
+      contar_convites: {
+        Args: { p_user: string };
+        Returns: number;
       };
       registrar_descanso: {
         Args: { p_day: string; p_note?: string | null };

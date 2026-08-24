@@ -118,7 +118,7 @@ test.describe('conquistas', () => {
 
     await page.goto('/conquistas');
     await expect(page.getByText('Legionário')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByText('Recruta')).toBeVisible();
+    await expect(page.getByText('Recruta', { exact: true })).toBeVisible();
     // sete dias seguidos também valem a insígnia de sequência
     await expect(page.getByText('Sentinela')).toBeVisible();
 
@@ -165,6 +165,20 @@ test.describe('conquistas', () => {
     await page.getByRole('button', { name: 'Apagar treino' }).click();
     await page.waitForURL('**/calendario', { timeout: 30_000 });
 
+    // primeiro a exclusão precisa chegar ao servidor; só então o gatilho roda.
+    // Separar as duas esperas diz onde o problema está, quando houver um.
+    await expect
+      .poll(
+        async () => {
+          const linhas = await (
+            await admin(`/rest/v1/workouts?user_id=eq.${userId}&select=id&deleted_at=is.null`)
+          ).json();
+          return (linhas as unknown[]).length;
+        },
+        { timeout: 90_000, message: 'a exclusão não chegou ao servidor' },
+      )
+      .toBe(6);
+
     await expect
       .poll(
         async () => {
@@ -173,7 +187,7 @@ test.describe('conquistas', () => {
           ).json();
           return (linhas as { badge_slug: string }[]).map((l) => l.badge_slug).sort();
         },
-        { timeout: 60_000, message: 'a conquista sobreviveu ao treino apagado' },
+        { timeout: 30_000, message: 'a conquista sobreviveu ao treino apagado' },
       )
       .toEqual(['fundador', 'recruta']);
   });

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { aplicarConvitePendente } from '@/lib/invites/cookie';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest) {
   if (error) {
     return NextResponse.redirect(`${origin}/login?erro=sessao`);
   }
+
+  // agora existe sessão: se a pessoa chegou por um convite, é aqui que ele vale
+  await aplicarConvitePendente();
 
   return NextResponse.redirect(`${origin}${next}`);
 }
