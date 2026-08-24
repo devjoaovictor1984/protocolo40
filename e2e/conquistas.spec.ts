@@ -125,7 +125,9 @@ test.describe('conquistas', () => {
     // e aparecem no perfil
     await page.goto('/perfil');
     await expect(page.getByText('Insígnias')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole('link', { name: 'Ver todas as conquistas' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Ver todas as conquistas', exact: true }),
+    ).toBeVisible();
   });
 
   test('apagar o treino que sustentava a conquista a retira', async ({ context, page, baseURL }) => {

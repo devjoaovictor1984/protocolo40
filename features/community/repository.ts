@@ -47,6 +47,20 @@ export async function buscarPessoas(termo: string): Promise<PessoaEncontrada[]> 
   return (data ?? []) as PessoaEncontrada[];
 }
 
+/**
+ * Quem está por aqui, sem precisar procurar.
+ *
+ * Uma caixa de busca vazia não é descoberta: só encontra quem já sabe o nome
+ * de alguém. Numa comunidade nova ninguém sabe — então a lista aparece
+ * pronta, e a busca serve para filtrar.
+ */
+export async function pessoasNoApp(): Promise<PessoaEncontrada[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc('buscar_pessoas', { p_termo: '', p_limite: 50 });
+
+  return (data ?? []) as PessoaEncontrada[];
+}
+
 export async function minhaRede(tipo: 'seguindo' | 'seguidores'): Promise<PessoaDaRede[]> {
   const supabase = await createClient();
   const { data } = await supabase.rpc('minha_rede', { p_tipo: tipo });

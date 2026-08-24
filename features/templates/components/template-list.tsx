@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Lightbulb, Play, Plus, Timer, Trophy } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -164,15 +165,11 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
 
   return (
     <div className="flex flex-col gap-5 py-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          {onlyFavorites ? 'Seus treinos' : 'Escolher um treino'}
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Todos funcionam igual: repita o circuito no seu ritmo durante 20 minutos e anote os
-          rounds.
-        </p>
-      </header>
+      <PageHeader
+        titulo={onlyFavorites ? 'Seus treinos' : 'Escolher um treino'}
+        descricao="Todos funcionam igual: repita o circuito no seu ritmo durante 20 minutos e anote os rounds."
+        trilha={onlyFavorites ? [{ href: '/treinos', label: 'Treinos' }] : []}
+      />
 
       {suggestion && !onlyFavorites ? (
         <div className="border-border bg-secondary/60 flex gap-3 rounded-xl border p-4">

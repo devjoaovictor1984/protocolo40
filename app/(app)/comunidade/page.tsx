@@ -2,11 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Search, UserPlus } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { FollowButton } from '@/features/community/components/follow-button';
-import { buscarPessoas, minhaRede, type Pessoa } from '@/features/community/repository';
+import { VisibilityCard } from '@/features/community/components/visibility-card';
+import {
+  buscarPessoas,
+  minhaRede,
+  pessoasNoApp,
+  type Pessoa,
+} from '@/features/community/repository';
 import { requireSession } from '@/lib/auth/session';
 import { env } from '@/lib/env';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
@@ -25,23 +32,27 @@ export default async function ComunidadePage({ searchParams }: { searchParams: S
   const params = await searchParams;
   const termo = typeof params.q === 'string' ? params.q : '';
 
-  const [encontrados, seguindo, seguidores] = await Promise.all([
+  const [encontrados, todos, seguindo, seguidores] = await Promise.all([
     buscarPessoas(termo),
+    pessoasNoApp(),
     minhaRede('seguindo'),
     minhaRede('seguidores'),
   ]);
 
   const seguindoIds = new Set(seguindo.map((pessoa) => pessoa.id));
+  const visivel = settings.profile_visibility === 'public' && settings.allow_followers;
+
+  // quem já sigo sai da vitrine: ela existe para descobrir, não para repetir
+  const paraDescobrir = todos.filter((pessoa) => !seguindoIds.has(pessoa.id));
 
   return (
     <div className="flex flex-col gap-8 py-6">
       <header className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Comunidade</h1>
-          <p className="text-muted-foreground text-sm">
-            Acompanhe quem também está fazendo os 20 minutos.
-          </p>
-        </div>
+        <PageHeader
+          titulo="Comunidade"
+          descricao="Acompanhe quem também está fazendo os 20 minutos."
+          trilha={[{ href: '/perfil', label: 'Perfil' }]}
+        />
 
         {/* GET simples: a busca vira endereço e o voltar do navegador funciona */}
         <form action="/comunidade" className="relative">
@@ -56,15 +67,7 @@ export default async function ComunidadePage({ searchParams }: { searchParams: S
         </form>
       </header>
 
-      {!settings.allow_followers || settings.profile_visibility !== 'public' ? (
-        <p className="border-warning/40 bg-warning/5 rounded-xl border p-4 text-sm">
-          Seu perfil não aparece nas buscas.{' '}
-          <Link href="/configuracoes/privacidade" className="font-medium underline underline-offset-4">
-            Deixe-o público e aceite seguidores
-          </Link>{' '}
-          para que outras pessoas possam te encontrar. Você continua vendo e seguindo quem quiser.
-        </p>
-      ) : null}
+      <VisibilityCard visivel={visivel} />
 
       {termo ? (
         <section className="flex flex-col gap-3">
@@ -92,6 +95,37 @@ export default async function ComunidadePage({ searchParams }: { searchParams: S
             </ul>
           )}
         </section>
+      ) : null}
+
+      {!termo && paraDescobrir.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+              Pessoas no P20X
+            </h2>
+            <span className="text-muted-foreground tnum text-xs">{paraDescobrir.length}</span>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {paraDescobrir.map((pessoa) => (
+              <li key={pessoa.id}>
+                <LinhaDePessoa
+                  pessoa={pessoa}
+                  detalhe={`${pessoa.seguidores} ${pessoa.seguidores === 1 ? 'seguidor' : 'seguidores'}`}
+                  jaSegue={false}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {!termo && paraDescobrir.length === 0 && seguindo.length === 0 ? (
+        <p className="border-border text-muted-foreground rounded-xl border p-4 text-sm leading-relaxed">
+          Ninguém mais liberou o perfil ainda. Convide quem treina com você: mande o endereço{' '}
+          <strong className="text-foreground">p20x.com.br</strong> e peça para tocar em “Quero
+          aparecer” aqui nesta tela.
+        </p>
       ) : null}
 
       <section className="flex flex-col gap-3">

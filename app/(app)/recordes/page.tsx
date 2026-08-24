@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Trophy } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState, RecordBadge } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { formatRecordValue, listRecords } from '@/features/records/queries';
@@ -16,7 +17,7 @@ export default async function RecordesPage() {
   return (
     <div className="flex flex-col gap-6 py-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">Recordes</h1>
+        <PageHeader titulo="Recordes" trilha={[{ href: '/perfil', label: 'Perfil' }]} />
         <p className="text-muted-foreground text-sm">
           Detectados automaticamente quando o treino sincroniza.
         </p>

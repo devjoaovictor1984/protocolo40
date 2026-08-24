@@ -168,11 +168,15 @@ test.describe('comunidade', () => {
     await expect(page.getByRole('heading', { name: 'Comunidade' })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('Você ainda não segue ninguém.')).toBeVisible();
 
+    // a vitrine mostra gente sem precisar procurar
+    await expect(page.getByText('Pessoas no P20X')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(`@${outro.username}`).first()).toBeVisible();
+
     await page.getByLabel('Buscar pessoas').fill(outro.username);
     await page.getByLabel('Buscar pessoas').press('Enter');
     await page.waitForURL(/q=/, { timeout: 20_000 });
 
-    await expect(page.getByText(`@${outro.username}`)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(`@${outro.username}`).first()).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'Seguir' }).first().click();
 
     // primeiro o que importa: o servidor registrou
@@ -349,5 +353,39 @@ test.describe('comunidade', () => {
     );
 
     expect(await resposta.json()).toHaveLength(0);
+  });
+
+  test('quem está privado é avisado e vira visível em um toque', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    test.setTimeout(120_000);
+
+    // entra com o perfil privado, que é como toda conta nasce
+    const eu = await entrar(context, baseURL!, false);
+    criadas.push(eu.id);
+
+    await page.goto('/comunidade');
+    await expect(page.getByText('Ninguém consegue te encontrar')).toBeVisible({ timeout: 20_000 });
+
+    // o que muda está escrito antes de decidir
+    await expect(page.getByText(/Continuam privados: peso, medidas, fotos e treinos/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'QUERO APARECER' }).click();
+    await expect(page.getByText('Você aparece na comunidade')).toBeVisible({ timeout: 30_000 });
+
+    // e o servidor concorda
+    const [config] = await (
+      await admin(
+        `/rest/v1/user_settings?user_id=eq.${eu.id}&select=profile_visibility,allow_followers`,
+      )
+    ).json();
+    expect(config.profile_visibility).toBe('public');
+    expect(config.allow_followers).toBe(true);
+
+    // dá para voltar atrás
+    await page.getByRole('button', { name: 'Sair da lista' }).click();
+    await expect(page.getByText('Ninguém consegue te encontrar')).toBeVisible({ timeout: 30_000 });
   });
 });

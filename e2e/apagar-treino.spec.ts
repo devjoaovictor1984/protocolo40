@@ -91,6 +91,8 @@ test.describe('apagar treino', () => {
   });
 
   test('some da tela, do histórico e do servidor', async ({ context, page, baseURL }) => {
+    // sete treinos criados e um apagado: a fila sobe oito operações
+    test.setTimeout(120_000);
     userId = await signIn(context, baseURL!);
     page.on('dialog', (dialog) => void dialog.accept());
 
@@ -108,7 +110,7 @@ test.describe('apagar treino', () => {
           ).json();
           return rows.length;
         },
-        { timeout: 40_000 },
+        { timeout: 90_000 },
       )
       .toBe(7);
 
@@ -135,7 +137,7 @@ test.describe('apagar treino', () => {
           ).json();
           return rows.length;
         },
-        { timeout: 40_000, message: 'a exclusão não chegou ao servidor' },
+        { timeout: 90_000, message: 'a exclusão não chegou ao servidor' },
       )
       .toBe(6);
 

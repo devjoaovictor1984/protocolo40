@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Droplet, Loader2, Minus, Plus, Scale } from 'lucide-react';
+import { Check, Droplet, Loader2, Minus, Scale } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,20 @@ import { cn } from '@/lib/utils';
  * número e some quando registrado; a água é toque em cima de toque, então
  * fica sempre aberta, mostrando quanto já foi.
  */
+/**
+ * As medidas de copo.
+ *
+ * Quatro cobrem o que as pessoas realmente usam: copo, caneca, garrafinha e
+ * garrafão. Mais opções virariam uma escolha antes de um gesto que deveria ser
+ * automático.
+ */
+const MEDIDAS = [
+  { ml: 200, curto: '200' },
+  { ml: 300, curto: '300' },
+  { ml: 500, curto: '500' },
+  { ml: 1000, curto: '1 L' },
+] as const;
+
 export function DailyCards({ aguaInicial, metaAgua }: { aguaInicial: number; metaAgua: number | null }) {
   return (
     <section aria-label="Seu dia" className="grid grid-cols-2 gap-3">
@@ -219,6 +233,15 @@ function CartaoAgua({ inicial, meta }: { inicial: number; meta: number | null })
           {salvando ? <Loader2 aria-label="Salvando" className="size-3 animate-spin" /> : null}
         </p>
 
+        {/* bater a meta merece a mesma confirmação que o peso registrado tem:
+            um estado de "pronto", e não só uma barra cheia */}
+        {bateu ? (
+          <p className="text-success mt-0.5 flex items-center gap-1 text-[11px] font-semibold">
+            <Check aria-hidden className="size-3" />
+            Meta batida
+          </p>
+        ) : null}
+
         {percentual !== null ? (
           <div
             role="progressbar"
@@ -236,24 +259,33 @@ function CartaoAgua({ inicial, meta }: { inicial: number; meta: number | null })
         ) : null}
       </div>
 
-      <div className="flex gap-1.5">
-        <Button
-          className="h-10 flex-1 px-2 text-sm"
-          disabled={salvando}
-          onClick={() => void somar(200)}
-        >
-          <Plus aria-hidden className="size-3" />
-          200 ml
-        </Button>
+      <div className="flex flex-col gap-1.5">
+        {/* quatro medidas: copo, caneca, garrafa e garrafão. Rótulo curto
+            porque o cartão tem metade da tela no celular. */}
+        <div className="grid grid-cols-4 gap-1">
+          {MEDIDAS.map((medida) => (
+            <Button
+              key={medida.ml}
+              size="sm"
+              className="h-9 px-0 text-[11px] font-semibold"
+              aria-label={`Somar ${medida.ml} ml`}
+              disabled={salvando}
+              onClick={() => void somar(medida.ml)}
+            >
+              {medida.curto}
+            </Button>
+          ))}
+        </div>
+
         <Button
           variant="ghost"
-          size="icon"
-          className="size-10 shrink-0"
+          className="text-muted-foreground h-8 text-[11px]"
           aria-label="Tirar 200 ml"
           disabled={salvando || ml === 0}
           onClick={() => void somar(-200)}
         >
-          <Minus aria-hidden className="size-4" />
+          <Minus aria-hidden className="size-3" />
+          200 ml
         </Button>
       </div>
     </Moldura>

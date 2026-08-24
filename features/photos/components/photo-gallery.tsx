@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Camera, CloudOff, GitCompareArrows, Lock, Trash2 } from 'lucide-react';
+import { Camera, CloudOff, GitCompareArrows, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
+import { useVerMais, VerMais } from '@/components/ver-mais';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,6 +63,9 @@ export function PhotoGallery({
    * com as datas erradas.
    */
   const [data, setData] = useState(dataInicial ?? today);
+  // cada dia carrega uma imagem decodificada; mostrar tudo de uma vez trava
+  // o telefone de quem tem meses de registro
+  const dias = useVerMais(groups, 12);
   const fileInput = useRef<HTMLInputElement>(null);
   const dataInput = useRef<HTMLInputElement>(null);
   const opened = useRef(false);
@@ -112,24 +117,21 @@ export function PhotoGallery({
 
   return (
     <div className="flex flex-col gap-6 py-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Fotos</h1>
-          <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-sm">
-            <Lock aria-hidden className="size-3.5" />
-            Privadas por padrão
-          </p>
-        </div>
-
-        <ButtonLink href="/evolucao/comparar"
+      <PageHeader
+        titulo="Fotos"
+        descricao="Privadas por padrão"
+        trilha={[{ href: '/evolucao', label: 'Evolução' }]}
+        acao={
+          <ButtonLink href="/evolucao/comparar"
           variant="outline"
           size="sm"
           className="h-10"
         >
           <GitCompareArrows aria-hidden className="size-4" />
-          Comparar
-        </ButtonLink>
-      </header>
+            Comparar
+          </ButtonLink>
+        }
+      />
 
       {/* Sem `capture`: com ele o navegador abre a câmera direto e a pessoa não
           chega à galeria nem aos arquivos. Sem ele o sistema mostra a folha
@@ -210,7 +212,7 @@ export function PhotoGallery({
         />
       ) : (
         <div className="flex flex-col gap-6">
-          {groups.map(([day, photos]) => (
+          {dias.mostrados.map(([day, photos]) => (
             <section key={day} className="flex flex-col gap-2">
               <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
                 Dia {protocolDay(protocolStartedOn, day)} · {formatDay(day)}
@@ -240,6 +242,13 @@ export function PhotoGallery({
               </ul>
             </section>
           ))}
+
+          <VerMais
+            restantes={dias.restantes}
+            porLote={dias.porLote}
+            onMostrar={dias.mostrarMais}
+            substantivo="dias"
+          />
         </div>
       )}
 

@@ -106,11 +106,16 @@ test.describe('a tela de hoje', () => {
 
     // e a água soma por toque
     await expect(dia.getByText('0,0')).toBeVisible();
-    await dia.getByRole('button', { name: '200 ml', exact: true }).click();
+    // agora são quatro medidas; o rótulo curto é o do botão
+    await dia.getByRole('button', { name: 'Somar 200 ml' }).click();
     await expect(dia.getByText('0,2')).toBeVisible({ timeout: 30_000 });
 
+    // e as outras medidas existem
+    await dia.getByRole('button', { name: 'Somar 1000 ml' }).click();
+    await expect(dia.getByText('1,2')).toBeVisible({ timeout: 30_000 });
+
     await dia.getByRole('button', { name: 'Tirar 200 ml' }).click();
-    await expect(dia.getByText('0,0')).toBeVisible({ timeout: 30_000 });
+    await expect(dia.getByText('1,0')).toBeVisible({ timeout: 30_000 });
 
     // os dois chegaram ao servidor
     await expect
@@ -128,7 +133,7 @@ test.describe('a tela de hoje', () => {
     const agua = await (
       await admin(`/rest/v1/water_logs?user_id=eq.${userId}&select=ml`)
     ).json();
-    expect((agua as { ml: number }[])[0].ml).toBe(0);
+    expect((agua as { ml: number }[])[0].ml).toBe(1000);
   });
 
   test('cada dia da semana leva a algum lugar', async ({ context, page, baseURL }) => {

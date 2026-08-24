@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { PageHeader } from '@/components/page-header';
 import { BadgeGrid } from '@/features/badges/components/badge-grid';
 import { Emblem } from '@/features/badges/components/emblem';
 import { conquistasDoUsuario, progressoAtual } from '@/features/badges/repository';
@@ -31,13 +32,11 @@ export default async function ConquistasPage() {
 
   return (
     <div className="flex flex-col gap-8 py-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Conquistas</h1>
-        <p className="text-muted-foreground text-sm">
-          {conquistas.conquistadas.length} de {conquistas.todas.length} insígnias. Cada uma é dada
-          pelo que você já fez — nenhuma se compra.
-        </p>
-      </header>
+      <PageHeader
+        titulo="Conquistas"
+        descricao={`${conquistas.conquistadas.length} de ${conquistas.todas.length} insígnias. Cada uma é dada pelo que você já fez — nenhuma se compra.`}
+        trilha={[{ href: '/perfil', label: 'Perfil' }]}
+      />
 
       {proxima ? (
         <section className="border-border bg-card flex items-center gap-4 rounded-2xl border p-4">

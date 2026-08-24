@@ -134,3 +134,45 @@ export async function definirVitrine(formData: FormData): Promise<void> {
   revalidatePath('/evolucao/fotos');
   if (perfil?.username) revalidatePath(`/u/${perfil.username}`);
 }
+
+/**
+ * Aparecer para as outras pessoas.
+ *
+ * O perfil nasce privado, e isso está certo: ninguém deve entrar num app de
+ * corpo e ser listado sem ter pedido. Mas a consequência é que uma comunidade
+ * nova nasce invisível — todo mundo procurando e ninguém aparecendo.
+ *
+ * Este é o consentimento explícito, em um toque, com o que muda dito na tela:
+ * nome, @usuário, sequência e insígnias. Peso, medidas e fotos continuam
+ * privados, cada um com a sua própria configuração.
+ */
+export async function aparecerNaComunidade(): Promise<void> {
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  await supabase
+    .from('user_settings')
+    .update({
+      profile_visibility: 'public',
+      allow_followers: true,
+      streak_visibility: 'public',
+    })
+    .eq('user_id', user.id);
+
+  revalidatePath('/comunidade');
+  revalidatePath('/configuracoes/privacidade');
+}
+
+/** Sair da vitrine. O perfil volta a ser privado e some das buscas. */
+export async function sairDaComunidade(): Promise<void> {
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  await supabase
+    .from('user_settings')
+    .update({ profile_visibility: 'private', streak_visibility: 'private' })
+    .eq('user_id', user.id);
+
+  revalidatePath('/comunidade');
+  revalidatePath('/configuracoes/privacidade');
+}

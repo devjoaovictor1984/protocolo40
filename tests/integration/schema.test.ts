@@ -70,6 +70,7 @@ const TABLE_TO_TYPE: Record<string, string> = {
   water_logs: 'WaterLogRow',
   daily_messages: 'DailyMessageRow',
   plans: 'PlanRow',
+  rest_days: 'RestDayRow',
   subscriptions: 'SubscriptionRow',
   admin_audit_log: 'AdminAuditRow',
 };

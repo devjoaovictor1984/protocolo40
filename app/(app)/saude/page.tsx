@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Beef, Flame, HeartPulse, Scale } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { BmiScale } from '@/features/health/components/bmi-scale';
@@ -70,15 +71,15 @@ export default async function SaudePage() {
 
   return (
     <div className="flex flex-col gap-8 py-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Saúde</h1>
+      <PageHeader titulo="Saúde" trilha={[{ href: '/evolucao', label: 'Evolução' }]} />
+      <div className="-mt-6">
         <p className="text-muted-foreground text-sm">
           Calculado a partir do seu peso
           {painel.pesoEm ? ` de ${formatDay(painel.pesoEm)}` : ''}, da sua altura e da frequência
           real com que você treina — {painel.diasDeTreinoPorSemana.toFixed(1)} dias por semana no
           último mês.
         </p>
-      </header>
+      </div>
 
       <WaterTracker dia={hoje} inicial={painel.aguaMl} meta={metas.aguaMl} />
 

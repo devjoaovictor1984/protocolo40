@@ -20,7 +20,9 @@ import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useSession, useToday } from '@/features/session/session-context';
+import { BadgeSpotlight } from '@/features/badges/components/badge-spotlight';
 import { DailyCards } from '@/features/dashboard/components/daily-cards';
+import { RestDayButton } from '@/features/rest/components/rest-day-button';
 import { DailyMessage } from '@/features/messages/components/daily-message';
 import type { MensagemDoDia } from '@/features/messages/repository';
 import { cn } from '@/lib/utils';
@@ -33,6 +35,7 @@ import {
   startOfWeek,
   WEEKDAY_LABELS,
 } from '@/services/calendar';
+import type { BadgeTier } from '@/types/database';
 import type { LocalWorkout } from '@/types/offline';
 
 /**
@@ -45,10 +48,14 @@ export function Dashboard({
   mensagem,
   agua,
   metaAgua,
+  descansouHoje,
+  ultimaInsignia,
 }: {
   mensagem: MensagemDoDia | null;
   agua: number;
   metaAgua: number | null;
+  descansouHoje: boolean;
+  ultimaInsignia: { emblem: string; tier: BadgeTier; name: string } | null;
 }) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
@@ -75,6 +82,17 @@ export function Dashboard({
         </div>
       </header>
 
+      {/* a insígnia mais recente abre o dia: é o que lembra do caminho já
+          andado, logo acima da frase que empurra para o de hoje */}
+      {ultimaInsignia ? (
+        <BadgeSpotlight
+          emblem={ultimaInsignia.emblem}
+          tier={ultimaInsignia.tier}
+          nome={ultimaInsignia.name}
+          conquistadaEm="recente"
+        />
+      ) : null}
+
       {mensagem ? <DailyMessage mensagem={mensagem} /> : null}
 
       <DailyCards aguaInicial={agua} metaAgua={metaAgua} />
@@ -84,7 +102,11 @@ export function Dashboard({
       ) : doneToday ? (
         <DoneCard workouts={data!.todayWorkouts} day={data!.protocolDay} />
       ) : (
-        <TodayCard day={data?.protocolDay ?? 1} goalSeconds={dailyGoalSeconds} />
+        <TodayCard
+          day={data?.protocolDay ?? 1}
+          goalSeconds={dailyGoalSeconds}
+          descansouHoje={descansouHoje}
+        />
       )}
 
       {isLoading ? (
@@ -142,7 +164,15 @@ export function Dashboard({
   );
 }
 
-function TodayCard({ day, goalSeconds }: { day: number; goalSeconds: number }) {
+function TodayCard({
+  day,
+  goalSeconds,
+  descansouHoje,
+}: {
+  day: number;
+  goalSeconds: number;
+  descansouHoje: boolean;
+}) {
   return (
     <section
       aria-label="Treino de hoje"
@@ -175,6 +205,10 @@ function TodayCard({ day, goalSeconds }: { day: number; goalSeconds: number }) {
           <ListChecks aria-hidden className="size-3.5" />
           Escolher um treino pronto
         </Link>
+
+        {/* recuperar faz parte do treino; punir quem respeita isso ensinaria
+            a coisa errada. Fica discreto porque é a segunda opção do dia. */}
+        <RestDayButton jaDescansou={descansouHoje} />
       </div>
     </section>
   );

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Camera, Columns2, SlidersHorizontal } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,7 +46,11 @@ export function PhotoComparison() {
   if (ordered.length < 2) {
     return (
       <div className="py-6">
-        <h1 className="mb-6 text-2xl font-extrabold tracking-tight">Comparar</h1>
+        <PageHeader
+          titulo="Comparar"
+          trilha={[{ href: '/evolucao/fotos', label: 'Fotos' }]}
+          className="mb-6"
+        />
         <EmptyState
           icon={Camera}
           title="Você precisa de pelo menos duas fotos."
@@ -68,10 +73,11 @@ export function PhotoComparison() {
 
   return (
     <div className="flex flex-col gap-6 py-6">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight">Comparar</h1>
-
-        <div className="border-border flex rounded-lg border p-0.5" role="group" aria-label="Modo">
+      <PageHeader
+        titulo="Comparar"
+        trilha={[{ href: '/evolucao/fotos', label: 'Fotos' }]}
+        acao={
+          <div className="border-border flex rounded-lg border p-0.5" role="group" aria-label="Modo">
           <button
             type="button"
             aria-pressed={mode === 'slider'}
@@ -94,10 +100,11 @@ export function PhotoComparison() {
             )}
           >
             <Columns2 aria-hidden className="size-3.5" />
-            Lado a lado
-          </button>
-        </div>
-      </header>
+              Lado a lado
+            </button>
+          </div>
+        }
+      />
 
       {a && b ? (
         mode === 'slider' ? (

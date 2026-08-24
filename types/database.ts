@@ -308,6 +308,13 @@ export type WaterLogRow = Timestamps & {
   ml: number;
 };
 
+export type RestDayRow = {
+  user_id: string;
+  day: string;
+  note: string | null;
+  created_at: string;
+};
+
 export type PlanRow = Timestamps & {
   slug: string;
   name: string;
@@ -494,6 +501,14 @@ export interface Database {
       badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
       daily_messages: TableDef<DailyMessageRow, InsertOf<DailyMessageRow, 'day_of_year'>>;
       plans: TableDef<PlanRow, InsertOf<PlanRow, 'slug' | 'name'>>;
+      // Sem policy de INSERT: quem grava é `registrar_descanso`, que confere o
+      // limite de um por semana.
+      rest_days: TableDef<
+        RestDayRow,
+        InsertOf<RestDayRow, 'user_id' | 'day'>,
+        Partial<RestDayRow>,
+        [FK<'rest_days_user_id_fkey', 'user_id', 'profiles'>]
+      >;
       // Sem policy de escrita para o cliente: quem grava é o webhook ou uma
       // função auditada. O tipo descreve a tabela; a autorização é do banco.
       subscriptions: TableDef<
@@ -580,6 +595,10 @@ export interface Database {
           sequencia: number | null;
           desde: string;
         }[];
+      };
+      registrar_descanso: {
+        Args: { p_day: string; p_note?: string | null };
+        Returns: string;
       };
       tem_acesso: {
         Args: { p_recurso: string; p_user?: string };

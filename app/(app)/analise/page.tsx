@@ -8,6 +8,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { analiseDoUsuario } from '@/features/analysis/repository';
@@ -81,8 +82,12 @@ export default async function AnalisePage() {
 
   return (
     <div className="flex flex-col gap-8 py-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Análise</h1>
+      <PageHeader
+        titulo="Análise"
+        trilha={[{ href: '/evolucao', label: 'Evolução' }]}
+        descricao={undefined}
+      />
+      <div className="-mt-6">
         <p className="text-muted-foreground text-sm">
           Últimas quatro semanas: {analise.treinos}{' '}
           {analise.treinos === 1 ? 'treino' : 'treinos'}
@@ -91,7 +96,7 @@ export default async function AnalisePage() {
             : ''}
           . Comparado com as quatro semanas anteriores.
         </p>
-      </header>
+      </div>
 
       {analise.gerais.length > 0 ? (
         <section className="flex flex-col gap-3">

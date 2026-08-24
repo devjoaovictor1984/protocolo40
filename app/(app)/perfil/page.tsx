@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { StatCard, StreakBadge } from '@/components/stats';
+import { BadgeChip } from '@/features/badges/components/badge-spotlight';
 import { Emblem } from '@/features/badges/components/emblem';
 import { conquistasDoUsuario } from '@/features/badges/repository';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -71,6 +72,15 @@ export default async function PerfilPage() {
           <p className="text-muted-foreground text-sm">@{profile.username}</p>
           <StreakBadge days={stats.current_streak} className="mt-2" />
         </div>
+
+        {/* a última insígnia ao lado do nome: identidade e prova, juntas */}
+        {conquistas.conquistadas[0] ? (
+          <BadgeChip
+            emblem={conquistas.conquistadas[0].emblem}
+            tier={conquistas.conquistadas[0].tier}
+            nome={conquistas.conquistadas[0].name}
+          />
+        ) : null}
 
         <ButtonLink href="/configuracoes"
           variant="ghost"

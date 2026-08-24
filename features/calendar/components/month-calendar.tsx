@@ -13,7 +13,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { useToday } from '@/features/session/session-context';
+import { Timeline } from '@/features/calendar/components/timeline';
+import { useRestDays } from '@/features/rest/use-rest-days';
+import { useSession, useToday } from '@/features/session/session-context';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
 import { cn } from '@/lib/utils';
 import {
@@ -35,7 +37,10 @@ import { formatDurationShort } from '@/services/duration';
  */
 export function MonthCalendar({ comLista = false }: { comLista?: boolean }) {
   const today = useToday();
+  const { protocolStartedOn } = useSession();
   const { data: workouts, isLoading } = useLocalWorkouts();
+  const { data: descansos } = useRestDays();
+  const descansou = new Set(descansos ?? []);
   const [reference, setReference] = useState(() => startOfMonth(today));
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -117,6 +122,7 @@ export function MonthCalendar({ comLista = false }: { comLista?: boolean }) {
 
           {cells.map(({ day, inMonth }) => {
             const trained = byDay.has(day);
+            const rest = !trained && descansou.has(day);
             const isToday = day === today;
             const future = day > today;
 
@@ -124,17 +130,18 @@ export function MonthCalendar({ comLista = false }: { comLista?: boolean }) {
               <button
                 key={day}
                 type="button"
-                disabled={!trained && !isToday}
+                disabled={!trained && !rest && !isToday}
                 onClick={() => setSelected(day)}
-                aria-label={`${formatDay(day)}${trained ? ' — treinou' : isToday ? ' — hoje' : ' — sem treino'}`}
+                aria-label={`${formatDay(day)}${trained ? ' — treinou' : rest ? ' — descanso' : isToday ? ' — hoje' : ' — sem treino'}`}
                 className={cn(
                   'relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm font-medium transition-colors',
                   !inMonth && 'opacity-25',
                   future && 'opacity-30',
                   trained && 'bg-primary text-primary-foreground',
-                  !trained && isToday && 'border-primary border-2',
-                  !trained && !isToday && 'bg-secondary text-muted-foreground',
-                  (trained || isToday) && 'hover:opacity-90',
+                  rest && 'border-primary/50 text-primary border-2 border-dashed',
+                  !trained && !rest && isToday && 'border-primary border-2',
+                  !trained && !rest && !isToday && 'bg-secondary text-muted-foreground',
+                  (trained || rest || isToday) && 'hover:opacity-90',
                 )}
               >
                 <span className="tnum">{Number(day.slice(8))}</span>
@@ -146,12 +153,24 @@ export function MonthCalendar({ comLista = false }: { comLista?: boolean }) {
           })}
         </div>
 
+        {/* a linha do tempo fecha o mês com a visão inteira do protocolo */}
+        <Timeline
+          inicio={protocolStartedOn}
+          hoje={today}
+          diasTreinados={(workouts ?? []).map((workout) => workout.workout_date)}
+          diasDeDescanso={descansos ?? []}
+        />
+
         <ul className="text-muted-foreground flex flex-wrap gap-4 text-xs">
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="bg-primary size-3 rounded" /> treinou
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="border-primary size-3 rounded border-2" /> hoje
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden className="border-primary/50 size-3 rounded border-2 border-dashed" />{' '}
+            descanso
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="bg-secondary size-3 rounded" /> sem treino

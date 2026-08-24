@@ -22,6 +22,7 @@ const COPOS = [
   { ml: 200, rotulo: 'Copo' },
   { ml: 300, rotulo: 'Caneca' },
   { ml: 500, rotulo: 'Garrafa' },
+  { ml: 1000, rotulo: 'Garrafão' },
 ] as const;
 
 export function WaterTracker({
@@ -120,7 +121,7 @@ export function WaterTracker({
           >
             <span className="flex items-center gap-1 text-sm font-semibold">
               <Plus aria-hidden className="size-3" />
-              {copo.ml} ml
+              {copo.ml >= 1000 ? '1 L' : `${copo.ml} ml`}
             </span>
             <span className="text-muted-foreground text-[11px]">{copo.rotulo}</span>
           </Button>

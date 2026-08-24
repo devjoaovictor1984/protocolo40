@@ -6,6 +6,8 @@ import { Scale } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { LineChart } from '@/components/charts';
+import { PageHeader } from '@/components/page-header';
+import { useVerMais, VerMais } from '@/components/ver-mais';
 import { EmptyState } from '@/components/stats';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +59,9 @@ export function MeasurementsPage({
   // a data pode vir da URL: é assim que "registrar o peso deste dia" funciona
   const [date, setDate] = useState(dataInicial ?? today);
 
+  // um registro por dia: em um ano são 365 nós numa lista só
+  const registros = useVerMais(measurements ?? [], 20);
+
   const existing = (measurements ?? []).find((item) => item.measured_on === date) ?? null;
   const series = weightSeries(measurements ?? []);
 
@@ -67,14 +72,17 @@ export function MeasurementsPage({
 
   return (
     <div className="flex flex-col gap-6 py-6">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight">Medidas</h1>
-        {!open ? (
-          <Button className="h-11" onClick={() => setOpen(true)}>
-            Registrar
-          </Button>
-        ) : null}
-      </header>
+      <PageHeader
+        titulo="Medidas"
+        trilha={[{ href: '/evolucao', label: 'Evolução' }]}
+        acao={
+          !open ? (
+            <Button className="h-11" onClick={() => setOpen(true)}>
+              Registrar
+            </Button>
+          ) : null
+        }
+      />
 
       {open ? (
         <MeasurementForm
@@ -121,7 +129,7 @@ export function MeasurementsPage({
               Registros
             </h2>
             <ul className="border-border divide-border divide-y rounded-xl border">
-              {(measurements ?? []).map((item) => (
+              {registros.mostrados.map((item) => (
                 <li key={item.client_id} className="flex items-center justify-between gap-3 p-4">
                   <div>
                     <p className="tnum font-medium">{formatDay(item.measured_on)}</p>
@@ -143,6 +151,13 @@ export function MeasurementsPage({
                 </li>
               ))}
             </ul>
+
+            <VerMais
+              restantes={registros.restantes}
+              porLote={registros.porLote}
+              onMostrar={registros.mostrarMais}
+              substantivo="registros"
+            />
           </section>
         </>
       )}
