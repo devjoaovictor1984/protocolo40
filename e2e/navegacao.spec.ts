@@ -162,7 +162,8 @@ test.describe('navegação', () => {
     page,
     baseURL,
   }) => {
-    await signIn(context, baseURL!);
+    // guardar o id não é detalhe: é o que o afterEach usa para apagar a conta
+    userId = await signIn(context, baseURL!);
 
     await page.goto('/hoje');
 

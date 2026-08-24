@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { PhotoGallery } from '@/features/photos/components/photo-gallery';
+import { requireSession } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Fotos', robots: { index: false, follow: false } };
 
@@ -12,5 +13,13 @@ export default async function FotosPage({ searchParams }: { searchParams: Search
     ? params.data
     : undefined;
 
-  return <PhotoGallery openCameraOnMount={params.nova === '1'} dataInicial={data} />;
+  const { profile } = await requireSession();
+
+  return (
+    <PhotoGallery
+      openCameraOnMount={params.nova === '1'}
+      dataInicial={data}
+      vitrine={{ antes: profile.showcase_before_id, depois: profile.showcase_after_id }}
+    />
+  );
 }

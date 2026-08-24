@@ -24,6 +24,7 @@ import {
   useThumbUrl,
   type GalleryPhoto,
 } from '@/features/photos/use-photos';
+import { ShowcasePicker } from '@/features/community/components/showcase-picker';
 import { useSession, useToday } from '@/features/session/session-context';
 import { formatDay } from '@/services/calendar';
 import { protocolDay } from '@/services/streak';
@@ -38,9 +39,12 @@ import { recarregar } from '@/lib/query/refresh';
 export function PhotoGallery({
   openCameraOnMount = false,
   dataInicial,
+  vitrine,
 }: {
   openCameraOnMount?: boolean;
   dataInicial?: string;
+  /** o par já exposto no perfil, para o seletor abrir marcado */
+  vitrine?: { antes: string | null; depois: string | null };
 }) {
   const { userId, protocolStartedOn } = useSession();
   const today = useToday();
@@ -183,6 +187,14 @@ export function PhotoGallery({
           {saving ? 'Preparando…' : data === today ? 'Registrar foto de hoje' : `Registrar foto de ${formatDay(data)}`}
         </Button>
       </section>
+
+      {(groups ?? []).length > 0 ? (
+        <ShowcasePicker
+          fotos={groups.flatMap(([, fotos]) => fotos)}
+          antesAtual={vitrine?.antes ?? null}
+          depoisAtual={vitrine?.depois ?? null}
+        />
+      ) : null}
 
       {isLoading ? (
         <div className="grid grid-cols-3 gap-2">

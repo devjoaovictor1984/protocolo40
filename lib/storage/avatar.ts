@@ -13,11 +13,13 @@ import type { ProfileRow } from '@/types/database';
 
 /** O `?v=` força o navegador a buscar de novo depois de uma troca de foto. */
 export function avatarUrl(
-  profile: Pick<ProfileRow, 'avatar_path' | 'avatar_url' | 'updated_at'>,
+  // `updated_at` é opcional: listas de pessoas vêm de funções do banco que não
+  // o devolvem, e sem ele a URL apenas deixa de ter versão
+  profile: Pick<ProfileRow, 'avatar_path' | 'avatar_url'> & { updated_at?: string },
   supabaseUrl: string,
 ): string | null {
   if (profile.avatar_path) {
-    const version = Date.parse(profile.updated_at) || 0;
+    const version = Date.parse(profile.updated_at ?? '') || 0;
     return `${supabaseUrl}/storage/v1/object/public/avatars/${profile.avatar_path}?v=${version}`;
   }
 

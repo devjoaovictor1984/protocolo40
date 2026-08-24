@@ -17,6 +17,7 @@ import {
   Timer,
   Trophy,
   User,
+  Users,
 } from 'lucide-react';
 
 import { Wordmark } from '@/components/brand/wordmark';
@@ -55,6 +56,7 @@ const SECONDARY: NavItem[] = [
   { href: '/medidas', label: 'Medidas', icon: Scale },
   { href: '/recordes', label: 'Recordes', icon: Trophy },
   { href: '/conquistas', label: 'Conquistas', icon: Medal },
+  { href: '/comunidade', label: 'Comunidade', icon: Users },
 ];
 
 /**
@@ -141,6 +143,18 @@ const QUICK_ACTIONS: {
         label: 'Recordes',
         description: 'Suas melhores marcas',
         icon: Trophy,
+      },
+      {
+        href: '/conquistas',
+        label: 'Conquistas',
+        description: 'As insígnias que você já tem e as que faltam',
+        icon: Medal,
+      },
+      {
+        href: '/comunidade',
+        label: 'Comunidade',
+        description: 'Siga quem também está fazendo os 20 minutos',
+        icon: Users,
       },
     ],
   },

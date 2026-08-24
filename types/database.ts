@@ -75,6 +75,8 @@ export type ProfileRow = Timestamps & {
   onboarding_completed_at: string | null;
   is_admin: boolean;
   biological_sex: BiologicalSex;
+  showcase_before_id: string | null;
+  showcase_after_id: string | null;
   deleted_at: string | null;
 };
 
@@ -546,6 +548,38 @@ export interface Database {
       somar_agua: {
         Args: { p_day: string; p_ml: number };
         Returns: number;
+      };
+      contar_seguidores: {
+        Args: { p_user: string };
+        Returns: number;
+      };
+      contar_seguindo: {
+        Args: { p_user: string };
+        Returns: number;
+      };
+      buscar_pessoas: {
+        Args: { p_termo: string; p_limite?: number };
+        Returns: {
+          id: string;
+          username: string;
+          full_name: string | null;
+          avatar_path: string | null;
+          avatar_url: string | null;
+          seguidores: number;
+        }[];
+      };
+      minha_rede: {
+        Args: { p_tipo: string };
+        Returns: {
+          id: string;
+          username: string;
+          full_name: string | null;
+          avatar_path: string | null;
+          avatar_url: string | null;
+          dias_treinados: number | null;
+          sequencia: number | null;
+          desde: string;
+        }[];
       };
       tem_acesso: {
         Args: { p_recurso: string; p_user?: string };

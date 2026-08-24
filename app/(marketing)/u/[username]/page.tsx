@@ -7,9 +7,14 @@ import { StatCard } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ButtonLink } from '@/components/ui/button-link';
 import { env } from '@/lib/env';
+import { Emblem } from '@/features/badges/components/emblem';
+import { conquistasDoUsuario } from '@/features/badges/repository';
+import { FollowButton } from '@/features/community/components/follow-button';
+import { contagens, relacaoCom, vitrineDe } from '@/features/community/repository';
+import { getUser } from '@/lib/auth/session';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { createClient } from '@/lib/supabase/server';
-import { formatDay } from '@/services/calendar';
+import { daysBetween, formatDay } from '@/services/calendar';
 
 /**
  * Perfil público.
@@ -26,7 +31,9 @@ async function loadProfile(username: string) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, username, full_name, bio, avatar_path, avatar_url, updated_at, protocol_started_on')
+    .select(
+      'id, username, full_name, bio, avatar_path, avatar_url, updated_at, protocol_started_on, showcase_before_id, showcase_after_id',
+    )
     .eq('username', username.toLowerCase())
     .maybeSingle();
 
@@ -66,10 +73,21 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
   }
 
   const supabase = await createClient();
+  const visitante = await getUser();
 
   // a função é SECURITY INVOKER: sem permissão, os números voltam zerados
-  const { data } = await supabase.rpc('get_user_stats', { p_user: profile.id });
+  const [{ data }, conquistas, numeros, vitrine, relacao] = await Promise.all([
+    supabase.rpc('get_user_stats', { p_user: profile.id }),
+    conquistasDoUsuario(profile.id),
+    contagens(profile.id),
+    vitrineDe(profile),
+    visitante && visitante.id !== profile.id
+      ? relacaoCom(profile.id)
+      : Promise.resolve({ segue: false, status: null, meSegue: false }),
+  ]);
+
   const stats = data?.[0] ?? null;
+  const ehVisitanteLogado = Boolean(visitante) && visitante!.id !== profile.id;
   const name = profile.full_name ?? profile.username;
   const initials = initialsOf(profile.full_name, profile.username);
   const foto = avatarUrl(profile, env.supabaseUrl);
@@ -90,13 +108,75 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
             <AvatarFallback className="text-xl font-bold">{initials}</AvatarFallback>
           </Avatar>
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-extrabold tracking-tight">{name}</h1>
             <p className="text-muted-foreground text-sm">@{profile.username}</p>
+            <p className="text-muted-foreground tnum mt-1 text-xs">
+              {numeros.seguidores} {numeros.seguidores === 1 ? 'seguidor' : 'seguidores'} ·{' '}
+              {numeros.seguindo} seguindo
+            </p>
           </div>
+
+          {ehVisitanteLogado ? (
+            <FollowButton
+              userId={profile.id}
+              username={profile.username}
+              seguindo={relacao.segue}
+              compacto
+            />
+          ) : null}
         </div>
 
         {profile.bio ? <p>{profile.bio}</p> : null}
+
+        {vitrine ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+              Antes e depois
+            </h2>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { url: vitrine.antes, dia: vitrine.antesEm, rotulo: 'Antes' },
+                { url: vitrine.depois, dia: vitrine.depoisEm, rotulo: 'Depois' },
+              ].map((foto) => (
+                <figure key={foto.rotulo} className="flex flex-col gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada de curta duração */}
+                  <img
+                    src={foto.url}
+                    alt={`${foto.rotulo}: ${formatDay(foto.dia)}`}
+                    className="border-border aspect-3/4 w-full rounded-xl border object-cover"
+                  />
+                  <figcaption className="text-muted-foreground tnum text-center text-[11px]">
+                    {foto.rotulo} · {formatDay(foto.dia)}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+
+            <p className="text-muted-foreground text-center text-[11px]">
+              {daysBetween(vitrine.antesEm, vitrine.depoisEm)} dias entre as duas
+            </p>
+          </section>
+        ) : null}
+
+        {conquistas.conquistadas.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+              Insígnias ({conquistas.conquistadas.length})
+            </h2>
+            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+              {conquistas.conquistadas.slice(0, 12).map((badge) => (
+                <span key={badge.slug} className="flex w-16 shrink-0 flex-col items-center gap-1">
+                  <Emblem emblem={badge.emblem} tier={badge.tier} className="size-12" />
+                  <span className="text-center text-[10px] leading-tight font-medium">
+                    {badge.name}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {stats && stats.total_days > 0 ? (
           <>
