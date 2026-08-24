@@ -110,7 +110,7 @@ test.describe('mensagem do dia e rotas', () => {
     await expect(page.getByText(esperada.verse)).toHaveCount(0);
     await page.getByRole('button', { name: new RegExp(esperada.reference.split(' ')[0]) }).click();
     await expect(page.getByText(esperada.verse)).toBeVisible();
-    await expect(page.getByText(/João Ferreira de Almeida/)).toBeVisible();
+    await expect(page.getByText(/Tradução de João Ferreira de Almeida/)).toBeVisible();
   });
 
   test('existe uma mensagem para cada um dos 366 dias', async () => {

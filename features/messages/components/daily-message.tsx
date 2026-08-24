@@ -38,8 +38,11 @@ export function DailyMessage({ mensagem }: { mensagem: MensagemDoDia }) {
       {aberto ? (
         <blockquote className="border-primary/40 text-muted-foreground border-l-2 pl-3 text-sm leading-relaxed italic">
           {mensagem.verse}
+          {/* "João Ferreira de Almeida" sozinho parecia um segundo autor
+              bíblico. O "Tradução de" desfaz a ambiguidade em duas palavras —
+              e é o nome que a tradução leva justamente por ser dele. */}
           <footer className="mt-1 text-[11px] not-italic">
-            {mensagem.reference} · João Ferreira de Almeida
+            {mensagem.reference} · Tradução de João Ferreira de Almeida
           </footer>
         </blockquote>
       ) : null}
