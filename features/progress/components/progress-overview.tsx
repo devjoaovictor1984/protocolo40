@@ -83,7 +83,7 @@ export function ProgressOverview() {
           title="Sua evolução aparece a partir do primeiro treino."
           description="Depois de alguns dias os gráficos começam a contar a história sozinhos."
           action={
-            <ButtonLink href="/treinar?auto=1" className="h-12">
+            <ButtonLink href="/treinar" className="h-12">
               COMEÇAR TREINO
             </ButtonLink>
           }

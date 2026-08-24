@@ -185,7 +185,9 @@ test.describe('análise', () => {
     // treino de poucos segundos pede confirmação
     page.on('dialog', (dialog) => void dialog.accept());
 
-    await page.goto('/treinar?auto=1');
+    await page.goto('/treinar');
+    // o cronômetro não começa sozinho: a tela de preparo mostra o treino primeiro
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'Adicionar um round' }).click();
     await page.getByRole('button', { name: 'Finalizar' }).click();

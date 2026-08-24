@@ -80,7 +80,7 @@ const QUICK_ACTIONS: {
     grupo: 'Treinar agora',
     itens: [
       {
-        href: '/treinar?auto=1',
+        href: '/treinar',
         label: 'Começar treino livre',
         description: 'Abre o cronômetro em 20:00',
         icon: Timer,
@@ -306,7 +306,7 @@ export function SideNav() {
           </QuickActions>
 
           <Link
-            href="/treinar?auto=1"
+            href="/treinar"
             className="bg-primary text-primary-foreground flex h-12 items-center justify-center gap-2 rounded-xl font-semibold transition-opacity hover:opacity-90"
           >
             <Timer aria-hidden className="size-4" />

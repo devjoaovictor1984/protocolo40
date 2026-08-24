@@ -147,7 +147,9 @@ test.describe('área segura', () => {
   test('o cronômetro também respeita o topo', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
 
-    await page.goto('/treinar?auto=1');
+    await page.goto('/treinar');
+    // o cronômetro não começa sozinho: a tela de preparo mostra o treino primeiro
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
     await simularEntalhe(page);
     await page.waitForTimeout(400);

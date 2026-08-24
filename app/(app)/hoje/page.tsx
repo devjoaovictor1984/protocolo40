@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { Dashboard } from '@/features/dashboard/components/dashboard';
+import { painelDeSaude } from '@/features/health/repository';
 import { mensagemDoDia } from '@/features/messages/repository';
 import { requireSession } from '@/lib/auth/session';
 import { todayIn } from '@/services/calendar';
@@ -14,7 +15,9 @@ export default async function DashboardPage() {
   const { profile } = await requireSession();
   // o dia é o do usuário: quem abre o app à meia-noite e meia em Manaus não
   // pode receber a mensagem de ontem
-  const mensagem = await mensagemDoDia(todayIn(profile.timezone));
+  const hoje = todayIn(profile.timezone);
 
-  return <Dashboard mensagem={mensagem} />;
+  const [mensagem, saude] = await Promise.all([mensagemDoDia(hoje), painelDeSaude(profile, hoje)]);
+
+  return <Dashboard mensagem={mensagem} agua={saude.aguaMl} metaAgua={saude.metas.aguaMl} />;
 }

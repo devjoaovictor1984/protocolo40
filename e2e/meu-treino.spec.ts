@@ -125,9 +125,16 @@ test.describe('biblioteca de treinos', () => {
 
     await page.getByRole('button', { name: 'SALVAR E COMEÇAR AGORA' }).click();
 
-    // salvou e já abriu o cronômetro com ele
+    // salvou e abriu a tela de preparo com ele — sem começar sozinho
     await page.waitForURL(/\/treinar/, { timeout: 25_000 });
     await expect(page.getByText('Meu circuito')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Sua meta de hoje')).toBeVisible({ timeout: 20_000 });
+
+    // os exercícios que acabei de escolher aparecem antes de começar
+    await expect(page.getByText('Agachamento')).toBeVisible();
+    await expect(page.getByText('Flexão')).toBeVisible();
+
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
 
     // dois rounds e finaliza
     await page.getByRole('button', { name: 'Adicionar um round' }).click();

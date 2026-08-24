@@ -175,7 +175,7 @@ export function MonthCalendar({ comLista = false }: { comLista?: boolean }) {
                     : 'Nenhum treino neste dia.'}
                 </p>
                 {selected === today ? (
-                  <ButtonLink href="/treinar?auto=1" className="h-12">
+                  <ButtonLink href="/treinar" className="h-12">
                     COMEÇAR TREINO
                   </ButtonLink>
                 ) : null}

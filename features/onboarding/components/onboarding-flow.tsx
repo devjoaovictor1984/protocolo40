@@ -314,7 +314,7 @@ function DayOne() {
         </p>
       </div>
 
-      <ButtonLink href="/treinar?auto=1"
+      <ButtonLink href="/treinar"
         className="h-16 w-full max-w-sm text-base font-bold"
       >
         <Play aria-hidden className="size-5" />

@@ -28,7 +28,7 @@ export default async function RecordesPage() {
           title="Seu primeiro treino já vira recorde."
           description="A partir dele, cada marca superada aparece aqui com a data e o valor anterior."
           action={
-            <ButtonLink href="/treinar?auto=1" className="h-12">
+            <ButtonLink href="/treinar" className="h-12">
               COMEÇAR TREINO
             </ButtonLink>
           }

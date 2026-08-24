@@ -20,7 +20,7 @@ import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useSession, useToday } from '@/features/session/session-context';
-import { WeightRow } from '@/features/dashboard/components/weight-row';
+import { DailyCards } from '@/features/dashboard/components/daily-cards';
 import { DailyMessage } from '@/features/messages/components/daily-message';
 import type { MensagemDoDia } from '@/features/messages/repository';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,15 @@ import type { LocalWorkout } from '@/types/offline';
  * A tela responde a uma pergunta só: o que eu preciso fazer hoje? Por isso o
  * cartão do treino ocupa o topo e tudo o mais vem depois, em texto pequeno.
  */
-export function Dashboard({ mensagem }: { mensagem: MensagemDoDia | null }) {
+export function Dashboard({
+  mensagem,
+  agua,
+  metaAgua,
+}: {
+  mensagem: MensagemDoDia | null;
+  agua: number;
+  metaAgua: number | null;
+}) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
   const { data, isLoading } = useDashboard();
@@ -69,7 +77,7 @@ export function Dashboard({ mensagem }: { mensagem: MensagemDoDia | null }) {
 
       {mensagem ? <DailyMessage mensagem={mensagem} /> : null}
 
-      <WeightRow />
+      <DailyCards aguaInicial={agua} metaAgua={metaAgua} />
 
       {isLoading ? (
         <Skeleton className="h-80 w-full rounded-2xl" />
@@ -95,7 +103,7 @@ export function Dashboard({ mensagem }: { mensagem: MensagemDoDia | null }) {
           title="Seu primeiro treino começa aqui."
           description="Vinte minutos. Sem equipamento, sem desculpa, sem preparação."
           action={
-            <ButtonLink href="/treinar?auto=1" size="lg" className="h-12">
+            <ButtonLink href="/treinar" size="lg" className="h-12">
               COMEÇAR TREINO
             </ButtonLink>
           }
@@ -154,7 +162,7 @@ function TodayCard({ day, goalSeconds }: { day: number; goalSeconds: number }) {
       </ProgressRing>
 
       <div className="flex w-full flex-col items-center gap-3">
-        <ButtonLink href="/treinar?auto=1" className="h-16 w-full text-base font-bold">
+        <ButtonLink href="/treinar" className="h-16 w-full text-base font-bold">
           <Play aria-hidden className="size-5" />
           COMEÇAR TREINO
         </ButtonLink>
@@ -236,18 +244,21 @@ function WeekStrip({ today, days }: { today: string; days: string[] }) {
                 {WEEKDAY_LABELS[index]}
               </span>
 
-              <span
-                title={`${formatDay(day)} - ${done ? 'treinou' : futuro ? 'ainda vem' : 'sem treino'}`}
-                className={cn(
-                  'tnum flex size-9 items-center justify-center rounded-full text-sm font-semibold',
-                  done && 'bg-primary text-primary-foreground',
-                  !done && isToday && 'border-primary text-primary border-2',
-                  !done && !isToday && 'text-muted-foreground',
-                  futuro && 'opacity-40',
-                )}
-              >
-                {Number(day.slice(8))}
-              </span>
+              {/*
+               * Cada dia leva a alguma coisa.
+               *
+               * Hoje sem treino abre o cronômetro; um dia passado sem treino
+               * abre o registro daquele dia; um dia com treino abre o
+               * calendário, que é onde ele mora. Dia futuro não é botão: não
+               * existe nada a fazer nele ainda.
+               */}
+              <DiaDaSemana
+                day={day}
+                rotulo={Number(day.slice(8))}
+                done={done}
+                isToday={isToday}
+                futuro={futuro}
+              />
 
               {done ? (
                 <span aria-hidden className="bg-primary size-1 rounded-full" />
@@ -281,5 +292,46 @@ function LastWorkout({ workout, today }: { workout: LocalWorkout; today: string 
         <ChevronRight aria-hidden className="text-muted-foreground size-4" />
       </Link>
     </section>
+  );
+}
+
+/** Um dia da faixa da semana: leva ao cronômetro, ao registro ou ao calendário. */
+function DiaDaSemana({
+  day,
+  rotulo,
+  done,
+  isToday,
+  futuro,
+}: {
+  day: string;
+  rotulo: number;
+  done: boolean;
+  isToday: boolean;
+  futuro: boolean;
+}) {
+  const classe = cn(
+    'tnum flex size-9 items-center justify-center rounded-full text-sm font-semibold transition-colors',
+    done && 'bg-primary text-primary-foreground',
+    !done && isToday && 'border-primary text-primary border-2',
+    !done && !isToday && 'text-muted-foreground',
+    futuro && 'opacity-40',
+    !futuro && 'hover:opacity-80',
+  );
+
+  if (futuro) {
+    return (
+      <span aria-hidden className={classe} title={`${formatDay(day)} — ainda vem`}>
+        {rotulo}
+      </span>
+    );
+  }
+
+  const destino = done ? '/calendario' : isToday ? '/treinar' : `/treino/novo?data=${day}`;
+  const acao = done ? 'ver no calendário' : isToday ? 'começar o treino' : 'registrar este dia';
+
+  return (
+    <Link href={destino} aria-label={`${formatDay(day)} — ${acao}`} className={classe}>
+      {rotulo}
+    </Link>
   );
 }

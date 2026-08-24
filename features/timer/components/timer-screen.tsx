@@ -322,6 +322,33 @@ function ReadyScreen({
         {template?.description ? (
           <p className="text-muted-foreground max-w-xs text-sm text-balance">{template.description}</p>
         ) : null}
+
+        {/*
+         * O que vai ser feito, antes de começar.
+         *
+         * Abrir o cronômetro já correndo economizava um toque e custava a
+         * informação que importa: quantos exercícios são, quais, e quantas
+         * repetições. Quem não sabe o que vem pela frente para no meio.
+         */}
+        {template && template.exercises.length > 0 ? (
+          <ul className="border-border w-full max-w-sm divide-y rounded-2xl border text-left">
+            {template.exercises.map((item, index) => (
+              <li
+                key={`${item.exerciseId}-${index}`}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+              >
+                <span className="truncate text-sm font-medium">{item.name}</span>
+                <span className="text-muted-foreground tnum shrink-0 text-sm">
+                  {describeMetrics(item)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : templateId || timer.session?.templateId ? null : (
+          <p className="text-muted-foreground max-w-xs text-sm text-balance">
+            Treino livre: você decide o que fazer. Se quiser um pronto, escolha em Treinos.
+          </p>
+        )}
       </div>
 
       <footer className="pb-safe flex flex-col items-center gap-3 px-6 pb-8">

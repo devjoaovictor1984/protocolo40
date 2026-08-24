@@ -115,7 +115,13 @@ test.describe('treino', () => {
     await cartao.getByRole('link', { name: 'COMEÇAR TREINO' }).click();
     await page.waitForURL('**/treinar**');
 
-    // o cronômetro está correndo, e não parado em 20:00
+    // a tela de preparo vem antes: mostra a meta e espera o toque
+    await expect(page.getByText('Sua meta de hoje')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Restantes')).toHaveCount(0);
+
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
+
+    // agora sim o cronômetro está correndo, e não parado em 20:00
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
     await page.waitForTimeout(2500);
     const marcador = await page.locator('.tnum').first().innerText();
@@ -175,7 +181,9 @@ test.describe('treino', () => {
     let perguntou = false;
     let mensagem = '';
 
-    await page.goto('/treinar?auto=1');
+    await page.goto('/treinar');
+    // o cronômetro não começa sozinho: a tela de preparo mostra o treino primeiro
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
 
     // primeiro recusa: o treino não pode ser gravado
@@ -213,7 +221,9 @@ test.describe('treino', () => {
   test('o cronômetro sobrevive a sair e voltar para a tela', async ({ context, page, baseURL }) => {
     userId = await signIn(context, baseURL!);
 
-    await page.goto('/treinar?auto=1');
+    await page.goto('/treinar');
+    // o cronômetro não começa sozinho: a tela de preparo mostra o treino primeiro
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
 
     // sai do cronômetro e volta: o tempo continua de onde estava
