@@ -124,7 +124,9 @@ test.describe('conquistas', () => {
 
     // e aparecem no perfil
     await page.goto('/perfil');
-    await expect(page.getByText('Insígnias')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: 'Insígnias' })).toBeVisible({
+      timeout: 20_000,
+    });
     await expect(
       page.getByRole('link', { name: 'Ver todas as conquistas', exact: true }),
     ).toBeVisible();

@@ -144,6 +144,8 @@ test.describe('navegação', () => {
       '/medidas',
       '/recordes',
       '/perfil',
+      '/comunidade',
+      '/convidar',
       '/configuracoes',
       '/treinar',
       '/treino/novo',
@@ -155,6 +157,35 @@ test.describe('navegação', () => {
       inalcancaveis,
       `sem caminho no celular: ${inalcancaveis.join(', ')}. Alcançáveis: ${[...alcancaveis].sort().join(', ')}`,
     ).toEqual([]);
+  });
+
+  test('a comunidade está na barra de baixo, não escondida no +', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    userId = await signIn(context, baseURL!);
+
+    await page.goto('/hoje');
+
+    const barra = page.getByRole('navigation', { name: 'Navegação principal' });
+    const comunidade = barra.getByRole('link', { name: 'Comunidade' });
+
+    await expect(comunidade, 'ninguém procura gente dentro de um "+"').toBeVisible({
+      timeout: 20_000,
+    });
+
+    await comunidade.click();
+    await page.waitForURL('**/comunidade', { timeout: 20_000 });
+
+    // e a barra não pode estourar a largura do telefone
+    const largura = await page.evaluate(() => ({
+      corpo: document.documentElement.scrollWidth,
+      janela: window.innerWidth,
+    }));
+    expect(largura.corpo, 'a barra de baixo estourou a tela').toBeLessThanOrEqual(
+      largura.janela + 1,
+    );
   });
 
   test('o calendário é a segunda aba e traz o histórico junto', async ({

@@ -42,13 +42,24 @@ import { cn } from '@/lib/utils';
 type NavItem = {
   href: string;
   label: string;
+  /**
+   * Rótulo curto para a barra do celular.
+   *
+   * Com cinco abas mais o botão central, cada uma tem cerca de 57 pixels num
+   * telefone estreito — "Comunidade" não cabe e vira reticências. Na barra
+   * lateral do desktop, onde há espaço, vale o nome inteiro.
+   */
+  curto?: string;
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 };
 
 const PRIMARY: NavItem[] = [
   { href: '/hoje', label: 'Hoje', icon: Home },
-  { href: '/calendario', label: 'Calendário', icon: CalendarDays },
+  { href: '/calendario', label: 'Calendário', curto: 'Mês', icon: CalendarDays },
   { href: '/evolucao', label: 'Evolução', icon: LineChart },
+  // duas pessoas relataram não encontrar a comunidade: ela estava só no menu
+  // do botão central, e ninguém procura gente dentro de um "+"
+  { href: '/comunidade', label: 'Comunidade', curto: 'Amigos', icon: Users },
   { href: '/perfil', label: 'Perfil', icon: User },
 ];
 
@@ -57,7 +68,7 @@ const SECONDARY: NavItem[] = [
   { href: '/medidas', label: 'Medidas', icon: Scale },
   { href: '/recordes', label: 'Recordes', icon: Trophy },
   { href: '/conquistas', label: 'Conquistas', icon: Medal },
-  { href: '/comunidade', label: 'Comunidade', icon: Users },
+  { href: '/convidar', label: 'Convidar', icon: UserPlus },
 ];
 
 /**
@@ -251,20 +262,21 @@ export function BottomNav() {
 }
 
 function NavTab({ item, active }: { item: NavItem; active: boolean }) {
-  const { href, label, icon: Icon } = item;
+  const { href, label, curto, icon: Icon } = item;
 
   return (
     <li className="flex-1">
       <Link
         href={href}
         aria-current={active ? 'page' : undefined}
+        aria-label={label}
         className={cn(
-          'flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-medium transition-colors',
+          'flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1.5 text-[10px] font-medium transition-colors',
           active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
         )}
       >
         <Icon aria-hidden className="size-5" />
-        {label}
+        <span className="max-w-full truncate">{curto ?? label}</span>
         {/* o item ativo não é indicado só pela cor */}
         <span
           aria-hidden

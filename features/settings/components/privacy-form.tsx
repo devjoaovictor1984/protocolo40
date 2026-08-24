@@ -12,8 +12,12 @@ import type { Visibility } from '@/types/database';
 /**
  * Privacidade.
  *
- * Cada item é independente e nasce privado. Nada aqui muda sozinho: publicar é
- * sempre uma escolha explícita do dono.
+ * Cada item é independente. O perfil e a sequência nascem públicos — é o que
+ * permite alguém te achar e seguir; sem isso a comunidade nasce vazia. Tudo o
+ * que este app tem de sensível de verdade — treinos, fotos, peso e medidas —
+ * nasce privado e só sai daqui por escolha explícita.
+ *
+ * Nada muda sozinho depois disso.
  */
 
 const OPTIONS: { value: Visibility; label: string; icon: typeof Lock }[] = [
@@ -23,7 +27,11 @@ const OPTIONS: { value: Visibility; label: string; icon: typeof Lock }[] = [
 ];
 
 const ITEMS = [
-  { key: 'profile_visibility', label: 'Perfil', hint: 'Nome, foto e bio em /u/seu-usuario' },
+  {
+    key: 'profile_visibility',
+    label: 'Perfil',
+    hint: 'Nome, foto, bio e insígnias em /u/seu-usuario. Público por padrão.',
+  },
   { key: 'workouts_visibility', label: 'Treinos', hint: 'Duração, rounds e exercícios' },
   { key: 'photos_visibility', label: 'Fotos', hint: 'Vale para as fotos novas; as antigas ficam como estão' },
   { key: 'weight_visibility', label: 'Peso', hint: 'O número e a curva' },
@@ -69,10 +77,15 @@ export function PrivacyForm({ settings }: { settings: SettingsShape }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="border-border bg-secondary/50 rounded-xl border p-4">
-        <p className="text-sm">
-          Tudo começa privado. Uma foto só fica visível para outra pessoa se você mudar isso aqui —
-          nenhuma parte do aplicativo publica nada sozinha.
+      <div className="border-border bg-secondary/50 flex flex-col gap-2 rounded-xl border p-4 text-sm">
+        <p>
+          <strong>Seu perfil e sua sequência começam públicos.</strong> É o que permite outra
+          pessoa te encontrar e seguir. Se preferir sumir das buscas, mude o Perfil para “Só eu”
+          logo abaixo.
+        </p>
+        <p className="text-muted-foreground">
+          Treinos, fotos, peso e medidas começam privados e continuam assim até você mudar aqui.
+          Nenhuma parte do aplicativo publica nada sozinha.
         </p>
       </div>
 

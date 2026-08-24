@@ -56,7 +56,9 @@ export async function buscarPessoas(termo: string): Promise<PessoaEncontrada[]> 
  */
 export async function pessoasNoApp(): Promise<PessoaEncontrada[]> {
   const supabase = await createClient();
-  const { data } = await supabase.rpc('buscar_pessoas', { p_termo: '', p_limite: 50 });
+  // vinte é o que cabe num relance; passar disso vira rolagem, e para achar
+  // alguém específico existe a busca
+  const { data } = await supabase.rpc('buscar_pessoas', { p_termo: '', p_limite: 20 });
 
   return (data ?? []) as PessoaEncontrada[];
 }

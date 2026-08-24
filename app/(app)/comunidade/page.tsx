@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/stats';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { FollowButton } from '@/features/community/components/follow-button';
+import { PeopleGrid } from '@/features/community/components/people-grid';
 import { VisibilityCard } from '@/features/community/components/visibility-card';
 import {
   buscarPessoas,
@@ -119,17 +120,12 @@ export default async function ComunidadePage({ searchParams }: { searchParams: S
             <span className="text-muted-foreground tnum text-xs">{paraDescobrir.length}</span>
           </div>
 
-          <ul className="flex flex-col gap-2">
-            {paraDescobrir.map((pessoa) => (
-              <li key={pessoa.id}>
-                <LinhaDePessoa
-                  pessoa={pessoa}
-                  detalhe={`${pessoa.seguidores} ${pessoa.seguidores === 1 ? 'seguidor' : 'seguidores'}`}
-                  jaSegue={false}
-                />
-              </li>
-            ))}
-          </ul>
+          <PeopleGrid pessoas={paraDescobrir} />
+
+          <p className="text-muted-foreground text-xs">
+            Toque em alguém para ver o perfil e seguir. Procurando uma pessoa específica? Use a
+            busca acima.
+          </p>
         </section>
       ) : null}
 

@@ -17,7 +17,7 @@ export default function AppError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[protocolo40]', error);
+    console.error('[p20x]', error);
   }, [error]);
 
   return (

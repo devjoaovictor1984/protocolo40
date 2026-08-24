@@ -388,4 +388,50 @@ test.describe('comunidade', () => {
     await page.getByRole('button', { name: 'Sair da lista' }).click();
     await expect(page.getByText('Ninguém consegue te encontrar')).toBeVisible({ timeout: 30_000 });
   });
+
+  test('conta nova já nasce visível na comunidade', async ({ context, page, baseURL }) => {
+    test.setTimeout(120_000);
+
+    // sem tocar em nenhuma configuração: é o padrão do banco que decide
+    const email = `com-${crypto.randomUUID()}@p20x.test`;
+    const senha = `Teste-${crypto.randomUUID()}`;
+
+    const { id } = await (
+      await admin('/auth/v1/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({ email, password: senha, email_confirm: true }),
+      })
+    ).json();
+    criadas.push(id);
+
+    await admin(`/rest/v1/profiles?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        onboarding_completed_at: new Date().toISOString(),
+        full_name: 'Recém Chegado',
+      }),
+    });
+
+    const [config] = await (
+      await admin(
+        `/rest/v1/user_settings?user_id=eq.${id}&select=profile_visibility,streak_visibility,allow_followers,photos_visibility,weight_visibility,workouts_visibility`,
+      )
+    ).json();
+
+    // o perfil aparece; o que é sensível continua fechado
+    expect(config.profile_visibility).toBe('public');
+    expect(config.streak_visibility).toBe('public');
+    expect(config.allow_followers).toBe(true);
+    expect(config.photos_visibility, 'foto não pode nascer pública').toBe('private');
+    expect(config.weight_visibility, 'peso não pode nascer público').toBe('private');
+    expect(config.workouts_visibility).toBe('private');
+
+    // e a pessoa é avisada disso na tela de privacidade
+    await entrarComo(context, baseURL!, email, senha);
+    await page.goto('/configuracoes/privacidade');
+    await expect(page.getByText(/Seu perfil e sua sequência começam públicos/)).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByText(/Treinos, fotos, peso e medidas começam privados/)).toBeVisible();
+  });
 });

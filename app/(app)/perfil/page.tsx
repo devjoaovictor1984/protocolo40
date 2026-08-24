@@ -13,6 +13,8 @@ import {
 
 import { StatCard, StreakBadge } from '@/components/stats';
 import { BadgeChip } from '@/features/badges/components/badge-spotlight';
+import { PrivacyToggle } from '@/features/community/components/privacy-toggle';
+import { contagens } from '@/features/community/repository';
 import { Emblem } from '@/features/badges/components/emblem';
 import { conquistasDoUsuario } from '@/features/badges/repository';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,10 +31,14 @@ export default async function PerfilPage() {
   const { user, profile, settings } = await requireSession();
   const supabase = await createClient();
 
-  const [{ data }, conquistas] = await Promise.all([
+  const [{ data }, conquistas, rede] = await Promise.all([
     supabase.rpc('get_user_stats', { p_user: user.id }),
     conquistasDoUsuario(user.id),
+    contagens(user.id),
   ]);
+
+  const visivelNaComunidade =
+    settings.profile_visibility === 'public' && settings.allow_followers;
   const stats = data?.[0] ?? {
     current_streak: 0,
     longest_streak: 0,
@@ -70,6 +76,21 @@ export default async function PerfilPage() {
             {profile.full_name ?? profile.username}
           </h1>
           <p className="text-muted-foreground text-sm">@{profile.username}</p>
+
+          {/* seguidores e seguindo levam à comunidade: é lá que os dois vivem */}
+          <p className="mt-1 flex items-center gap-3 text-sm">
+            <Link href="/comunidade" className="hover:text-foreground">
+              <strong className="tnum">{rede.seguidores}</strong>{' '}
+              <span className="text-muted-foreground">
+                {rede.seguidores === 1 ? 'seguidor' : 'seguidores'}
+              </span>
+            </Link>
+            <Link href="/comunidade" className="hover:text-foreground">
+              <strong className="tnum">{rede.seguindo}</strong>{' '}
+              <span className="text-muted-foreground">seguindo</span>
+            </Link>
+          </p>
+
           <StreakBadge days={stats.current_streak} className="mt-2" />
         </div>
 
@@ -132,6 +153,8 @@ export default async function PerfilPage() {
           </Link>
         </section>
       ) : null}
+
+      <PrivacyToggle visivel={visivelNaComunidade} />
 
       <nav className="flex flex-col gap-2">
         <Link

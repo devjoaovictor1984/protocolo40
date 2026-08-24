@@ -169,7 +169,7 @@ export function OnboardingFlow({
             label="Data de nascimento"
             name="birth_date"
             type="date"
-            hint="Opcional. O 40 é o nome do método, não uma regra de idade."
+            hint="Opcional. Serve para estimar seu gasto calórico na tela de Saúde."
             error={state.fieldErrors?.birth_date}
           />
         </fieldset>
