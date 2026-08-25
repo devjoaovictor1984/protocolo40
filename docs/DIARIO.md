@@ -48,8 +48,11 @@ pelo admin em `/admin/notificacoes`.
 
 **Decisões que não são óbvias:**
 
-- **O cron roda de hora em hora, não uma vez por dia.** Às 19h de Brasília são
-  18h em Manaus. Quem decide é `quem_lembrar()`, com `at time zone`.
+- **A regra é "a hora escolhida já passou hoje"**, e não "é exatamente ela".
+  Às 19h de Brasília são 18h em Manaus; quem decide é `quem_lembrar()`, com
+  `at time zone`. Chamando de hora em hora, o aviso sai na hora exata — a
+  primeira rodada a partir da hora escolhida é ela mesma. Chamando uma vez por
+  dia, sai mais tarde, mas sai. Ver a armadilha do cron da Vercel, abaixo.
 - **Ninguém recebe se já treinou, descansou ou já foi lembrado hoje.** A trava é
   `user_settings.last_reminded_on`.
 - **O texto é regra testada**, em `services/notifications.ts`. Nunca cobra, nunca
@@ -176,6 +179,25 @@ valor. Junto, falha com `unsafe use of new value of enum type`.
 Os transforms do usuário recebem o caminho do arquivo
 (`.next/server/app/index.html`), não a rota (`/`). Para tirar algo do precache,
 use `globIgnores`.
+
+### O plano Hobby da Vercel reprova o deploy por causa do cron
+
+Não é aviso, é erro fatal: `Hobby accounts are limited to daily Cron Jobs`. Um
+`schedule` mais frequente que uma vez por dia derruba o build inteiro, e o
+sintoma é "não aparece deploy nenhum" — o status vai para o commit no GitHub,
+não para a tela que se costuma olhar.
+
+Para ver de fora:
+
+```bash
+gh api repos/OWNER/REPO/commits/SHA/status --jq '.statuses[]'
+```
+
+O `vercel.json` está em `0 1 * * *` (01h UTC, 22h de Brasília) por causa disso.
+Para ter precisão de hora sem pagar o Pro, aponte um disparador externo gratuito
+para `/api/notificacoes/lembretes` de hora em hora, com o cabeçalho
+`Authorization: Bearer $CRON_SECRET`. A rota não sabe de que frequência é
+chamada, e a mesma regra serve nos dois casos.
 
 ### `NEXT_PUBLIC_*` entra no bundle no build
 

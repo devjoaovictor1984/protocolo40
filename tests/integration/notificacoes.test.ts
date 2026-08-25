@@ -109,20 +109,35 @@ describe.skipIf(!configured)('quem recebe lembrete', () => {
     expect(linhas[0].dia).toBe(DIA_SP);
   });
 
-  it('não lembra quem escolheu outra hora', async () => {
-    const id = await pessoa({ timezone: 'America/Sao_Paulo', hora: '07:00:00' });
+  it('não lembra quem escolheu uma hora que ainda não chegou', async () => {
+    // 23h em São Paulo, e lá ainda são 19h
+    const id = await pessoa({ timezone: 'America/Sao_Paulo', hora: '23:00:00' });
     expect(await achar(id)).toHaveLength(0);
   });
 
   /**
-   * O caso que um cron diário erraria: às 19h de São Paulo são 18h em Manaus.
-   * Quem escolheu 19h em Manaus só deve ser lembrado uma hora depois.
+   * A regra é "a hora escolhida já passou hoje", e não "é exatamente ela".
+   *
+   * Isso existe porque o plano Hobby da Vercel só aceita cron diário: com uma
+   * rodada por dia e comparação por igualdade, só seria lembrado quem tivesse
+   * escolhido a hora exata do disparo, e o resto nunca receberia nada. Quem
+   * chama de hora em hora continua recebendo na hora certa, porque a primeira
+   * rodada a partir da hora escolhida é ela mesma.
+   */
+  it('quem escolheu mais cedo é alcançado por uma rodada mais tarde', async () => {
+    const id = await pessoa({ timezone: 'America/Sao_Paulo', hora: '07:00:00' });
+    expect(await achar(id), 'às 19h, quem pediu 7h já passou da hora').toHaveLength(1);
+  });
+
+  /**
+   * O caso que um cron por fuso do servidor erraria: às 19h de São Paulo são
+   * 18h em Manaus.
    */
   it('a hora é a local, não a do servidor', async () => {
-    const manaus19 = await pessoa({ timezone: 'America/Manaus', hora: '19:00:00' });
+    const manaus20 = await pessoa({ timezone: 'America/Manaus', hora: '20:00:00' });
     const manaus18 = await pessoa({ timezone: 'America/Manaus', hora: '18:00:00' });
 
-    expect(await achar(manaus19), 'em Manaus ainda são 18h').toHaveLength(0);
+    expect(await achar(manaus20), 'em Manaus ainda são 18h').toHaveLength(0);
     expect(await achar(manaus18)).toHaveLength(1);
   });
 
@@ -148,6 +163,19 @@ describe.skipIf(!configured)('quem recebe lembrete', () => {
   it('um por dia: quem já foi lembrado hoje não é de novo', async () => {
     const id = await pessoa({ ultimoLembrete: DIA_SP });
     expect(await achar(id)).toHaveLength(0);
+  });
+
+  /**
+   * Sem esta trava, `hora_local >= hora_escolhida` mandaria um aviso a cada
+   * rodada até a meia-noite. É ela que faz a regra ser segura.
+   */
+  it('marcado o lembrete, as rodadas seguintes não o acham mais', async () => {
+    const id = await pessoa({ hora: '07:00:00' });
+    const [linha] = await achar(id);
+    expect(linha).toBeTruthy();
+
+    await admin.rpc('marcar_lembrete', { p_user: id, p_dia: linha.dia });
+    expect(await achar(id), 'seria um aviso por hora até a meia-noite').toHaveLength(0);
   });
 
   it('lembrado ontem volta a ser lembrado hoje', async () => {

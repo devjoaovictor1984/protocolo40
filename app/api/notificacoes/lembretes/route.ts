@@ -7,11 +7,17 @@ import { lembreteDoDia } from '@/services/notifications';
 /**
  * O lembrete diário.
  *
- * Roda de hora em hora, e não uma vez por dia, porque o horário é o da pessoa:
- * às 19h de Brasília são 18h em Manaus e 20h em Fernando de Noronha. Quem
- * decide são as contas de fuso dentro de `quem_lembrar()`, no banco — trazer
- * todo mundo para a memória do servidor só para descartar 95% seria caro e
- * ficaria errado no horário de verão.
+ * O horário é o da pessoa: às 19h de Brasília são 18h em Manaus e 20h em
+ * Fernando de Noronha. Quem decide são as contas de fuso dentro de
+ * `quem_lembrar()`, no banco — trazer todo mundo para a memória do servidor só
+ * para descartar 95% seria caro e ficaria errado no horário de verão.
+ *
+ * A rota não sabe de que frequência ela é chamada, e isso é de propósito. O
+ * plano Hobby da Vercel só aceita cron diário, então o `vercel.json` agenda uma
+ * rodada às 01h UTC (22h de Brasília) e `quem_lembrar()` devolve quem já passou
+ * da hora escolhida. Chamando de hora em hora — por um disparador externo ou no
+ * plano Pro — a mesma regra entrega no horário exato, porque a primeira rodada
+ * a partir da hora escolhida é ela mesma. A trava de um por dia cuida do resto.
  *
  * Chamado pelo cron da Vercel, que manda o `CRON_SECRET` no Authorization. Sem
  * a checagem, qualquer um poderia disparar notificação para a base inteira.
