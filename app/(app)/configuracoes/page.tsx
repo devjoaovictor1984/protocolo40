@@ -4,9 +4,11 @@ import { ChevronRight, CreditCard, LifeBuoy, Shield } from 'lucide-react';
 
 import {
   DailyGoalField,
+  ReminderTimeField,
   SignOutButton,
   ThemeSwitcher,
 } from '@/features/settings/components/settings-controls';
+import { PushToggle } from '@/features/notifications/components/push-toggle';
 import { requireSession } from '@/lib/auth/session';
 import { cobrancaAtiva } from '@/lib/billing/config';
 
@@ -36,6 +38,17 @@ export default async function ConfiguracoesPage() {
         <DailyGoalField seconds={settings.daily_goal_seconds} />
         <p className="text-muted-foreground text-sm">
           O cronômetro abre com essa meta. Treinar menos ou mais continua contando igual.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+          Lembretes
+        </h2>
+        <PushToggle />
+        <ReminderTimeField atual={settings.reminder_time} />
+        <p className="text-muted-foreground text-sm">
+          Nada é enviado se você já treinou ou registrou descanso no dia.
         </p>
       </section>
 

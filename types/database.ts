@@ -52,7 +52,9 @@ export type BadgeMetric =
   | 'madrugada'
   | 'fim_de_semana'
   | 'convites'
-  | 'fundador';
+  | 'fundador'
+  // insígnia datada, que vem de um desafio e não do acúmulo
+  | 'desafio';
 export type BadgeTier = 'bronze' | 'ferro' | 'prata' | 'ouro' | 'imperial';
 export type BiologicalSex = 'feminino' | 'masculino' | 'nao_informado';
 export type SubscriptionStatus =
@@ -106,6 +108,10 @@ export type UserSettingsRow = Timestamps & {
   allow_followers: boolean;
   reminder_time: string | null;
   notification_prefs: Json;
+  /** A pessoa autorizou lembretes. Separado da permissão do navegador. */
+  push_enabled: boolean;
+  /** Trava de um lembrete por dia; o cron roda de hora em hora pelos fusos. */
+  last_reminded_on: string | null;
 };
 
 export type ExerciseRow = Timestamps & {
@@ -117,8 +123,74 @@ export type ExerciseRow = Timestamps & {
   modality: ExerciseModality;
   equipment: string[];
   instructions: string | null;
+  /** Caminho da ilustração no bucket `exercise-art`. Null enquanto não houver arte. */
+  illustration_path: string | null;
   is_active: boolean;
   deleted_at: string | null;
+};
+
+/** Situação de uma campanha de notificação. */
+export type CampaignStatus = 'rascunho' | 'enviando' | 'enviada' | 'falhou';
+
+/** Um aparelho inscrito para receber push. A chave é o endpoint. */
+export type PushSubscriptionRow = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  last_ok_at: string | null;
+};
+
+export type NotificationCampaignRow = {
+  id: string;
+  title: string;
+  body: string;
+  url: string;
+  status: CampaignStatus;
+  created_by: string | null;
+  created_at: string;
+  sent_at: string | null;
+  entregues: number;
+  falhas: number;
+};
+
+/** Regra de um desafio: como se conta o que foi cumprido. */
+export type ChallengeRule = 'dias_no_periodo' | 'dias_seguidos' | 'minutos_no_periodo';
+
+export type ChallengeRow = Timestamps & {
+  id: string;
+  slug: string;
+  title: string;
+  tagline: string | null;
+  description: string;
+  starts_on: string;
+  ends_on: string;
+  rule: ChallengeRule;
+  goal: number;
+  badge_slug: string | null;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type ChallengeParticipantRow = {
+  challenge_id: string;
+  user_id: string;
+  joined_at: string;
+  completed_at: string | null;
+};
+
+/** Uma linha do ranking. Só constância e identidade pública — nunca corpo. */
+export type ChallengeRankRow = {
+  user_id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_path: string | null;
+  avatar_url: string | null;
+  dias: number;
+  concluido: boolean;
 };
 
 export type WorkoutTemplateRow = Timestamps & {
@@ -562,6 +634,31 @@ export interface Database {
           },
         ]
       >;
+      push_subscriptions: TableDef<
+        PushSubscriptionRow,
+        InsertOf<PushSubscriptionRow, 'user_id' | 'endpoint' | 'p256dh' | 'auth'>,
+        Partial<PushSubscriptionRow>,
+        [FK<'push_subscriptions_user_id_fkey', 'user_id', 'profiles'>]
+      >;
+      notification_campaigns: TableDef<
+        NotificationCampaignRow,
+        InsertOf<NotificationCampaignRow, 'title' | 'body'>,
+        Partial<NotificationCampaignRow>,
+        [FK<'notification_campaigns_created_by_fkey', 'created_by', 'profiles'>]
+      >;
+      challenges: TableDef<
+        ChallengeRow,
+        InsertOf<ChallengeRow, 'slug' | 'title' | 'description' | 'starts_on' | 'ends_on' | 'goal'>
+      >;
+      challenge_participants: TableDef<
+        ChallengeParticipantRow,
+        InsertOf<ChallengeParticipantRow, 'challenge_id' | 'user_id'>,
+        Partial<ChallengeParticipantRow>,
+        [
+          FK<'challenge_participants_challenge_id_fkey', 'challenge_id', 'challenges'>,
+          FK<'challenge_participants_user_id_fkey', 'user_id', 'profiles'>,
+        ]
+      >;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -571,6 +668,47 @@ export interface Database {
       };
       eh_admin: {
         Args: { p_user?: string };
+        Returns: boolean;
+      };
+      quem_lembrar: {
+        Args: { p_agora?: string };
+        Returns: {
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          dia: string;
+          primeiro_nome: string | null;
+          sequencia: number;
+          agua_ml: number;
+        }[];
+      };
+      marcar_lembrete: {
+        Args: { p_user: string; p_dia: string };
+        Returns: undefined;
+      };
+      aparelhos_inscritos: {
+        Args: Record<string, never>;
+        Returns: { user_id: string; endpoint: string; p256dh: string; auth: string }[];
+      };
+      ranking_do_desafio: {
+        Args: { p_slug: string; p_limite?: number };
+        Returns: ChallengeRankRow[];
+      };
+      meus_dias_nos_desafios: {
+        Args: Record<string, never>;
+        Returns: { challenge_id: string; dia: string }[];
+      };
+      meus_dias_no_desafio: {
+        Args: { p_slug: string };
+        Returns: string[];
+      };
+      participantes_por_desafio: {
+        Args: Record<string, never>;
+        Returns: { challenge_id: string; total: number }[];
+      };
+      concluir_desafio: {
+        Args: { p_slug: string };
         Returns: boolean;
       };
       somar_agua: {
@@ -659,6 +797,7 @@ export interface Database {
       theme_pref: ThemePref;
       ticket_kind: TicketKind;
       ticket_status: TicketStatus;
+      campaign_status: CampaignStatus;
       badge_metric: BadgeMetric;
       badge_tier: BadgeTier;
       biological_sex: BiologicalSex;

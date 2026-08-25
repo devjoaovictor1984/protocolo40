@@ -73,6 +73,25 @@ export async function updateDailyGoal(seconds: number): Promise<void> {
 }
 
 /** Edição do perfil, reaproveitando o schema do onboarding. */
+/**
+ * Horário do lembrete.
+ *
+ * Guardado como hora local da pessoa, e não como instante: o fuso já mora no
+ * perfil, e o cron faz a conta. Guardar em UTC quebraria para quem viaja e para
+ * o horário de verão.
+ */
+export async function updateReminderTime(hora: string | null): Promise<void> {
+  const user = await requireUser();
+
+  // aceita só HH:MM; o resto vira nulo, que significa "não me lembre"
+  const valida = hora && /^([01]\d|2[0-3]):[0-5]\d$/.test(hora) ? `${hora}:00` : null;
+
+  const supabase = await createClient();
+  await supabase.from('user_settings').update({ reminder_time: valida }).eq('user_id', user.id);
+
+  revalidatePath('/configuracoes');
+}
+
 export async function updateProfile(
   _prev: ActionState,
   formData: FormData,

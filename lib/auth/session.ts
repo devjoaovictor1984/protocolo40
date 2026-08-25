@@ -4,7 +4,26 @@ import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
+import { falhaTemporaria } from '@/lib/supabase/guard';
 import type { ProfileRow, UserSettingsRow } from '@/types/database';
+
+/**
+ * O servidor não respondeu. Isso não é sessão inválida.
+ *
+ * Existe para separar duas coisas que o Supabase devolve iguais: "não tem
+ * sessão" e "não deu para perguntar". Confundir as duas manda para a tela de
+ * login gente que está logada, e é a pior coisa que este app pode fazer — a
+ * pessoa perde a confiança na sequência que levou semanas para construir.
+ * Lançado, vira a fronteira de erro, que diz o que houve e oferece tentar de
+ * novo. Veja também `lib/supabase/guard.ts`, que faz a mesma distinção no proxy.
+ */
+export class SemConexao extends Error {
+  constructor(cause?: unknown) {
+    super('Não foi possível falar com o servidor. Tente de novo em instantes.');
+    this.name = 'SemConexao';
+    this.cause = cause;
+  }
+}
 
 /**
  * Identidade e sessão no servidor.
@@ -26,10 +45,19 @@ export type SessionUser = {
   email: string | null;
 };
 
-/** Usuário da requisição, ou null. Nunca lança. */
+/**
+ * Usuário da requisição, ou null.
+ *
+ * Lança `SemConexao` quando a rede falha — null aqui significa "não tem
+ * sessão", e quem chama transforma null em tela de login.
+ */
 export const getUser = cache(async (): Promise<SessionUser | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
+
+  if (falhaTemporaria(error)) {
+    throw new SemConexao(error);
+  }
 
   if (error || !data?.claims?.sub) {
     return null;
@@ -75,11 +103,18 @@ export const requireSession = cache(async (): Promise<SessionContext> => {
   const supabase = await createClient();
 
   // um único round trip: o join traz as configurações junto com o perfil
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('*, user_settings(*)')
     .eq('id', user.id)
     .maybeSingle();
+
+  // Consulta que falhou não é perfil inexistente. Sem esta separação, um
+  // soluço de rede levava a pessoa para o login dizendo que a conta dela não
+  // foi encontrada — que é assustador e, pior, mentira.
+  if (error) {
+    throw new SemConexao(error);
+  }
 
   const settings = data?.user_settings as UserSettingsRow | UserSettingsRow[] | null | undefined;
   const resolved = Array.isArray(settings) ? settings[0] : settings;

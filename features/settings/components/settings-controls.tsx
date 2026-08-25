@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signOut } from '@/features/auth/actions';
-import { deleteAccount, updateDailyGoal } from '@/features/settings/actions';
+import { deleteAccount, updateDailyGoal, updateReminderTime } from '@/features/settings/actions';
 import { wipeLocalData } from '@/lib/offline/db';
 import { summarize } from '@/lib/offline/queue';
 import { cn } from '@/lib/utils';
@@ -93,6 +93,48 @@ export function DailyGoalField({ seconds }: { seconds: number }) {
         />
       </div>
       <Button onClick={save} disabled={pending} className="h-12">
+        Salvar
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * Horário do lembrete.
+ *
+ * O padrão é 19h porque é quando a maioria decide se vai treinar ou não hoje —
+ * cedo demais e o dia ainda parece longo; tarde demais e já virou desculpa.
+ * Limpar o campo desliga o lembrete sem precisar mexer na permissão.
+ */
+export function ReminderTimeField({ atual }: { atual: string | null }) {
+  // o banco devolve HH:MM:SS e o input quer HH:MM
+  const [hora, setHora] = useState((atual ?? '19:00').slice(0, 5));
+  const [pending, startTransition] = useTransition();
+
+  function save(valor: string | null) {
+    startTransition(async () => {
+      try {
+        await updateReminderTime(valor);
+        toast.success(valor ? `Lembrete às ${valor}.` : 'Lembrete desligado.');
+      } catch {
+        toast.error('Não conseguimos salvar o horário.');
+      }
+    });
+  }
+
+  return (
+    <div className="flex items-end gap-3">
+      <div className="flex flex-1 flex-col gap-2">
+        <Label htmlFor="lembrete">Horário do lembrete</Label>
+        <Input
+          id="lembrete"
+          type="time"
+          value={hora}
+          onChange={(event) => setHora(event.target.value)}
+          className="tnum h-12 text-base"
+        />
+      </div>
+      <Button onClick={() => save(hora)} disabled={pending} className="h-12">
         Salvar
       </Button>
     </div>

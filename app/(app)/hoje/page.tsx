@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { conquistasDoUsuario } from '@/features/badges/repository';
+import { desafioEmDestaque, meusDiasPorDesafio } from '@/features/challenges/repository';
 import { Dashboard } from '@/features/dashboard/components/dashboard';
 import { painelDeSaude } from '@/features/health/repository';
 import { mensagemDoDia } from '@/features/messages/repository';
@@ -21,12 +22,17 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
 
-  const [mensagem, saude, { data: descanso }, conquistas] = await Promise.all([
-    mensagemDoDia(hoje),
-    painelDeSaude(profile, hoje),
-    supabase.from('rest_days').select('day').eq('user_id', profile.id).eq('day', hoje).maybeSingle(),
-    conquistasDoUsuario(profile.id),
-  ]);
+  const [mensagem, saude, { data: descanso }, conquistas, desafio, diasPorDesafio] =
+    await Promise.all([
+      mensagemDoDia(hoje),
+      painelDeSaude(profile, hoje),
+      supabase.from('rest_days').select('day').eq('user_id', profile.id).eq('day', hoje).maybeSingle(),
+      conquistasDoUsuario(profile.id),
+      desafioEmDestaque(hoje),
+      // os dias de todos os desafios de uma vez: qual deles vai aparecer só se
+      // sabe depois, e pedir pelo slug obrigaria a esperar a outra consulta
+      meusDiasPorDesafio(),
+    ]);
 
   // as conquistadas já vêm da mais recente para a mais antiga
   const ultima = conquistas.conquistadas[0] ?? null;
@@ -40,6 +46,8 @@ export default async function DashboardPage() {
       ultimaInsignia={
         ultima ? { emblem: ultima.emblem, tier: ultima.tier, name: ultima.name } : null
       }
+      desafio={desafio}
+      diasNoDesafio={desafio ? (diasPorDesafio.get(desafio.id) ?? []) : []}
     />
   );
 }

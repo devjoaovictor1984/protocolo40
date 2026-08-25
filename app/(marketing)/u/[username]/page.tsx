@@ -95,10 +95,22 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
   return (
     <div className="pt-safe px-safe flex min-h-dvh flex-col">
       <header className="flex items-center justify-between px-5 py-6">
-        <Wordmark />
-        <ButtonLink href="/cadastro" size="sm">
-          Começar meu protocolo
-        </ButtonLink>
+        {/*
+          Esta página é pública, mas quem mais chega aqui já tem conta: veio da
+          Comunidade ver o perfil de alguém. Para essa pessoa a marca leva de
+          volta ao painel, e não à landing — sair do app e dar de cara com um
+          botão "Entrar" parece que a sessão caiu.
+        */}
+        <Wordmark href={visitante ? '/hoje' : '/'} />
+        {visitante ? (
+          <ButtonLink href="/comunidade" variant="ghost" size="sm">
+            Voltar
+          </ButtonLink>
+        ) : (
+          <ButtonLink href="/cadastro" size="sm">
+            Começar meu protocolo
+          </ButtonLink>
+        )}
       </header>
 
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-5 py-8">
@@ -203,19 +215,20 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
           No P20X desde {formatDay(profile.protocol_started_on)}
         </p>
 
-        <section className="border-border mt-auto rounded-2xl border p-6 text-center">
-          <p className="text-xl font-extrabold tracking-tight text-balance">
-            20 minutos. Todos os dias.
-          </p>
-          <p className="text-muted-foreground mt-2 text-sm text-balance">
-            Treine, registre e acompanhe sua evolução um dia de cada vez.
-          </p>
-          <ButtonLink href="/cadastro"
-            className="mt-4 h-12 w-full font-semibold"
-          >
-            COMEÇAR MEU PROTOCOLO
-          </ButtonLink>
-        </section>
+        {/* o convite para criar conta é para quem ainda não tem uma */}
+        {visitante ? null : (
+          <section className="border-border mt-auto rounded-2xl border p-6 text-center">
+            <p className="text-xl font-extrabold tracking-tight text-balance">
+              20 minutos. Todos os dias.
+            </p>
+            <p className="text-muted-foreground mt-2 text-sm text-balance">
+              Treine, registre e acompanhe sua evolução um dia de cada vez.
+            </p>
+            <ButtonLink href="/cadastro" className="mt-4 h-12 w-full font-semibold">
+              COMEÇAR MEU PROTOCOLO
+            </ButtonLink>
+          </section>
+        )}
       </main>
     </div>
   );

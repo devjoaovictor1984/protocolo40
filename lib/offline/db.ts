@@ -8,6 +8,8 @@ import type {
   PendingOperation,
 } from '@/types/offline';
 
+import { LIMPAR_SESSAO } from './cache-policy';
+
 /**
  * Banco local do P20X.
  *
@@ -288,4 +290,9 @@ export async function wipeLocalData(): Promise<void> {
     db.clear('pending_operations'),
     db.clear('cache'),
   ]);
+
+  // O IndexedDB não é o único lugar onde fica dado de gente: o service worker
+  // guarda a tela de treino já renderizada. Sem isto, o próximo a abrir o app
+  // no mesmo aparelho vê o nome e a sequência de quem acabou de sair.
+  navigator.serviceWorker?.controller?.postMessage({ type: LIMPAR_SESSAO });
 }

@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
 import { analisar, type Analise, type TreinoFeito } from '@/services/analysis';
+import { focoDaSemana, type FocoDaSemana, type Objetivo } from '@/services/objective';
 
 /**
  * Dados da consultoria.
@@ -23,7 +24,14 @@ type LinhaExercicio = {
   exercises: { name: string; category: string } | null;
 };
 
-export async function analiseDoUsuario(userId: string, hoje: string): Promise<Analise> {
+/**
+ * Os treinos da janela, crus.
+ *
+ * Separado do diagnóstico porque duas leituras diferentes partem dos mesmos
+ * dados: a consultoria exercício por exercício e o foco por objetivo. Buscar
+ * duas vezes seria pagar a consulta em dobro.
+ */
+async function treinosDaJanela(userId: string): Promise<TreinoFeito[]> {
   const supabase = await createClient();
   const desde = new Date(Date.now() - SEMANAS * 7 * 86_400_000).toISOString().slice(0, 10);
 
@@ -58,5 +66,32 @@ export async function analiseDoUsuario(userId: string, hoje: string): Promise<An
     };
   });
 
-  return analisar(treinos, hoje);
+  return treinos;
+}
+
+export async function analiseDoUsuario(userId: string, hoje: string): Promise<Analise> {
+  return analisar(await treinosDaJanela(userId), hoje);
+}
+
+/**
+ * O foco por objetivo.
+ *
+ * Puxa os dias de descanso junto: sem eles, quem descansa direito aparece como
+ * quem simplesmente faltou — e levaria um conselho para corrigir algo que já
+ * está certo.
+ */
+export async function focoDoUsuario(
+  userId: string,
+  objetivo: Objetivo | null,
+  hoje: string,
+): Promise<FocoDaSemana> {
+  const supabase = await createClient();
+  const desde = new Date(Date.now() - SEMANAS * 7 * 86_400_000).toISOString().slice(0, 10);
+
+  const [treinos, { data: descansos }] = await Promise.all([
+    treinosDaJanela(userId),
+    supabase.from('rest_days').select('day').eq('user_id', userId).gte('day', desde),
+  ]);
+
+  return focoDaSemana(treinos, (descansos ?? []).map((linha) => linha.day), objetivo, hoje);
 }

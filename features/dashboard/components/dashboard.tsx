@@ -21,9 +21,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useSession, useToday } from '@/features/session/session-context';
 import { BadgeSpotlight } from '@/features/badges/components/badge-spotlight';
+import { ChallengeCard } from '@/features/challenges/components/challenge-card';
+import type { DesafioResumo } from '@/features/challenges/repository';
 import { DailyCards } from '@/features/dashboard/components/daily-cards';
 import { RestDayButton } from '@/features/rest/components/rest-day-button';
 import { DailyMessage } from '@/features/messages/components/daily-message';
+import { InstallCard } from '@/features/pwa/components/install-card';
 import type { MensagemDoDia } from '@/features/messages/repository';
 import { cn } from '@/lib/utils';
 import { formatClock, formatDurationShort } from '@/services/duration';
@@ -50,12 +53,16 @@ export function Dashboard({
   metaAgua,
   descansouHoje,
   ultimaInsignia,
+  desafio,
+  diasNoDesafio,
 }: {
   mensagem: MensagemDoDia | null;
   agua: number;
   metaAgua: number | null;
   descansouHoje: boolean;
   ultimaInsignia: { emblem: string; tier: BadgeTier; name: string } | null;
+  desafio: DesafioResumo | null;
+  diasNoDesafio: readonly string[];
 }) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
@@ -97,6 +104,10 @@ export function Dashboard({
 
       <DailyCards aguaInicial={agua} metaAgua={metaAgua} />
 
+      {/* o desafio entra depois dos cartões do dia e antes do treino: é convite,
+          não tarefa — quem abriu o app para treinar não precisa passar por ele */}
+      {desafio ? <ChallengeCard desafio={desafio} meusDias={diasNoDesafio} hoje={today} /> : null}
+
       {isLoading ? (
         <Skeleton className="h-80 w-full rounded-2xl" />
       ) : doneToday ? (
@@ -114,6 +125,10 @@ export function Dashboard({
       ) : (
         <WeekStrip today={today} days={data!.days} />
       )}
+
+      {/* depois da semana, não antes: quem abriu o app quer ver o treino de
+          hoje. O convite some sozinho quando o app já está instalado */}
+      <InstallCard />
 
       {!isLoading && data!.lastWorkout ? (
         <LastWorkout workout={data!.lastWorkout} today={today} />

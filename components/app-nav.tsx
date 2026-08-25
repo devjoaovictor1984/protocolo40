@@ -15,6 +15,7 @@ import {
   Plus,
   Scale,
   Timer,
+  Flag,
   Trophy,
   User,
   UserPlus,
@@ -34,9 +35,14 @@ import { cn } from '@/lib/utils';
 /**
  * Navegação principal.
  *
- * Cinco itens no celular, com o `+` no centro — a ação de registrar precisa
+ * Seis itens no celular, com o `+` no centro — a ação de registrar precisa
  * estar debaixo do polegar. No desktop os mesmos destinos viram uma sidebar
  * discreta, e o `+` volta a ser um botão comum.
+ *
+ * Seis é o limite, e já é apertado: num telefone de 360px cada aba fica com
+ * cerca de 48px. Por isso todo item tem rótulo curto e o texto encolhe — o
+ * ícone é quem carrega o reconhecimento, e o rótulo confirma. Um sétimo
+ * destino não cabe: teria que sair um dos que estão aqui.
  */
 
 type NavItem = {
@@ -45,7 +51,7 @@ type NavItem = {
   /**
    * Rótulo curto para a barra do celular.
    *
-   * Com cinco abas mais o botão central, cada uma tem cerca de 57 pixels num
+   * Com seis abas mais o botão central, cada uma tem cerca de 48 pixels num
    * telefone estreito — "Comunidade" não cabe e vira reticências. Na barra
    * lateral do desktop, onde há espaço, vale o nome inteiro.
    */
@@ -56,7 +62,8 @@ type NavItem = {
 const PRIMARY: NavItem[] = [
   { href: '/hoje', label: 'Hoje', icon: Home },
   { href: '/calendario', label: 'Calendário', curto: 'Mês', icon: CalendarDays },
-  { href: '/evolucao', label: 'Evolução', icon: LineChart },
+  { href: '/desafios', label: 'Desafios', curto: 'Desafio', icon: Flag },
+  { href: '/evolucao', label: 'Evolução', curto: 'Evolução', icon: LineChart },
   // duas pessoas relataram não encontrar a comunidade: ela estava só no menu
   // do botão central, e ninguém procura gente dentro de um "+"
   { href: '/comunidade', label: 'Comunidade', curto: 'Amigos', icon: Users },
@@ -237,7 +244,7 @@ export function BottomNav() {
       className="border-border bg-background/95 pb-safe fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur lg:hidden"
     >
       <ul className="mx-auto flex max-w-md items-stretch justify-between px-2 pt-1.5">
-        {PRIMARY.slice(0, 2).map((item) => (
+        {PRIMARY.slice(0, 3).map((item) => (
           <NavTab key={item.href} item={item} active={isActive(pathname, item.href)} />
         ))}
 
@@ -253,7 +260,7 @@ export function BottomNav() {
           </QuickActions>
         </li>
 
-        {PRIMARY.slice(2).map((item) => (
+        {PRIMARY.slice(3).map((item) => (
           <NavTab key={item.href} item={item} active={isActive(pathname, item.href)} />
         ))}
       </ul>
@@ -295,22 +302,30 @@ export function SideNav() {
       <div className="sticky top-0 flex h-dvh flex-col gap-6 px-4 py-6">
         <Wordmark href="/hoje" className="px-2" />
 
-        <nav aria-label="Navegação principal" className="flex flex-col gap-1">
-          {PRIMARY.map((item) => (
-            <SideLink key={item.href} item={item} active={isActive(pathname, item.href)} />
-          ))}
-        </nav>
+        {/*
+          A lista rola; as ações ficam. Com onze destinos numa tela de notebook
+          de 720px a coluna estourava a altura, o `mt-auto` deixava de empurrar e
+          o botão de começar treino caía abaixo da dobra — sem barra de rolagem
+          para revelá-lo, porque quem rolava era a página, não a coluna.
+        */}
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
+          <nav aria-label="Navegação principal" className="flex flex-col gap-1">
+            {PRIMARY.map((item) => (
+              <SideLink key={item.href} item={item} active={isActive(pathname, item.href)} />
+            ))}
+          </nav>
 
-        <div className="flex flex-col gap-1">
-          <p className="text-muted-foreground px-3 text-[11px] font-semibold tracking-wider uppercase">
-            Registrar
-          </p>
-          {SECONDARY.map((item) => (
-            <SideLink key={item.href} item={item} active={isActive(pathname, item.href)} />
-          ))}
+          <div className="flex flex-col gap-1">
+            <p className="text-muted-foreground px-3 text-[11px] font-semibold tracking-wider uppercase">
+              Registrar
+            </p>
+            {SECONDARY.map((item) => (
+              <SideLink key={item.href} item={item} active={isActive(pathname, item.href)} />
+            ))}
+          </div>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2">
+        <div className="flex shrink-0 flex-col gap-2">
           {/* as mesmas ações do botão central do celular: sem isto, registrar um
               treino passado ou uma foto não teria caminho no desktop */}
           <QuickActions>

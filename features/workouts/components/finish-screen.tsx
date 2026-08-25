@@ -133,7 +133,7 @@ export function FinishScreen({ clientId }: { clientId: string }) {
         await saveMeasurement({ userId, measuredOn: today, weightKg: Number(weight) });
       }
 
-      await recarregar(queryClient, ['workouts'], ['sync', 'queue']);
+      await recarregar(queryClient, ['workouts'], ['measurements'], ['photos'], ['sync', 'queue']);
 
       router.replace('/hoje');
     } catch {

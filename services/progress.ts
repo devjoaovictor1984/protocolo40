@@ -165,3 +165,40 @@ export function weightDelta(measurements: readonly MeasurementLike[]): number | 
     (withWeight[withWeight.length - 1].weight_kg as number) - (withWeight[0].weight_kg as number)
   );
 }
+
+/**
+ * O peso de cada dia, para casar com o que aconteceu naquele dia.
+ *
+ * Existe porque o peso morava em dois lugares que não conversavam: a medida do
+ * dia (`body_measurements`, escrita pelo cartão de Hoje e pela tela de Medidas)
+ * e uma cópia gravada junto da foto, preenchida só quando o peso era digitado
+ * na tela de finalizar treino. Quem registrava o peso pela manhã e tirava a
+ * foto depois via "Sem peso registrado" embaixo da própria foto, e a tela de
+ * comparar não conseguia calcular a diferença.
+ *
+ * A medida do dia é a fonte: ela é editável e é onde a correção acontece. A
+ * cópia da foto vira só reserva, para o que foi tirado antes disto existir.
+ */
+export function weightByDay(
+  measurements: readonly MeasurementLike[],
+): Map<string, number> {
+  const mapa = new Map<string, number>();
+
+  for (const item of measurements) {
+    if (item.weight_kg === null || item.weight_kg === undefined) continue;
+    // a última leitura de um mesmo dia vence; o upsert garante uma só, mas a
+    // fila offline pode entregar duas antes de sincronizar
+    mapa.set(item.measured_on, item.weight_kg);
+  }
+
+  return mapa;
+}
+
+/** O peso que vale para um dia: o registrado nele, ou o que veio junto do item. */
+export function weightForDay(
+  porDia: Map<string, number>,
+  day: string,
+  reserva: number | null = null,
+): number | null {
+  return porDia.get(day) ?? reserva;
+}

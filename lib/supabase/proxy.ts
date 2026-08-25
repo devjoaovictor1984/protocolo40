@@ -1,36 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-
 import { env } from '@/lib/env';
+import { decidirRota, falhaTemporaria, temCookieDeSessao } from '@/lib/supabase/guard';
 import type { Database } from '@/types/database';
-
-/** Prefixos que exigem sessão. */
-const PRIVATE_PREFIXES = [
-  '/hoje',
-  '/onboarding',
-  '/treino',
-  '/treinos',
-  '/historico',
-  '/calendario',
-  '/evolucao',
-  '/medidas',
-  '/recordes',
-  '/comunidade',
-  '/perfil',
-  '/configuracoes',
-];
-
-/** Rotas que não fazem sentido para quem já está logado. */
-const AUTH_ONLY_PREFIXES = ['/login', '/cadastro', '/esqueci-senha'];
-
-const isUnder = (pathname: string, prefixes: string[]) =>
-  prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 /**
  * Renova a sessão a cada request e barra rotas privadas.
  *
  * Isto é conveniência de navegação, não autorização — quem autoriza é a RLS.
- * Um usuário que force a URL vê uma tela, mas não vê dado de ninguém.
+ * Um usuário que force a URL vê uma tela, mas não vê dado de ninguém. A regra
+ * de quem entra onde está em `guard.ts`, testada à parte.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -52,12 +31,27 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  /**
+   * Leva para `destino` sem perder o que já foi escrito na resposta.
+   *
+   * Quando o token de acesso vence, o `getClaims()` abaixo troca o par de
+   * tokens e o antigo morre — a rotação do Supabase invalida o token de
+   * renovação assim que ele é usado. Um `NextResponse.redirect()` novo não
+   * carrega esses cookies, e o navegador continuaria guardando o par velho.
+   */
+  const redirecionar = (destino: URL) => {
+    const saida = NextResponse.redirect(destino);
+    for (const cookie of response.cookies.getAll()) {
+      saida.cookies.set(cookie);
+    }
+    return saida;
+  };
+
   // getClaims() verifica a assinatura do token localmente, com as chaves
   // públicas do projeto. getUser() faria o mesmo com uma ida à rede de ~250ms
   // em toda navegação. Não troque por getSession(), que aceita o cookie sem
   // verificar assinatura nenhuma.
-  const { data: claims } = await supabase.auth.getClaims();
-  const user = claims?.claims?.sub ? { id: claims.claims.sub } : null;
+  const { data: claims, error } = await supabase.auth.getClaims();
 
   const { pathname, search } = request.nextUrl;
 
@@ -80,19 +74,33 @@ export async function updateSession(request: NextRequest) {
     });
   }
 
-  if (!user && isUnder(pathname, PRIVATE_PREFIXES)) {
+  const decisao = decidirRota({
+    pathname,
+    busca: search,
+    autenticado: Boolean(claims?.claims?.sub),
+    temCookieDeSessao: temCookieDeSessao(
+      request.cookies.getAll().map((c) => c.name),
+      env.supabaseUrl,
+    ),
+    // A diferença entre "não tem sessão" e "não deu para perguntar". Confundir
+    // as duas é o que fazia gente logada cair na tela de login no primeiro
+    // soluço de sinal — ou quando o Supabase respondia 429.
+    verificacaoFalhou: falhaTemporaria(error),
+  });
+
+  if (decisao.tipo === 'pedir-login') {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.search = '';
-    url.searchParams.set('redirect', `${pathname}${search}`);
-    return NextResponse.redirect(url);
+    url.searchParams.set('redirect', decisao.de);
+    return redirecionar(url);
   }
 
-  if (user && isUnder(pathname, AUTH_ONLY_PREFIXES)) {
+  if (decisao.tipo === 'levar-ao-app') {
     const url = request.nextUrl.clone();
     url.pathname = '/hoje';
     url.search = '';
-    return NextResponse.redirect(url);
+    return redirecionar(url);
   }
 
   return response;

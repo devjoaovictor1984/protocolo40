@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { useSession } from '@/features/session/session-context';
+import { localMeasurements } from '@/features/measurements/repository';
 import { localPhotos, signPhotos } from '@/features/photos/repository';
 import { createClient } from '@/lib/supabase/client';
+import { weightByDay, weightForDay } from '@/services/progress';
 import type { PhotoPose } from '@/types/database';
 
 /**
@@ -23,6 +25,13 @@ export type GalleryPhoto = {
   takenOn: string;
   takenAt: string;
   pose: PhotoPose;
+  /**
+   * O peso daquele dia.
+   *
+   * Vem da medida do dia, não de uma cópia guardada na foto: quem registra o
+   * peso de manhã e tira a foto à noite tem um número só, e é esse que aparece
+   * nos dois lugares.
+   */
   weightKg: number | null;
   notes: string | null;
   pending: boolean;
@@ -49,7 +58,12 @@ export function usePhotos() {
   return useQuery({
     queryKey: ['photos', userId],
     queryFn: async (): Promise<GalleryPhoto[]> => {
-      const local = await localPhotos(userId);
+      const [local, medidas] = await Promise.all([
+        localPhotos(userId),
+        localMeasurements(userId),
+      ]);
+
+      const pesoDoDia = weightByDay(medidas);
 
       const localItems: GalleryPhoto[] = local.map((photo) => {
         return {
@@ -59,7 +73,7 @@ export function usePhotos() {
           takenOn: photo.taken_on,
           takenAt: photo.taken_at,
           pose: photo.pose,
-          weightKg: photo.weight_kg,
+          weightKg: weightForDay(pesoDoDia, photo.taken_on, photo.weight_kg),
           notes: photo.notes,
           pending: photo.sync_state !== 'synced',
           thumbBlob: photo.thumbnail,
@@ -93,7 +107,7 @@ export function usePhotos() {
         takenOn: row.taken_on,
         takenAt: row.taken_at,
         pose: row.pose,
-        weightKg: row.weight_kg,
+        weightKg: weightForDay(pesoDoDia, row.taken_on, row.weight_kg),
         notes: row.notes,
         pending: false,
         thumbBlob: null,

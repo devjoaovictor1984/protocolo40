@@ -123,7 +123,9 @@ function CartaoPeso() {
 
     try {
       await saveMeasurement({ userId, measuredOn: today, weightKg: peso });
-      await recarregar(queryClient, ['measurements'], ['sync', 'queue']);
+      // as fotos mostram o peso do dia: sem isto, a galeria continua dizendo
+      // "Sem peso registrado" para uma foto que já tem peso
+      await recarregar(queryClient, ['measurements'], ['photos'], ['sync', 'queue']);
       setValor(null);
       toast.success('Peso registrado.');
     } catch {

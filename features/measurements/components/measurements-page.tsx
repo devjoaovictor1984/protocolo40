@@ -66,7 +66,7 @@ export function MeasurementsPage({
   const series = weightSeries(measurements ?? []);
 
   async function handleSaved() {
-    await recarregar(queryClient, ['measurements'], ['sync', 'queue']);
+    await recarregar(queryClient, ['measurements'], ['photos'], ['sync', 'queue']);
     setOpen(false);
   }
 

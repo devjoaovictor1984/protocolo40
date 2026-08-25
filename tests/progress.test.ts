@@ -5,7 +5,9 @@ import {
   exercisesUsed,
   weeklyMinutes,
   weeklyWorkoutDays,
+  weightByDay,
   weightDelta,
+  weightForDay,
   weightSeries,
 } from '@/services/progress';
 import { suggestFocus } from '@/services/suggestions';
@@ -178,5 +180,58 @@ describe('suggestFocus', () => {
     );
 
     expect(suggestion).toBeNull();
+  });
+});
+
+/**
+ * O peso morava em dois lugares que não conversavam.
+ *
+ * A medida do dia era escrita pelo cartão de Hoje e pela tela de Medidas; a
+ * foto guardava uma cópia própria, preenchida só quando o peso era digitado na
+ * tela de finalizar treino. Quem pesava de manhã e fotografava à noite via
+ * "Sem peso registrado" embaixo da própria foto, e a tela de comparar não
+ * conseguia calcular a diferença entre antes e depois.
+ */
+describe('o peso que vale para um dia', () => {
+  const medidas = [
+    { measured_on: '2026-08-20', weight_kg: 82.4 },
+    { measured_on: '2026-08-25', weight_kg: 81.1 },
+    { measured_on: '2026-08-26', weight_kg: null },
+  ];
+
+  it('acha o peso do dia da foto', () => {
+    const porDia = weightByDay(medidas);
+    expect(weightForDay(porDia, '2026-08-25')).toBe(81.1);
+  });
+
+  it('foto sem peso próprio pega o peso registrado naquele dia', () => {
+    // este é o bug: a foto vinha com null e a tela dizia "sem peso"
+    const porDia = weightByDay(medidas);
+    expect(weightForDay(porDia, '2026-08-20', null)).toBe(82.4);
+  });
+
+  it('a medida do dia vence a cópia guardada na foto', () => {
+    // corrigir o peso na tela de Medidas precisa corrigir a foto junto
+    const porDia = weightByDay(medidas);
+    expect(weightForDay(porDia, '2026-08-25', 99)).toBe(81.1);
+  });
+
+  it('sem medida no dia, a cópia da foto ainda serve', () => {
+    const porDia = weightByDay(medidas);
+    expect(weightForDay(porDia, '2026-07-01', 88.2)).toBe(88.2);
+  });
+
+  it('dia sem peso nenhum devolve nulo em vez de zero', () => {
+    const porDia = weightByDay(medidas);
+    expect(weightForDay(porDia, '2026-08-26')).toBeNull();
+    expect(weightForDay(porDia, '2026-01-01')).toBeNull();
+  });
+
+  it('medida sem peso não entra no mapa', () => {
+    expect(weightByDay(medidas).has('2026-08-26')).toBe(false);
+  });
+
+  it('lista vazia não quebra', () => {
+    expect(weightByDay([]).size).toBe(0);
   });
 });

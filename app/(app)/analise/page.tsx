@@ -11,7 +11,8 @@ import {
 import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
-import { analiseDoUsuario } from '@/features/analysis/repository';
+import { analiseDoUsuario, focoDoUsuario } from '@/features/analysis/repository';
+import { FocusBlock } from '@/features/analysis/components/focus-block';
 import { Paywall } from '@/features/billing/components/paywall';
 import { temAcesso } from '@/features/billing/repository';
 import { requireSession } from '@/lib/auth/session';
@@ -60,7 +61,10 @@ export default async function AnalisePage() {
   }
 
   const hoje = todayIn(profile.timezone);
-  const analise = await analiseDoUsuario(user.id, hoje);
+  const [analise, foco] = await Promise.all([
+    analiseDoUsuario(user.id, hoje),
+    focoDoUsuario(user.id, profile.goal, hoje),
+  ]);
 
   if (analise.treinos === 0) {
     return (
@@ -97,6 +101,10 @@ export default async function AnalisePage() {
           . Comparado com as quatro semanas anteriores.
         </p>
       </div>
+
+      {/* o foco abre a tela: responde "o que eu faço esta semana", que é a
+          pergunta que a pessoa faz, antes do exercício por exercício */}
+      <FocusBlock foco={foco} />
 
       {analise.gerais.length > 0 ? (
         <section className="flex flex-col gap-3">
