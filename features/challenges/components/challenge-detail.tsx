@@ -81,7 +81,13 @@ export function ChallengeDetail({
       ) : null}
 
       <section aria-label="Sobre o desafio" className="flex flex-col gap-3">
-        {desafio.description.split('\n\n').map((paragrafo, i) => (
+        {/*
+          A divisão aceita CRLF porque textarea de HTML envia CRLF por
+          especificação, e arquivo salvo no Windows também. Dividir só em duas
+          quebras simples fazia o texto inteiro virar um parágrafo só — sem
+          erro, sem aviso, só feio.
+        */}
+        {desafio.description.split(/\r?\n\s*\r?\n/).map((paragrafo, i) => (
           <p key={i} className="leading-relaxed text-balance">
             {paragrafo}
           </p>

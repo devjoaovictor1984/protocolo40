@@ -26,7 +26,14 @@ const desafioSchema = z
       .regex(/^[a-z0-9-]{3,40}$/, 'O endereço aceita só letras minúsculas, números e hífen.'),
     title: z.string().trim().min(3, 'O nome precisa de pelo menos 3 letras.').max(60),
     tagline: z.string().trim().max(80).optional().or(z.literal('')),
-    description: z.string().trim().min(20, 'Explique o desafio em pelo menos uma frase.'),
+    description: z
+      .string()
+      .trim()
+      .min(20, 'Explique o desafio em pelo menos uma frase.')
+      // textarea envia CRLF por especificação; guardar só a quebra simples
+      // deixa o texto igual em qualquer lugar que o leia, sem depender de quem
+      // renderiza ser tolerante
+      .transform((texto) => texto.replace(/\r\n/g, '\n')),
     starts_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de início inválida.'),
     ends_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de fim inválida.'),
     goal: z.coerce.number().int().positive('A meta precisa ser maior que zero.'),

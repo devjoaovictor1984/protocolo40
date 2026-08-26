@@ -9,6 +9,30 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 26/08/2026 · CRLF transformava o texto num parágrafo só
+
+A migration do texto foi salva num editor do Windows e a string multilinha
+levou os `
+` do arquivo para dentro do banco. O componente separava
+parágrafos em `
+
+`, que **não casa** com `
+
+` — a sequência é
+` 
+  
+` e não tem dois `
+` seguidos. O texto inteiro virava um bloco.
+Sem erro, sem aviso, só feio.
+
+Não era caso isolado: **textarea de HTML envia CRLF por especificação**, então
+todo desafio criado pelo painel teria o mesmo problema.
+
+Corrigido nas três pontas: a ação normaliza na entrada, o componente aceita as
+duas convenções na saída, e uma migration limpou o que já estava gravado.
+
+---
+
 ## 26/08/2026 · Desafio de teste vazou para produção
 
 Uma corrida da suíte foi interrompida por tempo limite e morreu antes do
