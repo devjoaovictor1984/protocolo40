@@ -121,7 +121,13 @@ export function ChallengeCard({
             {formatDayShort(desafio.starts_on)} a {formatDayShort(desafio.ends_on)} ·{' '}
             {desafio.goal} dias para concluir
           </p>
-          <p className="text-primary text-sm font-semibold">Entrar no desafio →</p>
+          {/*
+            "Ver", e não "Entrar": este cartão é um link para a tela do desafio,
+            e é lá que existe o botão de inscrição. Prometer a ação aqui fez
+            gente clicar, ser levada para a tela e sair achando que tinha
+            entrado — sem estar.
+          */}
+          <p className="text-primary text-sm font-semibold">Ver o desafio →</p>
         </div>
       )}
 

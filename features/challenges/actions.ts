@@ -14,10 +14,33 @@ import { createClient } from '@/lib/supabase/server';
  * dia ela discordaria da primeira.
  */
 
-export async function entrarNoDesafio(formData: FormData): Promise<void> {
+export type EstadoDaInscricao = { erro: string | null };
+
+/**
+ * Só tipo e função saem daqui.
+ *
+ * Um arquivo `'use server'` exporta exclusivamente funções assíncronas — cada
+ * export vira um endpoint. Uma constante aqui derruba o build inteiro com
+ * "can only export async functions, found object", e o estado inicial mora
+ * no componente que o usa.
+ */
+const semErro: EstadoDaInscricao = { erro: null };
+
+/**
+ * Entrar no desafio.
+ *
+ * Devolve estado, e não `void`: a versão anterior falhava em silêncio absoluto
+ * — a página revalidava, o botão continuava dizendo "ENTRAR NO DESAFIO" e a
+ * pessoa não tinha como saber se o toque valeu. Quem clica num botão precisa
+ * saber o que aconteceu, inclusive quando não aconteceu nada.
+ */
+export async function entrarNoDesafio(
+  _anterior: EstadoDaInscricao,
+  formData: FormData,
+): Promise<EstadoDaInscricao> {
   const user = await requireUser();
   const slug = String(formData.get('slug') ?? '');
-  if (!slug) return;
+  if (!slug) return { erro: 'Desafio não identificado.' };
 
   const supabase = await createClient();
 
@@ -28,23 +51,32 @@ export async function entrarNoDesafio(formData: FormData): Promise<void> {
     .eq('is_active', true)
     .maybeSingle();
 
-  if (!desafio) return;
+  if (!desafio) return { erro: 'Este desafio não está mais aberto.' };
 
   // entrar duas vezes não é erro: a chave primária resolve, e a tela não
   // precisa saber se o toque anterior chegou
-  await supabase
+  const { error } = await supabase
     .from('challenge_participants')
     .upsert({ challenge_id: desafio.id, user_id: user.id }, { onConflict: 'challenge_id,user_id' });
+
+  if (error) {
+    return { erro: 'Não conseguimos te inscrever agora. Tente de novo em instantes.' };
+  }
 
   revalidatePath('/desafios');
   revalidatePath(`/desafios/${slug}`);
   revalidatePath('/hoje');
+
+  return semErro;
 }
 
-export async function sairDoDesafio(formData: FormData): Promise<void> {
+export async function sairDoDesafio(
+  _anterior: EstadoDaInscricao,
+  formData: FormData,
+): Promise<EstadoDaInscricao> {
   const user = await requireUser();
   const slug = String(formData.get('slug') ?? '');
-  if (!slug) return;
+  if (!slug) return { erro: 'Desafio não identificado.' };
 
   const supabase = await createClient();
 
@@ -54,17 +86,21 @@ export async function sairDoDesafio(formData: FormData): Promise<void> {
     .eq('slug', slug)
     .maybeSingle();
 
-  if (!desafio) return;
+  if (!desafio) return { erro: 'Desafio não encontrado.' };
 
-  await supabase
+  const { error } = await supabase
     .from('challenge_participants')
     .delete()
     .eq('challenge_id', desafio.id)
     .eq('user_id', user.id);
 
+  if (error) return { erro: 'Não conseguimos sair agora. Tente de novo.' };
+
   revalidatePath('/desafios');
   revalidatePath(`/desafios/${slug}`);
   revalidatePath('/hoje');
+
+  return semErro;
 }
 
 /**

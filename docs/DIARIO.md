@@ -9,6 +9,47 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 26/08/2026 · A inscrição de um inscrevia todos
+
+**O que estava errado.** A policy de `challenge_participants` é `using (true)` —
+tem que ser, porque é dela que o ranking sai. Mas as duas consultas do
+repositório liam **todas** as inscrições sem filtrar por usuário:
+
+```ts
+supabase.from('challenge_participants').select('challenge_id')   // de todo mundo
+```
+
+Bastou uma pessoa entrar para o app achar que todos entraram. O botão nascia
+dizendo "Sair do desafio" para quem nunca tinha entrado, e clicar não fazia
+nada — o `delete` é corretamente limitado ao próprio usuário e apagava zero
+linhas. Sem erro, sem sinal.
+
+**Por que os testes não pegaram.** Cada teste tinha um usuário só, e com um
+participante "todos" e "eu" dão o mesmo resultado. O teste novo usa dois: um
+entra, o outro precisa continuar vendo o convite.
+
+> **Regra geral:** `using (true)` numa policy não dispensa o `eq('user_id')` na
+> consulta. A policy diz quem *pode* ler; a consulta diz o que se *quer* ler.
+> Confundir as duas é fácil quando a tabela é de leitura aberta por desenho.
+
+**Duas correções do mesmo caso:**
+
+- O cartão da lista dizia "Entrar no desafio →" mas era texto dentro de um link:
+  clicar levava para a tela, não inscrevia. Agora diz "Ver o desafio →".
+- `entrarNoDesafio` devolvia `void` e falhava em silêncio absoluto. Agora
+  devolve estado e a tela mostra o que aconteceu.
+
+**Também:** o texto do desafio ficou em cinco frases; a lista antes do começo se
+chama "Já entraram" e não mostra posição nem contador (classificar gente com
+zero dias inventa uma competição que ainda não existe); e o favicon passou a ser
+a arte real.
+
+> ⚠ Arquivo `'use server'` só exporta função assíncrona. Uma constante ali
+> derruba o build com *"can only export async functions, found object"* — o
+> estado inicial de `useActionState` mora no componente.
+
+---
+
 ## 26/08/2026 · Marca, ícone e arte do desafio
 
 **Cores oficiais**, extraídas dos arquivos entregues: vermelho `#DA332D`, preto

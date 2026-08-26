@@ -97,7 +97,7 @@ test.describe('desafios', () => {
       await expect(page.getByRole('button', { name: 'ENTRAR NO DESAFIO' })).toBeVisible();
 
       // e o app avisa o que entrar significa, antes do clique
-      await expect(page.getByText(/mostra seu @usuário e seus dias no ranking/i)).toBeVisible();
+      await expect(page.getByText(/mostra seu @usuário e seus dias na lista/i)).toBeVisible();
 
       await page.getByRole('button', { name: 'ENTRAR NO DESAFIO' }).click();
 
@@ -106,6 +106,52 @@ test.describe('desafios', () => {
       await expect(progresso).toBeVisible({ timeout: 30_000 });
       await expect(progresso).toContainText(/2\s*de 3 dias/);
       await expect(page.getByRole('button', { name: 'Sair do desafio' })).toBeVisible();
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
+
+  /**
+   * O bug que os testes de um usuário só não pegavam.
+   *
+   * A policy de `challenge_participants` é `using (true)`, porque é dela que
+   * sai o ranking. A consulta do app lia todas as inscrições sem filtrar por
+   * usuário — então bastou **uma** pessoa entrar para o app achar que todo
+   * mundo tinha entrado: o botão nascia dizendo "Sair do desafio", e sair não
+   * fazia nada, porque o delete é corretamente limitado ao próprio usuário.
+   *
+   * Com um participante só na base de teste, nada disso aparecia.
+   */
+  test('a inscrição de um não inscreve os outros', async ({ context, page, baseURL }) => {
+    const primeiro = await novoUsuario();
+    const segundo = await novoUsuario();
+    const { slug, title } = await criarDesafio(3);
+
+    try {
+      // o primeiro entra de verdade
+      await gravarSessao(context, baseURL!, primeiro.session);
+      await page.goto(`/desafios/${slug}`);
+      await page.getByRole('button', { name: 'ENTRAR NO DESAFIO' }).click();
+      await expect(page.getByRole('button', { name: 'Sair do desafio' })).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // o segundo abre a mesma tela e precisa ver o convite, não a saída
+      await gravarSessao(context, baseURL!, segundo.session);
+      await page.goto(`/desafios/${slug}`);
+
+      await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 30_000 });
+      await expect(
+        page.getByRole('button', { name: 'ENTRAR NO DESAFIO' }),
+        'quem não entrou não pode ver o botão de sair',
+      ).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Sair do desafio' })).toHaveCount(0);
+
+      // e na lista de desafios, o mesmo
+      await page.goto('/desafios');
+      const cartao = page.getByRole('link', { name: new RegExp(title) }).first();
+      await expect(cartao).toBeVisible({ timeout: 30_000 });
+      await expect(cartao, 'o cartão convida quem ainda não entrou').toContainText(/Ver o desafio/);
     } finally {
       await apagarDesafio(slug);
     }
@@ -126,7 +172,7 @@ test.describe('desafios', () => {
       });
 
       // apareceu no ranking
-      await expect(page.getByRole('region', { name: 'Ranking' })).toBeVisible();
+      await expect(page.getByRole('region', { name: /Ranking|Já entraram/ })).toBeVisible();
 
       await page.getByRole('button', { name: 'Sair do desafio' }).click();
       await expect(page.getByRole('button', { name: 'ENTRAR NO DESAFIO' })).toBeVisible({
@@ -134,7 +180,7 @@ test.describe('desafios', () => {
       });
 
       // e o ranking voltou a estar vazio
-      await expect(page.getByText('O ranking aparece quando alguém entrar.')).toBeVisible();
+      await expect(page.getByText('Ninguém entrou ainda. Seja o primeiro.').first()).toBeVisible();
     } finally {
       await apagarDesafio(slug);
     }
@@ -187,7 +233,7 @@ test.describe('desafios', () => {
       await gravarSessao(context, baseURL!, eu.session);
       await page.goto(`/desafios/${slug}`);
 
-      const ranking = page.getByRole('region', { name: 'Ranking' });
+      const ranking = page.getByRole('region', { name: /Ranking|Já entraram/ });
       await expect(ranking).toBeVisible({ timeout: 30_000 });
 
       // a constância aparece

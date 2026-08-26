@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { Check, Flame, Trophy, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Barra } from '@/features/challenges/components/challenge-card';
-import { entrarNoDesafio, sairDoDesafio } from '@/features/challenges/actions';
+import { JoinButton } from '@/features/challenges/components/join-button';
 import type { DesafioCompleto } from '@/features/challenges/repository';
 import { env } from '@/lib/env';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
@@ -89,28 +88,9 @@ export function ChallengeDetail({
         ))}
       </section>
 
-      <form action={desafio.participando ? sairDoDesafio : entrarNoDesafio}>
-        <input type="hidden" name="slug" value={desafio.slug} />
-        {desafio.participando ? (
-          <Button type="submit" variant="outline" className="h-12 w-full">
-            Sair do desafio
-          </Button>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Button type="submit" size="lg" className="h-14 w-full text-base font-semibold">
-              ENTRAR NO DESAFIO
-            </Button>
-            {/* dito antes do clique, não depois: entrar coloca a pessoa numa
-                lista que outras pessoas veem */}
-            <p className="text-muted-foreground text-center text-xs leading-relaxed">
-              Participar mostra seu @usuário e seus dias no ranking abaixo. Peso, medidas e fotos
-              continuam privados.
-            </p>
-          </div>
-        )}
-      </form>
+      <JoinButton slug={desafio.slug} participando={desafio.participando} />
 
-      <Ranking linhas={ranking} meuId={meuId} />
+      <Ranking linhas={ranking} meuId={meuId} comecou={progresso.fase !== 'antes'} />
     </div>
   );
 }
@@ -176,26 +156,36 @@ function GradeDoDesafio({ desafio, hoje }: { desafio: DesafioCompleto; hoje: str
 function Ranking({
   linhas,
   meuId,
+  comecou,
 }: {
   linhas: (DesafioCompleto['ranking'][number] & { posicao: number })[];
   meuId: string;
+  comecou: boolean;
 }) {
+  /*
+   * Antes de começar, isto é uma lista de inscritos — não um ranking.
+   * Classificar gente com zero dias, numerando do primeiro ao último por ordem
+   * de chegada, inventa uma competição que ainda não existe e desanima quem
+   * entrou por último sem ter feito nada de errado.
+   */
+  const titulo = comecou ? 'Ranking' : 'Já entraram';
+
   if (linhas.length === 0) {
     return (
-      <section aria-label="Ranking" className="border-border rounded-2xl border border-dashed p-6 text-center">
+      <section aria-label={titulo} className="border-border rounded-2xl border border-dashed p-6 text-center">
         <Trophy aria-hidden className="text-muted-foreground mx-auto size-6" />
-        <p className="mt-2 text-sm font-semibold">O ranking aparece quando alguém entrar.</p>
+        <p className="mt-2 text-sm font-semibold">Ninguém entrou ainda. Seja o primeiro.</p>
         <p className="text-muted-foreground mt-1 text-xs">
-          Ele mostra só dias mantidos — nunca peso, medida ou foto.
+          A lista mostra só dias mantidos — nunca peso, medida ou foto.
         </p>
       </section>
     );
   }
 
   return (
-    <section aria-label="Ranking" className="flex flex-col gap-3">
+    <section aria-label={titulo} className="flex flex-col gap-3">
       <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-        Ranking
+        {titulo} ({linhas.length})
       </h2>
 
       <ul className="flex flex-col">
@@ -211,9 +201,11 @@ function Ranking({
                 souEu && 'bg-primary/5 -mx-2 rounded-lg px-2',
               )}
             >
-              <span className="tnum text-muted-foreground w-6 shrink-0 text-center text-sm font-bold">
-                {linha.posicao}
-              </span>
+              {comecou ? (
+                <span className="tnum text-muted-foreground w-6 shrink-0 text-center text-sm font-bold">
+                  {linha.posicao}
+                </span>
+              ) : null}
 
               <Avatar className="size-8 shrink-0">
                 {foto ? <AvatarImage src={foto} alt="" /> : null}
@@ -236,11 +228,13 @@ function Ranking({
                 <Check aria-label="Concluiu o desafio" className="text-success size-4 shrink-0" />
               ) : null}
 
-              <span className="tnum flex shrink-0 items-center gap-1 text-sm font-bold">
-                {linha.dias}
-                <Flame aria-hidden className="text-primary size-3.5" />
-                <span className="sr-only">dias</span>
-              </span>
+              {comecou ? (
+                <span className="tnum flex shrink-0 items-center gap-1 text-sm font-bold">
+                  {linha.dias}
+                  <Flame aria-hidden className="text-primary size-3.5" />
+                  <span className="sr-only">dias</span>
+                </span>
+              ) : null}
             </li>
           );
         })}

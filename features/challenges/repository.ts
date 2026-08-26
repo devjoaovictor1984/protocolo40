@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { requireUser } from '@/lib/auth/session';
+import { getUser, requireUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { desafioEmDestaque as escolherDestaque } from '@/services/challenges';
 import type { ChallengeRankRow, ChallengeRow } from '@/types/database';
@@ -52,7 +52,15 @@ export async function meusDiasPorDesafio(): Promise<Map<string, string[]>> {
 /** Todos os desafios ativos, do mais recente para o mais antigo. */
 export async function desafiosAtivos(): Promise<DesafioResumo[]> {
   const supabase = await createClient();
+  const user = await getUser();
 
+  /*
+   * O `eq('user_id')` não é redundante com a RLS — é o que faz a consulta estar
+   * certa. A policy de `challenge_participants` é `using (true)` de propósito,
+   * porque é dela que sai o ranking; sem o filtro, a consulta devolve a
+   * inscrição de todo mundo e basta uma pessoa entrar para o app achar que
+   * todos entraram. Foi o que aconteceu.
+   */
   const [{ data: desafios }, { data: contagens }, { data: minhas }] = await Promise.all([
     supabase
       .from('challenges')
@@ -61,7 +69,9 @@ export async function desafiosAtivos(): Promise<DesafioResumo[]> {
       .order('sort_order', { ascending: false })
       .order('starts_on', { ascending: false }),
     supabase.rpc('participantes_por_desafio'),
-    supabase.from('challenge_participants').select('challenge_id'),
+    user
+      ? supabase.from('challenge_participants').select('challenge_id').eq('user_id', user.id)
+      : Promise.resolve({ data: [] as { challenge_id: string }[] }),
   ]);
 
   const totais = new Map((contagens ?? []).map((linha) => [linha.challenge_id, linha.total]));
@@ -82,7 +92,7 @@ export async function desafioEmDestaque(hoje: string): Promise<DesafioResumo | n
 /** Um desafio com o meu progresso e o ranking. */
 export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | null> {
   const supabase = await createClient();
-  await requireUser();
+  const user = await requireUser();
 
   const { data: desafio } = await supabase
     .from('challenges')
@@ -98,7 +108,13 @@ export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | nu
       supabase.rpc('meus_dias_no_desafio', { p_slug: slug }),
       supabase.rpc('ranking_do_desafio', { p_slug: slug, p_limite: 50 }),
       supabase.rpc('participantes_por_desafio'),
-      supabase.from('challenge_participants').select('challenge_id').eq('challenge_id', desafio.id),
+      // a minha inscrição, e só a minha: sem o filtro por usuário a consulta
+      // devolve a de qualquer participante e o botão nasce dizendo "Sair"
+      supabase
+        .from('challenge_participants')
+        .select('challenge_id')
+        .eq('challenge_id', desafio.id)
+        .eq('user_id', user.id),
     ]);
 
   const totais = new Map((contagens ?? []).map((linha) => [linha.challenge_id, linha.total]));
