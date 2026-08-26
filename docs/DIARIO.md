@@ -9,18 +9,57 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 26/08/2026 · Instalação no Android
+
+**Relato:** duas opções aparecem no Chrome e "Instalar" não instala.
+
+O manifest, os ícones e o service worker foram conferidos em produção e estão
+todos corretos — não é falta de requisito básico:
+
+| Requisito do Chrome | Estado |
+|---|---|
+| HTTPS | ✓ |
+| Ícone 192 e 512 com `purpose: any` | ✓ (conferido: respondem e batem no tamanho) |
+| `display: standalone` | ✓ |
+| Service worker com handler de fetch | ✓ (`sw.js` responde 200) |
+| Manifest ligado na página | ✓ |
+
+**O que faltava e foi acrescentado:**
+
+- **`screenshots`** com `form_factor`. Não é exigência, mas é o que troca a
+  barra mínima do Chrome pela caixa de instalação rica — e a barra mínima é
+  exatamente a que se confunde com "criar atalho". Duas capturas reais do app,
+  geradas por Playwright.
+- **`id: '/'`**. Sem ele o Chrome usa a `start_url` como identidade: no dia em
+  que ela mudar, o aparelho instala um segundo ícone em vez de atualizar.
+- **`display_override`** deixando o navegador como último recurso.
+
+**Não reproduzido.** Sem o aparelho não dá para afirmar que isto resolve. Para
+diagnosticar de verdade, o Chrome do Android diz o motivo em
+`chrome://inspect` a partir do desktop, aba Application → Manifest.
+
+O smoke agora confere os requisitos de instalação a partir do próprio manifest:
+tamanhos de ícone, `display`, `id` e as capturas.
+
+---
+
 ## 26/08/2026 · CRLF transformava o texto num parágrafo só
 
 A migration do texto foi salva num editor do Windows e a string multilinha
-levou os `
+levou os `
+
 ` do arquivo para dentro do banco. O componente separava
 parágrafos em `
 
-`, que **não casa** com `
-
+`, que **não casa** com `
+
+
+
 ` — a sequência é
-` 
-  
+`
+ 
+ 
+ 
 ` e não tem dois `
 ` seguidos. O texto inteiro virava um bloco.
 Sem erro, sem aviso, só feio.

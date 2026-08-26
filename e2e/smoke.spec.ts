@@ -35,7 +35,7 @@ test.describe('fundação', () => {
      * acompanha a mudança e ainda pega o inverso: um ícone declarado que não
      * responde, que é o que faz a instalação falhar sem explicação.
      */
-    const icones = body.icons as { src: string; type: string }[];
+    const icones = body.icons as { src: string; type: string; sizes: string; purpose?: string }[];
     expect(icones.length, 'o manifest precisa declarar ícones').toBeGreaterThan(0);
 
     for (const icone of icones) {
@@ -47,6 +47,24 @@ test.describe('fundação', () => {
     // o badge da notificação não entra no manifest, mas o service worker usa
     const badge = await request.get('/icons/badge');
     expect(badge.ok(), 'o badge da notificação sumiu').toBeTruthy();
+
+    /**
+     * O que o Android exige para instalar de verdade, e não só criar atalho:
+     * ícone de 192 e de 512 com `purpose: any`, `display` autônomo e `id`
+     * fixo. As capturas não são exigência, mas são elas que trocam a barra
+     * mínima pela caixa de instalação rica — a diferença entre alguém instalar
+     * e alguém achar que instalou.
+     */
+    const tamanhos = icones.filter((icone) => icone.purpose !== 'maskable');
+    expect(tamanhos.map((i) => i.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']));
+    expect(['standalone', 'fullscreen', 'minimal-ui']).toContain(body.display);
+    expect(body.id, 'sem id, uma mudança de start_url vira um segundo app').toBeTruthy();
+
+    for (const captura of (body.screenshots ?? []) as { src: string }[]) {
+      const resposta = await request.get(captura.src);
+      expect(resposta.ok(), `captura declarada e ausente: ${captura.src}`).toBeTruthy();
+    }
+    expect((body.screenshots ?? []).length, 'sem captura, o Android mostra a barra mínima').toBeGreaterThan(0);
   });
 
   test('o login recusa credenciais vazias sem quebrar', async ({ page }) => {
