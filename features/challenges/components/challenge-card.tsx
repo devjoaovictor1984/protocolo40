@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ChevronRight, Flame, Trophy, Users } from 'lucide-react';
 
 import type { DesafioResumo } from '@/features/challenges/repository';
+import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { formatDayShort } from '@/services/calendar';
 import { progressoNoDesafio, recadoDoDesafio } from '@/services/challenges';
@@ -28,12 +29,46 @@ export function ChallengeCard({
 }) {
   const progresso = progressoNoDesafio(desafio, meusDias, hoje);
   const porcento = Math.round(progresso.fracao * 100);
+  const arte = arteDoDesafio(desafio.image_path);
 
   return (
     <Link
       href={`/desafios/${desafio.slug}`}
-      className="border-border hover:border-primary/50 focus-visible:ring-ring group flex flex-col gap-3 rounded-2xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="border-border hover:border-primary/50 focus-visible:ring-ring group flex flex-col gap-3 overflow-hidden rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
+      {/*
+        A arte é fundo, e o texto vem por cima em elemento de verdade: num
+        telefone de 360px, palavra embutida em imagem vira mancha, não acompanha
+        o tema e não é lida em voz alta. Sem arte o cartão fica igual, só sem a
+        faixa — a imagem melhora, não sustenta.
+      */}
+      {arte ? (
+        <div className="relative aspect-[16/7] w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element -- arte servida do bucket público */}
+          <img src={arte} alt="" className="absolute inset-0 size-full object-cover" />
+
+          {/* o véu garante contraste do texto sobre qualquer arte que venha */}
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent"
+          />
+
+          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-4">
+            <p className="text-[11px] font-semibold tracking-wider text-white/80 uppercase">
+              {progresso.fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
+            </p>
+            <p className="text-lg leading-tight font-extrabold tracking-tight text-white">
+              {desafio.title}
+            </p>
+            {desafio.tagline ? (
+              <p className="truncate text-sm text-white/85">{desafio.tagline}</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <div className={cn('flex flex-col gap-3 p-4', arte && 'pt-0')}>
+      {arte ? null : (
       <div className="flex items-start gap-3">
         <span
           aria-hidden
@@ -57,6 +92,7 @@ export function ChallengeCard({
           className="text-muted-foreground group-hover:text-foreground mt-2 size-4 shrink-0 transition-colors"
         />
       </div>
+      )}
 
       {desafio.participando ? (
         <div className="flex flex-col gap-2">
@@ -93,10 +129,23 @@ export function ChallengeCard({
         <Users aria-hidden className="size-3" />
         {desafio.participantes === 0
           ? 'Ninguém entrou ainda. Seja o primeiro.'
-          : `${desafio.participantes} ${desafio.participantes === 1 ? 'pessoa' : 'pessoas'} ${desafio.participantes === 1 ? 'participando' : 'participando'}`}
+          : `${desafio.participantes} ${desafio.participantes === 1 ? 'pessoa' : 'pessoas'} participando`}
       </p>
+      </div>
     </Link>
   );
+}
+
+/**
+ * URL pública da arte.
+ *
+ * O bucket é público na leitura porque isto é material de divulgação e precisa
+ * aparecer para quem ainda não tem conta — ao contrário de foto de progresso,
+ * que é privada e só sai por URL assinada de cinco minutos.
+ */
+export function arteDoDesafio(caminho: string | null): string | null {
+  if (!caminho) return null;
+  return `${env.supabaseUrl}/storage/v1/object/public/challenge-art/${caminho}`;
 }
 
 /**

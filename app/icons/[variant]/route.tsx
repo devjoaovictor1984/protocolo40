@@ -1,11 +1,15 @@
 import { renderIcon } from '@/lib/brand/icon';
 
 /** Ícones do manifest: /icons/192, /icons/512 e /icons/maskable. */
+/**
+ * Só o badge sobrou aqui.
+ *
+ * Os ícones do app agora são arquivos de verdade em `public/icons`, servidos
+ * pelo CDN. O badge continua sendo desenhado por código porque precisa ser
+ * silhueta monocromática em fundo transparente — o Android recorta a forma e
+ * pinta de branco, e a arte com fundo escuro viraria um quadrado sólido.
+ */
 const VARIANTS: Record<string, { size: number; maskable: boolean; badge?: boolean }> = {
-  '192': { size: 192, maskable: false },
-  '512': { size: 512, maskable: false },
-  maskable: { size: 512, maskable: true },
-  // o ícone pequeno da barra de status, para a notificação do Android
   badge: { size: 96, maskable: false, badge: true },
 };
 

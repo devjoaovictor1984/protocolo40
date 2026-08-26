@@ -171,6 +171,8 @@ export type ChallengeRow = Timestamps & {
   rule: ChallengeRule;
   goal: number;
   badge_slug: string | null;
+  /** Arte de fundo no bucket `challenge-art`. Nula quando o desafio não tem arte. */
+  image_path: string | null;
   is_active: boolean;
   sort_order: number;
 };

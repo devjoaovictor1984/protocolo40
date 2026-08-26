@@ -26,9 +26,27 @@ test.describe('fundação', () => {
     expect(body.short_name).toBe('P20X');
     expect(body.display).toBe('standalone');
 
-    const icon = await request.get('/icons/512');
-    expect(icon.ok()).toBeTruthy();
-    expect(icon.headers()['content-type']).toContain('image/png');
+    /**
+     * Todo ícone que o manifest promete precisa existir de verdade.
+     *
+     * Conferir um caminho fixo deixava passar o caso que aconteceu: os ícones
+     * mudaram de rota gerada para arquivo estático e o manifest foi junto — o
+     * teste continuou apontando para o endereço velho. Lendo do manifest, ele
+     * acompanha a mudança e ainda pega o inverso: um ícone declarado que não
+     * responde, que é o que faz a instalação falhar sem explicação.
+     */
+    const icones = body.icons as { src: string; type: string }[];
+    expect(icones.length, 'o manifest precisa declarar ícones').toBeGreaterThan(0);
+
+    for (const icone of icones) {
+      const resposta = await request.get(icone.src);
+      expect(resposta.ok(), `ícone declarado e ausente: ${icone.src}`).toBeTruthy();
+      expect(resposta.headers()['content-type']).toContain('image/');
+    }
+
+    // o badge da notificação não entra no manifest, mas o service worker usa
+    const badge = await request.get('/icons/badge');
+    expect(badge.ok(), 'o badge da notificação sumiu').toBeTruthy();
   });
 
   test('o login recusa credenciais vazias sem quebrar', async ({ page }) => {

@@ -31,6 +31,7 @@ const desafioSchema = z
     ends_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data de fim inválida.'),
     goal: z.coerce.number().int().positive('A meta precisa ser maior que zero.'),
     badge_slug: z.string().trim().optional().or(z.literal('')),
+    image_path: z.string().trim().max(200).optional().or(z.literal('')),
     is_active: z.union([z.literal('on'), z.literal('')]).optional(),
   })
   .refine((v) => v.ends_on >= v.starts_on, {
@@ -52,12 +53,13 @@ export async function salvarDesafio(
     return { status: 'erro', mensagem: parsed.error.issues[0]?.message ?? 'Confira os campos.' };
   }
 
-  const { id, is_active, tagline, badge_slug, ...resto } = parsed.data;
+  const { id, is_active, tagline, badge_slug, image_path, ...resto } = parsed.data;
 
   const linha = {
     ...resto,
     tagline: tagline || null,
     badge_slug: badge_slug || null,
+    image_path: image_path || null,
     is_active: is_active === 'on',
   };
 

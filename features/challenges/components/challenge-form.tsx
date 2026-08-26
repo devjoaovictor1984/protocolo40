@@ -162,6 +162,23 @@ export function ChallengeForm({
         </div>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`arte-${id}`}>Arte de fundo</Label>
+        <Input
+          id={`arte-${id}`}
+          name="image_path"
+          defaultValue={desafio?.image_path ?? ''}
+          placeholder="setembro-2026.webp"
+          className="h-12"
+        />
+        {/* a arte é fundo, não cartaz: o app desenha o nome e a frase por cima */}
+        <p className="text-muted-foreground text-xs">
+          Nome do arquivo no bucket <span className="font-mono">challenge-art</span>. Deixe em
+          branco para o cartão simples. A arte é fundo — o nome e a frase são escritos pelo app em
+          cima dela, então não mande imagem com texto.
+        </p>
+      </div>
+
       <label className="flex items-center gap-3 text-sm">
         <input
           type="checkbox"

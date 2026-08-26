@@ -9,6 +9,41 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 26/08/2026 · Marca, ícone e arte do desafio
+
+**Cores oficiais**, extraídas dos arquivos entregues: vermelho `#DA332D`, preto
+`#090A0E`, cinza `#606062`, claro `#E6E7E8`.
+
+O `--primary` do app já era `oklch(58% 0.19 28)` = `#d33c33`, e o vermelho da
+logo é `oklch(58.3% 0.204 27.8)`. **A diferença é imperceptível**, então os
+tokens ficaram como estavam — trocar seria churn sem ganho.
+
+**Ícones** deixaram de ser desenhados por código e viraram arquivos em
+`public/icons` (192, 512, maskable) mais `app/apple-icon.png`. O maskable ganha
+20% de margem porque o sistema recorta em círculo. A rota `/icons/[variant]`
+sobrou só para o `badge` da notificação, que precisa ser silhueta monocromática
+em fundo transparente — arte com fundo escuro viraria um quadrado sólido na
+barra de status do Android.
+
+**A marca** no app usa duas artes, uma por tema, trocadas por CSS (`dark:`) e
+não por JavaScript: decidir no cliente faria a logo piscar na cor errada no
+primeiro quadro, que é onde ela mais é olhada.
+
+**Arte do desafio** em `challenge-art` (bucket público — é divulgação e precisa
+aparecer para quem não tem conta). Quatro variações subidas; a de blocos entrou
+como padrão porque tem exatamente 30 blocos para os 30 dias de setembro. Trocar
+é pelo campo "Arte de fundo" em `/admin/desafios`, sem deploy.
+
+> A arte é **fundo, não cartaz**. O nome e a frase são desenhados pelo app em
+> cima dela. Texto embutido vira mancha em 360px, não acompanha o tema e não é
+> lido por leitor de tela.
+
+**Teste corrigido junto:** o smoke conferia `/icons/512` fixo e deixou passar a
+mudança de rota. Agora ele lê o manifest e confere **todos** os ícones
+declarados — pega tanto o caminho que mudou quanto o ícone prometido e ausente.
+
+---
+
 ## 25/08/2026 · Privacidade que mentia, orçamento de campanhas e o perfil
 
 ### A configuração de privacidade não valia para treino nem foto
