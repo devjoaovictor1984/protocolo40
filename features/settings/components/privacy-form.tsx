@@ -33,7 +33,14 @@ const ITEMS = [
     hint: 'Nome, foto, bio e insígnias em /u/seu-usuario. Público por padrão.',
   },
   { key: 'workouts_visibility', label: 'Treinos', hint: 'Duração, rounds e exercícios' },
-  { key: 'photos_visibility', label: 'Fotos', hint: 'Vale para as fotos novas; as antigas ficam como estão' },
+  {
+    key: 'photos_visibility',
+    label: 'Fotos',
+    // a dica antiga dizia "vale para as fotos novas; as antigas ficam como
+    // estão" — era a descrição do bug, não da regra. A configuração vale para
+    // o álbum inteiro.
+    hint: 'Vale para o álbum inteiro, antigas e novas. O antes-e-depois do perfil é escolhido à parte.',
+  },
   { key: 'weight_visibility', label: 'Peso', hint: 'O número e a curva' },
   { key: 'measurements_visibility', label: 'Medidas', hint: 'Cintura, peito, braço e demais' },
   { key: 'streak_visibility', label: 'Sequência', hint: 'Dias seguidos e maior sequência' },
@@ -88,6 +95,19 @@ export function PrivacyForm({ settings }: { settings: SettingsShape }) {
           Nenhuma parte do aplicativo publica nada sozinha.
         </p>
       </div>
+
+      {/*
+        "Todos" é a palavra curta que cabe no botão, e ela esconde uma
+        diferença que importa: público aqui alcança quem não tem conta, porque
+        o perfil em /u/usuario é uma página aberta. Dizer isso uma vez, em
+        cima, é melhor do que repetir em seis dicas.
+      */}
+      <p className="text-muted-foreground text-sm">
+        <strong className="text-foreground">Só eu</strong> é só você.{' '}
+        <strong className="text-foreground">Quem me segue</strong> alcança quem já te segue hoje.{' '}
+        <strong className="text-foreground">Todos</strong> alcança qualquer pessoa com o endereço
+        do seu perfil — inclusive quem não tem conta no P20X.
+      </p>
 
       <ul className="flex flex-col gap-5">
         {ITEMS.map((item) => (

@@ -9,6 +9,62 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 25/08/2026 · Privacidade que mentia, orçamento de campanhas e o perfil
+
+### A configuração de privacidade não valia para treino nem foto
+
+**O que estava errado.** Existiam dois lugares guardando "quem pode ver", e eles
+nunca conversaram: `user_settings.workouts_visibility` (o que a tela escreve) e
+`workouts.visibility` (coluna por linha, que nasce privada e era o que a policy
+lia). Dava para marcar tudo como público, salvar, e continuar invisível para
+todo mundo — sem erro e sem aviso.
+
+É a pior forma de bug de privacidade: **a que mente na direção de quem confiou
+na interface.** Alguém achava que tinha compartilhado o progresso com um amigo
+e não tinha.
+
+**O que passou a valer.** A policy consulta a configuração **ou** a linha
+compartilhada. O `or` preserva a vitrine do perfil, que marca duas fotos como
+públicas enquanto o álbum segue privado.
+
+Nada passou a ser exposto por causa disso — só passou a ser exposto o que alguém
+tinha pedido para expor. Coberto por `tests/integration/privacidade.test.ts`,
+que testa os dois sentidos.
+
+**Textos corrigidos junto:** a dica das fotos dizia *"vale para as fotos novas;
+as antigas ficam como estão"*, que era a descrição do bug. E "Todos" agora diz
+que alcança quem não tem conta — porque alcança mesmo, e o perfil em
+`/u/usuario` é página aberta.
+
+> ⚠ **Lacuna conhecida:** `weight_visibility` continua sem policy própria. A RLS
+> é por linha e não separa colunas, então medidas públicas expõem o peso na
+> tabela crua. O antes-e-depois do perfil respeita a configuração certa, via
+> `peso_da_vitrine()`. Resolver o caso geral pede separar peso de medida em
+> tabelas, ou permissão por coluna.
+
+### Orçamento de campanhas
+
+Não existe cota de navegador ou de serviço de push que valha mostrar — as do
+Firebase e da Apple são altas demais para alguém alcançar mandando campanha à
+mão. O teto em `services/campaign-budget.ts` (1 por dia, 8 por mês) é nosso, e
+protege o único erro irreversível aqui: cansar as pessoas até desligarem os
+avisos. **Desligar é definitivo — o navegador não pergunta de novo.**
+
+Conferido no servidor, não só desenhado na tela. O botão de teste continua
+liberado quando o orçamento acaba: ele vai só para o próprio aparelho.
+
+Campanhas podem ser apagadas do histórico. Some o registro, não a notificação —
+o que já chegou ao aparelho de alguém não volta atrás.
+
+### Perfil público
+
+Antes e depois com tabela comparativa (data e peso nas duas pontas, com a
+variação), e ícone em cada número. O peso só aparece quando `weight_visibility`
+permite, via função dedicada que devolve **apenas** os dois dias da vitrine —
+nunca a série.
+
+---
+
 ## 25/08/2026 · Desafios, notificações, instalação e análise por objetivo
 
 ### Desafios

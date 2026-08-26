@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/session';
 import { enviarEmLote, pushConfigurado, resumir } from '@/lib/push/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { todayIn } from '@/services/calendar';
+import { orcamentoDeCampanhas } from '@/services/campaign-budget';
 import { textoDaCampanha } from '@/services/notifications';
 
 /**
@@ -51,6 +53,28 @@ export async function dispararCampanha(
 
   const texto = textoDaCampanha(parsed.data);
   const admin = createAdminClient();
+
+  /**
+   * O orçamento é conferido no servidor, e não só desenhado na tela.
+   *
+   * O botão desabilitado impede o toque distraído; isto impede o resto. Não é
+   * cota de terceiro — é proteção contra o único erro irreversível aqui, que é
+   * cansar as pessoas até elas desligarem os avisos. Desligar é definitivo: o
+   * navegador não pergunta duas vezes.
+   */
+  const { data: jaEnviadas } = await admin
+    .from('notification_campaigns')
+    .select('sent_at')
+    .eq('status', 'enviada');
+
+  const orcamento = orcamentoDeCampanhas(
+    (jaEnviadas ?? []).map((linha) => linha.sent_at),
+    todayIn('America/Sao_Paulo'),
+  );
+
+  if (!orcamento.podeEnviar) {
+    return { status: 'erro', mensagem: orcamento.motivo ?? 'Limite de envios atingido.' };
+  }
 
   // a campanha nasce registrada, antes de sair: se o envio morrer no meio, o
   // que foi mandado continua sabido
@@ -151,4 +175,23 @@ export async function testarNoMeuAparelho(
   return resumo.entregues > 0
     ? { status: 'ok', mensagem: 'Enviada só para você. Confira o aparelho.' }
     : { status: 'erro', mensagem: 'Não chegou. Verifique a permissão no navegador.' };
+}
+
+/**
+ * Apaga uma campanha do histórico.
+ *
+ * Some o registro, não a notificação — o que já chegou ao aparelho de alguém
+ * não volta atrás, e nenhum botão aqui pode prometer isso. Serve para limpar a
+ * lista de testes e rascunhos.
+ */
+export async function apagarCampanha(formData: FormData): Promise<void> {
+  await requireAdmin();
+
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+
+  const admin = createAdminClient();
+  await admin.from('notification_campaigns').delete().eq('id', id);
+
+  revalidatePath('/admin/notificacoes');
 }

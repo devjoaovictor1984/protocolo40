@@ -112,8 +112,16 @@ export async function relacaoCom(outroId: string): Promise<Relacao> {
  * existe link permanente para foto de ninguém.
  */
 export async function vitrineDe(
-  perfil: { showcase_before_id: string | null; showcase_after_id: string | null },
-): Promise<{ antes: string; depois: string; antesEm: string; depoisEm: string } | null> {
+  perfil: { id: string; showcase_before_id: string | null; showcase_after_id: string | null },
+): Promise<{
+  antes: string;
+  depois: string;
+  antesEm: string;
+  depoisEm: string;
+  /** Peso das duas pontas, só quando o dono deixa o peso visível. */
+  pesoAntes: number | null;
+  pesoDepois: number | null;
+} | null> {
   const { showcase_before_id: antesId, showcase_after_id: depoisId } = perfil;
   if (!antesId || !depoisId) return null;
 
@@ -137,7 +145,22 @@ export async function vitrineDe(
 
   if (!urlAntes.data?.signedUrl || !urlDepois.data?.signedUrl) return null;
 
+  /**
+   * O peso vem de uma função dedicada, e não de um select em
+   * `body_measurements`: a RLS daquela tabela obedece a configuração de
+   * *medidas*, e o peso tem a própria. Só os dois dias da vitrine saem de lá.
+   */
+  const { data: pesos } = await supabase.rpc('peso_da_vitrine', {
+    p_owner: perfil.id,
+    p_antes: antes.taken_on,
+    p_depois: depois.taken_on,
+  });
+
+  const porDia = new Map((pesos ?? []).map((linha) => [linha.dia, Number(linha.peso)]));
+
   return {
+    pesoAntes: porDia.get(antes.taken_on) ?? null,
+    pesoDepois: porDia.get(depois.taken_on) ?? null,
     antes: urlAntes.data.signedUrl,
     depois: urlDepois.data.signedUrl,
     antesEm: antes.taken_on,

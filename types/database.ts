@@ -691,6 +691,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { user_id: string; endpoint: string; p256dh: string; auth: string }[];
       };
+      peso_da_vitrine: {
+        Args: { p_owner: string; p_antes: string; p_depois: string };
+        Returns: { dia: string; peso: number }[];
+      };
       ranking_do_desafio: {
         Args: { p_slug: string; p_limite?: number };
         Returns: ChallengeRankRow[];

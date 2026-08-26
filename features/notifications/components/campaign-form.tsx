@@ -13,6 +13,7 @@ import {
   type EstadoDaCampanha,
 } from '@/features/notifications/admin-actions';
 import { cn } from '@/lib/utils';
+import type { Orcamento } from '@/services/campaign-budget';
 
 const inicial: EstadoDaCampanha = { status: 'idle' };
 
@@ -26,7 +27,13 @@ const inicial: EstadoDaCampanha = { status: 'idle' };
  *
  * O botão de teste manda só para o próprio aparelho, e existe pelo mesmo motivo.
  */
-export function CampaignForm({ inscritos }: { inscritos: number }) {
+export function CampaignForm({
+  inscritos,
+  orcamento,
+}: {
+  inscritos: number;
+  orcamento: Orcamento;
+}) {
   const [envio, dispararAction] = useActionState(dispararCampanha, inicial);
   const [teste, testarAction] = useActionState(testarNoMeuAparelho, inicial);
 
@@ -104,15 +111,22 @@ export function CampaignForm({ inscritos }: { inscritos: number }) {
           Testar no meu aparelho
         </Button>
 
-        <Button type="submit" formAction={dispararAction} className="h-12 flex-1 font-semibold">
+        {/* o teste continua liberado quando o orçamento acaba: ele vai só para
+            o próprio aparelho e não gasta nada de ninguém */}
+        <Button
+          type="submit"
+          formAction={dispararAction}
+          disabled={!orcamento.podeEnviar}
+          className="h-12 flex-1 font-semibold"
+        >
           <Send aria-hidden className="size-4" />
           ENVIAR PARA {inscritos}
         </Button>
       </div>
 
       <p className="text-muted-foreground text-center text-xs leading-relaxed">
-        Vai para {inscritos} {inscritos === 1 ? 'aparelho' : 'aparelhos'} de uma vez, e não tem como
-        desfazer. Teste antes.
+        {orcamento.motivo ??
+          `Vai para ${inscritos} ${inscritos === 1 ? 'aparelho' : 'aparelhos'} de uma vez, e não tem como desfazer. Teste antes.`}
       </p>
     </form>
   );

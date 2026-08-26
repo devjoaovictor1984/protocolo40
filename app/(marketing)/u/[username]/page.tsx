@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Flame } from 'lucide-react';
+import { CalendarCheck, Flame, Trophy } from 'lucide-react';
 
 import { Wordmark } from '@/components/brand/wordmark';
 import { StatCard } from '@/components/stats';
@@ -10,11 +10,12 @@ import { env } from '@/lib/env';
 import { Emblem } from '@/features/badges/components/emblem';
 import { conquistasDoUsuario } from '@/features/badges/repository';
 import { FollowButton } from '@/features/community/components/follow-button';
+import { Showcase } from '@/features/community/components/showcase';
 import { contagens, relacaoCom, vitrineDe } from '@/features/community/repository';
 import { getUser } from '@/lib/auth/session';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { createClient } from '@/lib/supabase/server';
-import { daysBetween, formatDay } from '@/services/calendar';
+import { formatDay } from '@/services/calendar';
 
 /**
  * Perfil público.
@@ -141,36 +142,7 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
 
         {profile.bio ? <p>{profile.bio}</p> : null}
 
-        {vitrine ? (
-          <section className="flex flex-col gap-2">
-            <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-              Antes e depois
-            </h2>
-
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { url: vitrine.antes, dia: vitrine.antesEm, rotulo: 'Antes' },
-                { url: vitrine.depois, dia: vitrine.depoisEm, rotulo: 'Depois' },
-              ].map((foto) => (
-                <figure key={foto.rotulo} className="flex flex-col gap-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada de curta duração */}
-                  <img
-                    src={foto.url}
-                    alt={`${foto.rotulo}: ${formatDay(foto.dia)}`}
-                    className="border-border aspect-3/4 w-full rounded-xl border object-cover"
-                  />
-                  <figcaption className="text-muted-foreground tnum text-center text-[11px]">
-                    {foto.rotulo} · {formatDay(foto.dia)}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-
-            <p className="text-muted-foreground text-center text-[11px]">
-              {daysBetween(vitrine.antesEm, vitrine.depoisEm)} dias entre as duas
-            </p>
-          </section>
-        ) : null}
+        {vitrine ? <Showcase {...vitrine} /> : null}
 
         {conquistas.conquistadas.length > 0 ? (
           <section className="flex flex-col gap-2">
@@ -192,10 +164,22 @@ export default async function PerfilPublicoPage({ params }: { params: Params }) 
 
         {stats && stats.total_days > 0 ? (
           <>
-            <section className="grid grid-cols-3 gap-4">
-              <StatCard value={stats.total_days} unit="dias" label="Dias treinados" />
+            {/* cada número com o próprio ícone: numa grade de três, o desenho
+                é o que diferencia antes de a pessoa ler o rótulo */}
+            <section className="grid grid-cols-3 gap-3">
+              <StatCard
+                value={stats.total_days}
+                unit="dias"
+                label="Treinados"
+                icon={CalendarCheck}
+              />
               <StatCard value={stats.current_streak} unit="dias" label="Sequência" icon={Flame} />
-              <StatCard value={stats.longest_streak} unit="dias" label="Maior sequência" />
+              <StatCard
+                value={stats.longest_streak}
+                unit="dias"
+                label="Recorde"
+                icon={Trophy}
+              />
             </section>
 
             {stats.current_streak > 0 ? (
