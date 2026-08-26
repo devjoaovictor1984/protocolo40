@@ -5,6 +5,7 @@ import { ArrowLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { alternarDesafio } from '@/features/challenges/admin-actions';
 import { ChallengeForm } from '@/features/challenges/components/challenge-form';
+import { DeleteChallenge } from '@/features/challenges/components/delete-challenge';
 import { todosOsDesafios } from '@/features/challenges/repository';
 import { requireAdmin } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
@@ -91,13 +92,24 @@ export default async function AdminDesafiosPage() {
                   </p>
                 </div>
 
-                <form action={alternarDesafio}>
-                  <input type="hidden" name="id" value={desafio.id} />
-                  <input type="hidden" name="valor" value={desafio.is_active ? '0' : '1'} />
-                  <Button type="submit" variant="outline" size="sm" className="h-10">
-                    {desafio.is_active ? 'Desligar' : 'Ligar'}
-                  </Button>
-                </form>
+                <div className="flex shrink-0 items-center gap-1">
+                  <form action={alternarDesafio}>
+                    <input type="hidden" name="id" value={desafio.id} />
+                    <input type="hidden" name="valor" value={desafio.is_active ? '0' : '1'} />
+                    <Button type="submit" variant="outline" size="sm" className="h-10">
+                      {desafio.is_active ? 'Desligar' : 'Ligar'}
+                    </Button>
+                  </form>
+
+                  {/* desligar e apagar são coisas diferentes, e só uma delas
+                      tem volta — por isso ficam lado a lado, com pesos visuais
+                      diferentes */}
+                  <DeleteChallenge
+                    id={desafio.id}
+                    titulo={desafio.title}
+                    participantes={desafio.participantes}
+                  />
+                </div>
               </li>
             ))}
           </ul>

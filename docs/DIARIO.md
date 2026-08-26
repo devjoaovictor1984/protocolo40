@@ -9,6 +9,30 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 26/08/2026 · Desafio de teste vazou para produção
+
+Uma corrida da suíte foi interrompida por tempo limite e morreu antes do
+`finally` que apaga o desafio criado. Ele ficou em produção — e não ficou
+quieto: a janela dele (21/08 a 31/08) cobria hoje, então ele estava **em curso**,
+e a regra de destaque prefere o que está rolando ao que vai começar. Resultado:
+o desafio de teste ocupou a tela de Hoje de todo mundo e o Desafio de Setembro
+sumiu dela.
+
+**Duas frentes de correção:**
+
+- `e2e/varredura.ts` passa a apagar também os desafios com prefixo `teste-`, na
+  mesma rede de segurança que já pegava contas. Um desafio vazado é pior que uma
+  conta vazada: aparece na tela inicial de quem usa o app.
+- `/admin/desafios` ganhou **apagar**, separado de desligar. A confirmação diz
+  quantas pessoas perdem a participação em vez de perguntar "tem certeza?" —
+  "tem certeza" não informa nada.
+
+**Desligar × apagar:** desligar tira das telas e mantém tudo; apagar leva junto a
+participação de todo mundo pelo `on delete cascade`. A insígnia de quem concluiu
+fica, porque mora em `user_badges` e não depende do desafio existir.
+
+---
+
 ## 26/08/2026 · A inscrição de um inscrevia todos
 
 **O que estava errado.** A policy de `challenge_participants` é `using (true)` —

@@ -105,3 +105,27 @@ export async function alternarDesafio(formData: FormData): Promise<void> {
   revalidatePath('/desafios');
   revalidatePath('/hoje');
 }
+
+/**
+ * Apaga um desafio de vez.
+ *
+ * Diferente de desligar: o `on delete cascade` de `challenge_participants`
+ * leva junto a participação de todo mundo. A insígnia de quem concluiu fica —
+ * ela mora em `user_badges` e não depende do desafio existir — mas o histórico
+ * de quem estava dentro some. A tela avisa o número antes de perguntar.
+ */
+export async function apagarDesafio(id: string): Promise<string | null> {
+  await requireAdmin();
+  if (!id) return 'Desafio não identificado.';
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('challenges').delete().eq('id', id);
+
+  if (error) return error.message;
+
+  revalidatePath('/admin/desafios');
+  revalidatePath('/desafios');
+  revalidatePath('/hoje');
+
+  return null;
+}
