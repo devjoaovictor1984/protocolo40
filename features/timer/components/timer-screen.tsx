@@ -58,38 +58,29 @@ export function TimerScreen({
   /**
    * O sino do intervalo.
    *
-   * A escolha vive aqui e não no cronômetro porque é decisão de sessão, não de
-   * treino: ninguém quer que o intervalo de ontem volte sozinho amanhã.
+   * Mora nas preferências, e não em estado local, por dois motivos que se
+   * somam:
+   *
+   * - **quem toca o som é o `IntervalBell`, no layout**, e ele não tem como ler
+   *   estado de uma tela que pode nem estar montada. Um lugar só, que os dois
+   *   enxergam;
+   * - **a escolha precisa sobreviver ao treino de ontem.** A primeira versão
+   *   voltava sempre desligada, para não fazer barulho sem ninguém pedir. Na
+   *   prática, quem sempre treina 40/20 reescolhia todo dia — e escolher com o
+   *   relógio já correndo entrava no meio de um ciclo, com o primeiro sinal
+   *   fora de hora. Agora a escolha acontece na tela de preparo, e o áudio é
+   *   liberado no mesmo toque que começa o treino.
    */
   const { preferencias, salvar } = useIntervalPrefs();
 
-  /**
-   * O intervalo volta ligado com o que foi usado da última vez.
-   *
-   * A primeira versão voltava desligado para não fazer barulho sem ninguém
-   * pedir. Na prática, quem sempre treina com 40/20 tinha que reescolher todo
-   * dia — e escolher com o relógio já correndo entrava no meio de um ciclo, com
-   * o primeiro sinal soando fora de hora. Agora a escolha acontece na tela de
-   * preparo, e o som é liberado no mesmo toque que começa o treino.
-   */
-  /**
-   * A escolha desta sessão, quando houver — senão vale a que ficou guardada.
-   *
-   * Derivar em vez de copiar para o estado não é preciosismo: o inicializador
-   * de `useState` roda na primeira renderização, que no servidor ainda não tem
-   * `localStorage`. Copiando, o intervalo guardado chegava sempre nulo e a
-   * persistência simplesmente não existia. O `null` de dentro significa "ainda
-   * não mexi nisso"; desligar guarda `{ config: null }`, que é diferente.
-   */
-  const [escolha, setEscolha] = useState<{ config: ConfiguracaoDeIntervalo | null } | null>(null);
-  const intervalo = escolha ? escolha.config : preferencias.ultimo;
+  const intervalo = preferencias.ligado ? preferencias.ultimo : null;
 
-  const setIntervalo = (config: ConfiguracaoDeIntervalo | null) => setEscolha({ config });
+  const setIntervalo = (config: ConfiguracaoDeIntervalo | null) =>
+    salvar(config ? { ultimo: config, ligado: true } : { ligado: false });
+
   const sino = useIntervals({
     config: intervalo,
     elapsed: timer.elapsed,
-    rodando: timer.running && !timer.paused,
-    preferencias,
   });
   const { data: template } = useTemplate(
     templateId ?? timer.session?.templateId ?? null,
@@ -127,10 +118,7 @@ export function TimerScreen({
         intervalo={intervalo}
         preferencias={preferencias}
         onPreferencias={salvar}
-        onEscolher={(escolha) => {
-          setIntervalo(escolha);
-          if (escolha) salvar({ ultimo: escolha });
-        }}
+        onEscolher={setIntervalo}
         onAntesDeComecar={sino.ligarSom}
       />
     );
@@ -276,15 +264,11 @@ export function TimerScreen({
         <IntervalControl
           config={intervalo}
           momento={sino.momento}
-          comSom={sino.comSom}
           preferencias={preferencias}
           onPreferencias={salvar}
           onEscolher={async (escolha) => {
             // liberar o áudio precisa acontecer dentro do toque; este é o toque
-            if (escolha) {
-              await sino.ligarSom();
-              salvar({ ultimo: escolha });
-            }
+            if (escolha) await sino.ligarSom();
             setIntervalo(escolha);
           }}
         />
@@ -546,7 +530,6 @@ function ReadyScreen({
         <IntervalControl
           config={intervalo}
           momento={null}
-          comSom={false}
           preferencias={preferencias}
           preparo
           onEscolher={onEscolher}

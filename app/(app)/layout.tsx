@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { BottomNav, SideNav } from '@/components/app-nav';
 import { FloatingTimer } from '@/features/timer/components/floating-timer';
+import { IntervalBell } from '@/features/timer/components/interval-bell';
 import { SessionProvider } from '@/features/session/session-context';
 import { needsOnboarding, requireSession } from '@/lib/auth/session';
 
@@ -42,6 +43,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </main>
         </div>
       </div>
+
+      {/* o sino mora no layout, não na tela do treino: sair do cronômetro
+          desmontaria o componente e o som morreria junto */}
+      <IntervalBell />
 
       {/* o cronômetro segue por todas as telas: o treino sempre continuou
           rodando ao sair daqui, o que faltava era isso aparecer */}

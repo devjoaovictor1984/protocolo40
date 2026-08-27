@@ -13,17 +13,28 @@ import type { ConfiguracaoDeIntervalo } from '@/services/intervals';
  * nos dois, e sincronizar isso seria imitar uma consistência que ninguém pediu.
  *
  * Retomar o último intervalo usado é o que faz a diferença no uso diário: quem
- * sempre faz 40/20 não quer redigitar antes de cada treino. Mas o intervalo
- * volta **desligado** — retomar o som sozinho seria o app fazendo barulho sem
- * ninguém ter pedido naquele momento.
+ * sempre faz 40/20 não quer redigitar antes de cada treino. E ele volta
+ * **ligado**, porque desligar era o que dava trabalho: a pessoa reescolhia
+ * todo dia, muitas vezes com o relógio já correndo — e aí o primeiro sinal
+ * soava no meio de um ciclo. Desligar continua a um toque de distância.
  */
 
 export type PreferenciasDoSino = Preferencias & {
-  /** O último intervalo escolhido, para oferecer de novo. Nunca liga sozinho. */
+  /** O intervalo escolhido. */
   ultimo: ConfiguracaoDeIntervalo | null;
+  /**
+   * O sino está ligado para o treino em curso.
+   *
+   * Mora aqui, e não no estado da tela do cronômetro, porque **quem toca o som
+   * não é aquela tela**. Sair dela desmontava o hook e o som morria com ela —
+   * exatamente o que acontecia ao ir ver outra coisa no meio do descanso. Agora
+   * quem toca é um componente do layout, que não desmonta ao navegar, e ele
+   * precisa ler a escolha de algum lugar compartilhado.
+   */
+  ligado: boolean;
 };
 
-const PADRAO: PreferenciasDoSino = { ...PREFERENCIAS_PADRAO, ultimo: null };
+const PADRAO: PreferenciasDoSino = { ...PREFERENCIAS_PADRAO, ultimo: null, ligado: false };
 const CHAVE = 'p20x_sino';
 
 const ouvintes = new Set<() => void>();
@@ -43,6 +54,7 @@ function ler(): PreferenciasDoSino {
       timbre: salvo.timbre ?? PADRAO.timbre,
       vibrar: salvo.vibrar ?? PADRAO.vibrar,
       ultimo: salvo.ultimo ?? null,
+      ligado: salvo.ligado ?? false,
     };
   } catch {
     // navegador com armazenamento bloqueado: o padrão serve

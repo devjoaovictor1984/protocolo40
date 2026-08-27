@@ -9,6 +9,59 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/08/2026 · O som que atravessa a navegação
+
+Três relatos, um deles o mais grave da leva:
+
+**1. O som morria ao trocar de tela.** "Está rolando o treino, vou ver algo no
+descanso dentro do app, e ele não avisa. Quando volto ao treino o som sai."
+Exatamente isso: quem tocava era um hook dentro da tela do cronômetro. Navegar
+desmonta a tela, o efeito limpa, o `AudioContext` fecha. O treino nunca parou —
+o tempo vem de `startedAt` no IndexedDB — mas o aviso parava, e voltando para a
+tela ele ressuscitava, o que deixava o defeito ainda mais confuso de descrever.
+
+Agora quem toca é **`features/timer/components/interval-bell.tsx`**, que não
+desenha nada e mora nos dois layouts (`(app)` e `(focus)`), porque layout é o
+único lugar que a navegação não desmonta. Ele lê a sessão do IndexedDB a cada
+500 ms, calcula o segundo e dispara. `use-intervals.ts` ficou só com o que
+depende de estar na tela: liberar o áudio dentro do gesto e calcular a fase para
+o anel.
+
+> ⚠ **Trocar de grupo de rotas remonta o layout.** Ir de `/treinar` (`focus`)
+> para `/hoje` (`app`) desmonta um layout e monta o outro — logo, remonta o
+> sino. Por isso a sessão nasce `undefined` e não `null`: com `null`, o efeito
+> "sem treino, fecha o áudio" fecharia o contexto no primeiro quadro depois de
+> **cada** navegação, recriando o defeito que ele existe para consertar. A
+> diferença entre "ainda não sei" e "não há treino" é o conserto inteiro.
+
+**2. O balão não se movia.** Ele fica por cima do conteúdo, e o canto certo
+depende da tela. Agora arrasta, com a posição guardada em `p20x_balao`. Duas
+sutilezas: abaixo de 6 px ainda é toque (senão tocar para voltar ao treino
+viraria um arrasto de dois pixels), e a posição é presa dentro da janela, senão
+girar o aparelho some com ele.
+
+> ⚠ Ler `localStorage` num efeito que chama `setState` é erro de lint aqui
+> (`cascading renders`) — e com razão: este componente vive no layout, então
+> seria uma renderização extra em toda tela do app. O padrão da casa é
+> `useSyncExternalStore`, como em `use-interval-prefs.ts` e `use-install.ts`.
+
+**3. No silencioso não toca, e ninguém avisava.** Não existe API para saber se a
+chavinha do iPhone está ligada: o navegador simplesmente não toca, sem erro
+nenhum. Quem descobre isso no meio do treino conclui que o recurso está
+quebrado. O aviso agora fica à vista na faixa da fase, não escondido na gaveta.
+
+### Sintoma → onde olhar
+
+| Sintoma | Olhar em |
+|---|---|
+| Som para ao navegar | `features/timer/components/interval-bell.tsx` — está montado nos **dois** layouts? |
+| Áudio fecha sozinho depois de navegar | a sessão precisa nascer `undefined`; `encerrar()` só em `sessao === null` |
+| Balão volta para o canto | `p20x_balao` no `localStorage`, e `dentroDaTela()` |
+| Toque no balão vira arrasto | a folga de 6 px em `aoMover` |
+| Sino toca duas vezes | alguém voltou a tocar de dentro de `use-intervals.ts` |
+
+---
+
 ## 27/08/2026 · O sino se escolhe antes, e dá para sair do cronômetro
 
 Três relatos de uso, todos certos:

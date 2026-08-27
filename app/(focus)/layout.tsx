@@ -1,4 +1,5 @@
 import { SessionProvider } from '@/features/session/session-context';
+import { IntervalBell } from '@/features/timer/components/interval-bell';
 import { requireSession } from '@/lib/auth/session';
 
 /**
@@ -21,6 +22,9 @@ export default async function FocusLayout({ children }: { children: React.ReactN
         dailyGoalSeconds: settings.daily_goal_seconds,
       }}
     >
+      {/* o mesmo sino do resto do app: navegar entre o cronômetro e as outras
+          telas não pode interromper o aviso */}
+      <IntervalBell />
       <div className="pt-safe px-safe flex min-h-dvh flex-col">{children}</div>
     </SessionProvider>
   );

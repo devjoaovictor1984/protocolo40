@@ -323,11 +323,23 @@ test.describe('o cronômetro que segue pelo app', () => {
 
     // na própria tela do treino ele não existe: apontar para onde a pessoa já
     // está é ruído
-    await expect(page.getByRole('link', { name: /Voltar ao cronômetro/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Treino em andamento/ })).toHaveCount(0);
 
     await page.goto('/calendario');
-    const balao = page.getByRole('link', { name: /Treino em andamento.*Voltar ao cronômetro/ });
+    const balao = page.getByRole('button', { name: /Treino em andamento/ });
     await expect(balao).toBeVisible({ timeout: 20_000 });
+
+    // arrastar move o balão, e o toque continua sendo toque: a folga de alguns
+    // pixels entre um e outro é justamente o que este par de asserções guarda
+    const antes = (await balao.boundingBox())!;
+    await page.mouse.move(antes.x + antes.width / 2, antes.y + antes.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(antes.x + 20, antes.y - 100, { steps: 8 });
+    await page.mouse.up();
+
+    const depois = (await balao.boundingBox())!;
+    expect(Math.abs(depois.y - antes.y)).toBeGreaterThan(40);
+    await expect(page).toHaveURL(/\/calendario/);
 
     await balao.click();
     await expect(page).toHaveURL(/\/treinar/, { timeout: 20_000 });

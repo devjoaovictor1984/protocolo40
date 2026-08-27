@@ -65,7 +65,6 @@ const TIMBRES: { valor: Timbre; rotulo: string; descricao: string }[] = [
 export function IntervalControl({
   config,
   momento,
-  comSom,
   preferencias,
   preparo = false,
   onEscolher,
@@ -73,7 +72,6 @@ export function IntervalControl({
 }: {
   config: ConfiguracaoDeIntervalo | null;
   momento: Momento | null;
-  comSom: boolean;
   /**
    * Antes de o relógio começar.
    *
@@ -119,15 +117,20 @@ export function IntervalControl({
             </p>
           </div>
 
-          {!comSom ? (
-            <span
-              title="O aparelho está em silencioso ou o som não foi liberado"
-              className="text-muted-foreground flex items-center gap-1 text-[11px]"
-            >
-              <VolumeX aria-hidden className="size-3.5" />
-              sem som
+          {/*
+            O aviso do silencioso fica à vista, e não escondido numa gaveta.
+            Não existe API para saber se a chavinha do iPhone está ligada — o
+            navegador simplesmente não toca, sem erro nenhum. Quem descobre isso
+            no meio do treino conclui que o recurso está quebrado.
+          */}
+          <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-[10px] leading-tight">
+            <VolumeX aria-hidden className="size-3.5 shrink-0" />
+            <span>
+              no silencioso
+              <br />
+              não toca
             </span>
-          ) : null}
+          </span>
 
           <button
             type="button"
