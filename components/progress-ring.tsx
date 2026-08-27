@@ -11,6 +11,13 @@ type ProgressRingProps = {
   children?: React.ReactNode;
   /** Descrição para leitor de tela. O anel sozinho não comunica nada. */
   label?: string;
+  /**
+   * Riscos ao longo da volta, de 0 a 1.
+   *
+   * São os intervalos do treino, lidos como as marcas de hora de um relógio.
+   * Ficam dentro da espessura do traço para não engordar o anel.
+   */
+  marks?: { fracao: number; forte: boolean }[];
 };
 
 /**
@@ -29,6 +36,7 @@ export function ProgressRing({
   indicatorClassName,
   children,
   label,
+  marks,
 }: ProgressRingProps) {
   const clamped = Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0));
   const radius = (size - strokeWidth) / 2;
@@ -68,6 +76,31 @@ export function ProgressRing({
           strokeDashoffset={offset}
           className={cn('stroke-primary transition-[stroke-dashoffset] duration-300', indicatorClassName)}
         />
+        {/*
+          Os riscos vêm por último para ficarem por cima do progresso. Cada um é
+          uma linha radial atravessando a espessura do anel — a marca de um
+          relógio, no mesmo lugar onde o olho já procura. Desenhados na cor do
+          fundo, eles recortam o anel em vez de somar tinta a ele.
+        */}
+        {marks?.map((marca) => {
+          const angulo = marca.fracao * 2 * Math.PI;
+          const interno = radius - strokeWidth / 2;
+          const externo = radius + strokeWidth / 2;
+          const meio = size / 2;
+
+          return (
+            <line
+              key={`${marca.fracao}-${marca.forte}`}
+              x1={meio + Math.cos(angulo) * interno}
+              y1={meio + Math.sin(angulo) * interno}
+              x2={meio + Math.cos(angulo) * externo}
+              y2={meio + Math.sin(angulo) * externo}
+              strokeWidth={marca.forte ? 2.5 : 1.5}
+              strokeLinecap="butt"
+              className={cn(marca.forte ? 'stroke-background' : 'stroke-background/60')}
+            />
+          );
+        })}
       </svg>
 
       {children ? (

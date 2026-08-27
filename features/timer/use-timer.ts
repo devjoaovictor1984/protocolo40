@@ -13,6 +13,7 @@ import {
   isPaused as sessionPaused,
   pause as pauseSession,
   progressRatio,
+  restartSession,
   resume as resumeSession,
   toggleMode as toggleSessionMode,
   type TimerSession,
@@ -227,6 +228,11 @@ export function useTimer() {
   }, [releaseWakeLock, session, timezone]);
 
   /** Descarta a sessão sem gravar nada. */
+  /** Zera o relógio sem perder o treino: os exercícios marcados continuam. */
+  const restart = useCallback(() => {
+    apply((atual) => restartSession(atual, Date.now()));
+  }, [apply]);
+
   const discard = useCallback(async () => {
     releaseWakeLock();
     await persist(null);
@@ -252,6 +258,7 @@ export function useTimer() {
     addMinutes,
     setRounds,
     toggleChecked,
+    restart,
     finish,
     discard,
   };

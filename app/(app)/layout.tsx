@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { BottomNav, SideNav } from '@/components/app-nav';
+import { FloatingTimer } from '@/features/timer/components/floating-timer';
 import { SessionProvider } from '@/features/session/session-context';
 import { needsOnboarding, requireSession } from '@/lib/auth/session';
 
@@ -41,6 +42,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </main>
         </div>
       </div>
+
+      {/* o cronômetro segue por todas as telas: o treino sempre continuou
+          rodando ao sair daqui, o que faltava era isso aparecer */}
+      <FloatingTimer />
 
       <BottomNav />
     </SessionProvider>

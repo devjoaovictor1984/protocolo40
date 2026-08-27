@@ -63,14 +63,28 @@ frequências não são múltiplos inteiros da fundamental, e é isso que separa
 ataque de 4 ms e cauda exponencial; os parciais agudos morrem antes, como num
 sino real. Um compressor na saída é o que permite "alto" ser alto sem distorcer.
 
-**A linha da volta, no treino.** A régua da demonstração mostra dois ciclos numa
-escala fixa; num treino de vinte minutos com 40/20 seriam vinte voltas e as
-marcas virariam um borrão. Na tela do treino ela aparece reescalada para **uma
-volta só**, sempre do mesmo tamanho: esforço à esquerda, descanso à direita,
-agulha correndo, e as faixas mais claras marcando os três segundos de aviso — dá
-para *ver* o bipe chegando antes de ouvi-lo. Escala fixa é o que permite o olho
-aprender a ler num relance, que é o único tipo de leitura disponível para quem
-está no meio de um burpee.
+**As marcas no anel.** A primeira tentativa foi uma barra separada abaixo do
+relógio, e ela competia com o anel — dois elementos contando a mesma história. A
+versão que ficou põe os riscos **no próprio anel**, como as marcas de hora de um
+relógio: o mostrador que todo mundo já sabe ler. Traço forte no começo de cada
+esforço, fino no começo do descanso, desenhados na cor do fundo para recortar o
+anel em vez de somar tinta.
+
+Quando as marcas não cabem, elas se reduzem sozinhas: passando de 60, só o
+começo de cada esforço é marcado; passando disso, somem. Um anel cheio de risco
+não informa nada.
+
+**Recomeçar** zera o relógio e mantém o treino — exercícios marcados, rounds e
+meta continuam. É para quem esqueceu o cronômetro rodando e voltou com um número
+que não corresponde a esforço nenhum; apagar tudo e montar de novo seria caro
+demais para um engano tão comum.
+
+**O balão flutuante.** O cronômetro sempre sobreviveu a sair da tela — o tempo
+vem de `startedAt` no IndexedDB, não de um contador. O que faltava era aparecer:
+quem saía para ver o histórico não tinha sinal de que o relógio seguia, e o
+caminho de volta era procurar o botão de treinar como se fosse começar de novo.
+O balão lê direto do IndexedDB, sem montar o cronômetro inteiro em cada página, e
+some na própria tela do treino.
 
 Demonstração em `/admin/intervalos`: roda acelerado (até 8×), desenha a linha do
 tempo com todos os sinais antes de eles tocarem, permite tocar cada som separado

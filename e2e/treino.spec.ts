@@ -274,15 +274,61 @@ test.describe('sino do intervalo', () => {
     await expect(page.getByText(/Esforço · volta 1/)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/^\d+s$/).first()).toBeVisible();
 
-    // a linha da volta: mesma ideia da régua da demonstração, mas de um ciclo só
-    // — vinte voltas na mesma escala virariam um borrão ilegível
-    await expect(
-      page.getByRole('img', { name: /Volta de 60 segundos de esforço e 60 de descanso/ }),
-    ).toBeVisible();
+    // o anel ganha as marcas do intervalo, como os riscos de um relógio. A barra
+    // separada saiu: o anel já é um mostrador que todo mundo sabe ler, e uma
+    // segunda régua competia com ele
+    await expect(page.locator('svg line')).not.toHaveCount(0);
 
     // e dá para desligar sem sair do treino. O rótulo passa a lembrar o último
     // escolhido — é o atalho de quem sempre usa o mesmo intervalo
     await page.getByRole('button', { name: 'Desligar o intervalo' }).click();
     await expect(page.getByRole('button', { name: /Ligar o sino · 60 \/ 60/ })).toBeVisible();
+  });
+});
+
+/**
+ * O cronômetro sempre sobreviveu a sair da tela — o tempo é calculado a partir
+ * de `startedAt` no IndexedDB. O que faltava era aparecer: quem saía para ver
+ * outra coisa não tinha sinal de que o relógio continuava, e o caminho de volta
+ * era procurar o botão de treinar como se fosse começar de novo.
+ */
+test.describe('o cronômetro que segue pelo app', () => {
+  test.skip(!configured, 'precisa das credenciais do Supabase');
+
+  let userId = '';
+
+  test.afterEach(async () => {
+    if (userId) {
+      await admin(`/auth/v1/admin/users/${userId}`, { method: 'DELETE' });
+      userId = '';
+    }
+  });
+
+  test('o balão aparece nas outras telas e leva de volta', async ({ context, page, baseURL }) => {
+    test.setTimeout(120_000);
+    userId = await signIn(context, baseURL!);
+    page.on('dialog', (dialog) => void dialog.accept());
+
+    await page.goto('/treinar');
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
+    await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
+
+    // na própria tela do treino ele não existe: apontar para onde a pessoa já
+    // está é ruído
+    await expect(page.getByRole('link', { name: /Voltar ao cronômetro/ })).toHaveCount(0);
+
+    await page.goto('/calendario');
+    const balao = page.getByRole('link', { name: /Treino em andamento.*Voltar ao cronômetro/ });
+    await expect(balao).toBeVisible({ timeout: 20_000 });
+
+    await balao.click();
+    await expect(page).toHaveURL(/\/treinar/, { timeout: 20_000 });
+    await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
+
+    // e recomeçar zera o relógio sem desistir do treino
+    await page.getByRole('button', { name: 'Recomeçar' }).click();
+    await expect(page.getByText('Restantes')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Sair sem salvar' }).click();
   });
 });

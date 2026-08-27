@@ -5,6 +5,7 @@ import {
   PRESETS,
   duracaoDoCiclo,
   linhaDoTempo,
+  marcasDoAnel,
   momentoEm,
   nomeDoIntervalo,
   normalizarConfig,
@@ -201,5 +202,53 @@ describe('como o intervalo se chama', () => {
   it('e monta um nome para o que foi digitado', () => {
     expect(nomeDoIntervalo({ trabalho: 45, descanso: 15 })).toBe('45 / 15');
     expect(nomeDoIntervalo({ trabalho: 90, descanso: 0 })).toBe('Sino a cada 90s');
+  });
+});
+
+/**
+ * As marcas no anel substituíram uma barra separada: o anel já é um mostrador
+ * que todo mundo sabe ler, e risco nele é a mesma leitura de um relógio.
+ */
+describe('marcas do anel', () => {
+  it('marca o começo de cada esforço e de cada descanso', () => {
+    // 20 minutos com 60/60: dez voltas, duas marcas cada
+    const marcas = marcasDoAnel(UM_MINUTO, 1200);
+
+    expect(marcas[0]).toEqual({ fracao: 0, forte: true });
+    expect(marcas[1]).toEqual({ fracao: 60 / 1200, forte: false });
+    expect(marcas[2]).toEqual({ fracao: 120 / 1200, forte: true });
+  });
+
+  it('sem descanso, só as viradas de minuto', () => {
+    const marcas = marcasDoAnel(SINO, 600);
+    expect(marcas.every((m) => m.forte)).toBe(true);
+    expect(marcas).toHaveLength(11);
+  });
+
+  it('nenhuma marca passa do fim do anel', () => {
+    for (const m of marcasDoAnel(TABATA, 1200)) {
+      expect(m.fracao).toBeGreaterThanOrEqual(0);
+      expect(m.fracao).toBeLessThanOrEqual(1);
+    }
+  });
+
+  /**
+   * Vinte minutos de tabata são 40 voltas: 80 marcas encostariam umas nas
+   * outras e o anel viraria textura em vez de informação.
+   */
+  it('com muitas voltas, marca só o começo de cada esforço', () => {
+    const marcas = marcasDoAnel(TABATA, 1200);
+    expect(marcas.every((m) => m.forte)).toBe(true);
+    expect(marcas.length).toBeLessThanOrEqual(41);
+  });
+
+  it('e some de vez quando nem isso cabe', () => {
+    // esforço de cinco segundos num treino de uma hora
+    expect(marcasDoAnel({ trabalho: 5, descanso: 0 }, 3600)).toEqual([]);
+  });
+
+  it('configuração ou duração inválida não desenha nada', () => {
+    expect(marcasDoAnel(UM_MINUTO, 0)).toEqual([]);
+    expect(marcasDoAnel({ trabalho: 0, descanso: 0 }, 1200)).toEqual([]);
   });
 });

@@ -24,9 +24,7 @@ import {
 import type { PreferenciasDoSino } from "@/features/timer/use-interval-prefs";
 import { cn } from "@/lib/utils";
 import {
-  AVISO_ANTES,
   PRESETS,
-  duracaoDoCiclo,
   nomeDoIntervalo,
   normalizarConfig,
   type ConfiguracaoDeIntervalo,
@@ -67,7 +65,6 @@ const TIMBRES: { valor: Timbre; rotulo: string; descricao: string }[] = [
 export function IntervalControl({
   config,
   momento,
-  segundo,
   comSom,
   preferencias,
   onEscolher,
@@ -75,8 +72,6 @@ export function IntervalControl({
 }: {
   config: ConfiguracaoDeIntervalo | null;
   momento: Momento | null;
-  /** Segundos decorridos, para posicionar a agulha dentro da volta. */
-  segundo: number;
   comSom: boolean;
   preferencias: PreferenciasDoSino;
   onEscolher: (config: ConfiguracaoDeIntervalo | null) => void;
@@ -126,7 +121,6 @@ export function IntervalControl({
           </button>
         </div>
 
-        <LinhaDoCiclo config={config} segundo={segundo} />
       </div>
     );
   }
@@ -359,82 +353,3 @@ function NoSeuJeito({
   );
 }
 
-/**
- * A volta atual, em uma linha.
- *
- * A régua da demonstração mostra dois ciclos inteiros numa escala fixa. Num
- * treino de vinte minutos com 40/20 são vinte voltas, e as marcas virariam um
- * borrão. Aqui a linha mostra **uma volta só**, do mesmo tamanho sempre: o
- * esforço à esquerda, o descanso à direita, e a agulha correndo. A escala não
- * muda, então o olho aprende a ler em um relance — que é o único tipo de leitura
- * disponível para quem está no meio de um burpee.
- *
- * As faixas claras nas pontas são os três segundos de aviso: dá para *ver* o
- * bipe chegando antes de ouvi-lo.
- */
-function LinhaDoCiclo({
-  config,
-  segundo,
-}: {
-  config: ConfiguracaoDeIntervalo;
-  segundo: number;
-}) {
-  const ciclo = duracaoDoCiclo(config);
-  const dentro = Math.max(0, Math.floor(segundo)) % ciclo;
-  const pctTrabalho = (config.trabalho / ciclo) * 100;
-  const temDescanso = config.descanso > 0;
-
-  const avisoTrabalho =
-    config.trabalho > AVISO_ANTES ? (AVISO_ANTES / ciclo) * 100 : 0;
-  const avisoDescanso =
-    temDescanso && config.descanso > AVISO_ANTES
-      ? (AVISO_ANTES / ciclo) * 100
-      : 0;
-
-  return (
-    <div
-      role="img"
-      aria-label={`Volta de ${config.trabalho} segundos de esforço${
-        temDescanso ? ` e ${config.descanso} de descanso` : ""
-      }, no segundo ${dentro}`}
-      className="bg-muted relative h-2.5 w-full overflow-hidden rounded-full"
-    >
-      {/* o esforço ocupa a fatia da esquerda */}
-      <span
-        aria-hidden
-        style={{ width: `${pctTrabalho}%` }}
-        className="bg-primary/35 absolute inset-y-0 left-0"
-      />
-
-      {/* os três segundos de aviso, em cada ponta que os comporta */}
-      {avisoTrabalho > 0 ? (
-        <span
-          aria-hidden
-          style={{
-            left: `${pctTrabalho - avisoTrabalho}%`,
-            width: `${avisoTrabalho}%`,
-          }}
-          className="bg-primary/70 absolute inset-y-0"
-        />
-      ) : null}
-
-      {avisoDescanso > 0 ? (
-        <span
-          aria-hidden
-          style={{
-            left: `${100 - avisoDescanso}%`,
-            width: `${avisoDescanso}%`,
-          }}
-          className="bg-foreground/30 absolute inset-y-0"
-        />
-      ) : null}
-
-      {/* a agulha */}
-      <span
-        aria-hidden
-        style={{ left: `${(dentro / ciclo) * 100}%` }}
-        className="bg-foreground absolute inset-y-0 w-[3px] -translate-x-1/2 rounded-full transition-[left] duration-300 ease-linear"
-      />
-    </div>
-  );
-}

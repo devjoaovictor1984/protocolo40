@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Minus, Pause, Play, Plus, RefreshCw, X } from 'lucide-react';
+import { Check, Minus, Pause, Play, Plus, RefreshCw, X,
+  RotateCcw,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ProgressRing } from '@/components/progress-ring';
@@ -17,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { IntervalControl } from '@/features/timer/components/interval-control';
 import { useIntervalPrefs } from '@/features/timer/use-interval-prefs';
 import { useIntervals } from '@/features/timer/use-intervals';
-import type { ConfiguracaoDeIntervalo } from '@/services/intervals';
+import { marcasDoAnel, type ConfiguracaoDeIntervalo } from '@/services/intervals';
 import { formatClock, MIN_MEANINGFUL_SECONDS } from '@/services/duration';
 import type { LocalWorkoutExercise } from '@/types/offline';
 
@@ -186,6 +188,7 @@ export function TimerScreen({
           strokeWidth={12}
           label={`${formatClock(timer.display)} ${timer.mode === 'regressivo' ? 'restantes' : 'decorridos'}`}
           indicatorClassName={cn(timer.paused && 'stroke-muted-foreground')}
+          marks={intervalo ? marcasDoAnel(intervalo, timer.session?.targetSeconds ?? 0) : undefined}
         >
           <span
             className={cn(
@@ -203,7 +206,6 @@ export function TimerScreen({
         <IntervalControl
           config={intervalo}
           momento={sino.momento}
-          segundo={timer.elapsed}
           comSom={sino.comSom}
           preferencias={preferencias}
           onPreferencias={salvar}
@@ -310,9 +312,32 @@ export function TimerScreen({
           </Button>
         </div>
 
-        <Button variant="ghost" size="sm" className="h-10" onClick={() => timer.addMinutes(5)}>
-          + 5 minutos
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-10" onClick={() => timer.addMinutes(5)}>
+            + 5 minutos
+          </Button>
+
+          {/*
+            Recomeçar zera o relógio e mantém o treino: exercícios marcados,
+            rounds e meta continuam. É para quem esqueceu o cronômetro rodando e
+            voltou com um número que não corresponde a esforço nenhum — apagar
+            tudo e montar de novo seria caro demais para um engano tão comum.
+            A confirmação existe porque o tempo perdido não volta.
+          */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground h-10"
+            onClick={() => {
+              if (timer.elapsed < 5 || window.confirm('Zerar o cronômetro e recomeçar? O que você já marcou continua.')) {
+                timer.restart();
+              }
+            }}
+          >
+            <RotateCcw aria-hidden className="size-4" />
+            Recomeçar
+          </Button>
+        </div>
 
         <p className="text-muted-foreground pb-4 text-xs">
           {online ? 'Seu treino é salvo no aparelho antes de subir.' : 'Offline — salvo no aparelho.'}

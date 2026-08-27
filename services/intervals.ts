@@ -229,3 +229,68 @@ export function nomeDoIntervalo(config: ConfiguracaoDeIntervalo): string {
     ? `Sino a cada ${config.trabalho}s`
     : `${config.trabalho} / ${config.descanso}`;
 }
+
+/** Uma marca no anel do cronômetro. */
+export type Marca = {
+  /** Onde fica na volta do anel, de 0 a 1. */
+  fracao: number;
+  /** Começo de esforço merece traço mais forte que começo de descanso. */
+  forte: boolean;
+};
+
+/**
+ * Quantas marcas cabem antes de o anel virar tracejado.
+ *
+ * Um mostrador de relógio tem sessenta e continua legível, mas ali os traços
+ * são finos e o círculo é grande. Acima disto as marcas se encostam e o anel
+ * deixa de mostrar intervalo para mostrar textura.
+ */
+const MARCAS_MAXIMAS = 60;
+
+/**
+ * As marcas do anel, uma a cada virada de fase.
+ *
+ * A ideia veio no lugar de uma barra separada: o anel já é um mostrador que
+ * todo mundo sabe ler, e riscos nele são a mesma leitura de um relógio. Uma
+ * segunda barra competiria com a primeira.
+ *
+ * Quando o intervalo é curto para a duração do treino, marcar cada virada
+ * encheria a volta — nesse caso só o começo de cada esforço é marcado, que é a
+ * informação que importa. Se ainda assim não couber, some: um anel cheio de
+ * risco não informa nada.
+ *
+ * @param totalSegundos Duração alvo do treino, que é a volta inteira do anel.
+ */
+export function marcasDoAnel(
+  config: ConfiguracaoDeIntervalo,
+  totalSegundos: number,
+): Marca[] {
+  if (!valida(config) || !Number.isFinite(totalSegundos) || totalSegundos <= 0) return [];
+
+  const ciclo = duracaoDoCiclo(config);
+  const trabalho = Math.round(config.trabalho);
+  const temDescanso = Math.max(0, Math.round(config.descanso)) > 0;
+
+  const voltas = Math.floor(totalSegundos / ciclo);
+  const porVolta = temDescanso ? 2 : 1;
+
+  // com o dobro de marcas passando do teto, marca só o começo de cada esforço
+  const soEsforco = voltas * porVolta > MARCAS_MAXIMAS;
+  if (voltas > MARCAS_MAXIMAS) return [];
+
+  const marcas: Marca[] = [];
+
+  for (let volta = 0; volta <= voltas; volta += 1) {
+    const inicio = volta * ciclo;
+    if (inicio > totalSegundos) break;
+
+    marcas.push({ fracao: inicio / totalSegundos, forte: true });
+
+    if (temDescanso && !soEsforco) {
+      const pausa = inicio + trabalho;
+      if (pausa <= totalSegundos) marcas.push({ fracao: pausa / totalSegundos, forte: false });
+    }
+  }
+
+  return marcas;
+}

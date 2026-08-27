@@ -86,6 +86,22 @@ export function startSession(now: number, targetSeconds = DEFAULT_TARGET_SECONDS
 }
 
 /** Abaixo disto o cronômetro mal começou; a interface pergunta antes de gravar. */
+/**
+ * Recomeça o cronômetro do zero, mantendo o treino.
+ *
+ * O que muda é só o relógio: `startedAt` volta para agora e as pausas somem. A
+ * meta, o modo e tudo que a pessoa já marcou — exercícios feitos, rounds —
+ * continuam, porque recomeçar o tempo não é desistir do treino. Quem quer
+ * desistir tem o botão de sair sem salvar.
+ *
+ * Existe para o caso comum de esquecer o cronômetro rodando: a pessoa volta
+ * quinze minutos depois, vê um número que não corresponde ao esforço dela, e
+ * precisa de um caminho que não seja apagar tudo e montar de novo.
+ */
+export function restartSession(session: TimerSession, now: number): TimerSession {
+  return { ...session, startedAt: now, pauses: [] };
+}
+
 export const MIN_MEANINGFUL_SECONDS = 20;
 
 /**

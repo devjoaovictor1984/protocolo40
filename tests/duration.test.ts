@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  restartSession,
   addMinutes,
   displaySeconds,
   elapsedSeconds,
@@ -146,5 +147,48 @@ describe('duração nunca sai zerada', () => {
 
   it('acima do piso a duração é a real', () => {
     expect(finishSession(startSession(T0), T0 + minutes(3)).durationSeconds).toBe(180);
+  });
+});
+
+/**
+ * Recomeçar o relógio sem desistir do treino.
+ *
+ * O caso que originou: esquecer o cronômetro rodando, voltar quinze minutos
+ * depois e ver um número que não corresponde a esforço nenhum. Apagar tudo e
+ * montar de novo é caro demais para um engano tão comum.
+ */
+describe('recomeçar', () => {
+  const base = {
+    startedAt: 1_000_000,
+    pauses: [{ at: 1_100_000, until: 1_200_000 }],
+    targetSeconds: 1200,
+    mode: 'regressivo' as const,
+  };
+
+  it('zera o tempo decorrido', () => {
+    const agora = 2_000_000;
+    expect(elapsedSeconds(base, agora)).toBeGreaterThan(0);
+    expect(elapsedSeconds(restartSession(base, agora), agora)).toBe(0);
+  });
+
+  it('esquece as pausas', () => {
+    expect(restartSession(base, 2_000_000).pauses).toEqual([]);
+  });
+
+  it('mantém a meta e o modo — recomeçar o tempo não é desistir do treino', () => {
+    const novo = restartSession(base, 2_000_000);
+    expect(novo.targetSeconds).toBe(base.targetSeconds);
+    expect(novo.mode).toBe(base.mode);
+  });
+
+  it('não altera a sessão recebida', () => {
+    restartSession(base, 2_000_000);
+    expect(base.startedAt).toBe(1_000_000);
+    expect(base.pauses).toHaveLength(1);
+  });
+
+  it('depois de recomeçar, o cronômetro não está pausado', () => {
+    const pausada = { ...base, pauses: [{ at: 1_500_000, until: null }] };
+    expect(isPaused(restartSession(pausada, 2_000_000))).toBe(false);
   });
 });
