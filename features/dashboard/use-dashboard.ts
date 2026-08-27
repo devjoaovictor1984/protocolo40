@@ -7,6 +7,7 @@ import { useSession, useToday } from '@/features/session/session-context';
 import { hydrateMeasurements } from '@/features/measurements/repository';
 import { hydrateWorkouts, localWorkouts } from '@/features/workouts/repository';
 import { addDays } from '@/services/calendar';
+import { useRestDays } from '@/features/rest/use-rest-days';
 import { calculateStreak, protocolDay } from '@/services/streak';
 import type { LocalWorkout } from '@/types/offline';
 
@@ -57,8 +58,13 @@ export function useDashboard() {
     };
   }, [queryClient, today, userId]);
 
+  // o descanso é elo da sequência: sem ele aqui, a tela de Hoje quebrava a
+  // corrente de quem tinha registrado descanso — o oposto do que o recurso
+  // promete — enquanto o perfil público a mostrava inteira
+  const { data: descansos } = useRestDays();
+
   return useQuery<DashboardData>({
-    queryKey: ['workouts', 'dashboard', userId, today],
+    queryKey: ['workouts', 'dashboard', userId, today, descansos?.length ?? 0],
     queryFn: async () => {
       const workouts = await localWorkouts(userId);
       const days = [...new Set(workouts.map((workout) => workout.workout_date))];
@@ -68,7 +74,7 @@ export function useDashboard() {
         todayWorkouts: workouts.filter((workout) => workout.workout_date === today),
         lastWorkout: workouts[0] ?? null,
         days,
-        streak: calculateStreak(days, today),
+        streak: calculateStreak(days, today, descansos ?? []),
         protocolDay: protocolDay(protocolStartedOn, today),
         totalSeconds: workouts.reduce((total, workout) => total + workout.duration_seconds, 0),
         pending: workouts.filter((workout) => workout.sync_state !== 'synced').length,

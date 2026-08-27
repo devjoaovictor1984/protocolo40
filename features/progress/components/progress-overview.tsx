@@ -21,6 +21,7 @@ import { EmptyState, StatCard } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExercises } from '@/features/exercises/catalog';
+import { useRestDays } from '@/features/rest/use-rest-days';
 import { localMeasurements } from '@/features/measurements/repository';
 import { useSession, useToday } from '@/features/session/session-context';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
@@ -46,6 +47,7 @@ export function ProgressOverview() {
   const today = useToday();
   const { data: workouts, isLoading } = useLocalWorkouts();
   const { data: exercises } = useExercises();
+  const { data: descansos } = useRestDays();
 
   const { data: measurements } = useQuery({
     queryKey: ['measurements', userId],
@@ -93,7 +95,8 @@ export function ProgressOverview() {
   }
 
   const days = [...new Set(all.map((workout) => workout.workout_date))];
-  const streak = calculateStreak(days, today);
+  // mesma razão do painel: o descanso segura a corrente
+  const streak = calculateStreak(days, today, descansos ?? []);
   const totalMinutes = Math.round(
     all.reduce((sum, workout) => sum + workout.duration_seconds, 0) / 60,
   );

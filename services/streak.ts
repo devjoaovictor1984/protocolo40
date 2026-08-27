@@ -30,17 +30,38 @@ function isValidDay(value: string): boolean {
 }
 
 /**
- * @param days  Dias com treino, em qualquer ordem, com repetições permitidas.
- * @param today Dia de referência, no fuso do usuário.
+ * O dia de descanso registrado entra como **elo da corrente, e não como treino**.
+ * São perguntas diferentes: `totalDays` responde "quanto você treinou" e só
+ * conta treino; a sequência responde "há quanto tempo você não abandona isso",
+ * e um descanso deliberado não é abandono.
+ *
+ * Isto espelha exatamente o que `get_user_stats` faz no banco. Enquanto não
+ * espelhava, a sequência do perfil público e a da tela de Hoje discordavam — e
+ * a de Hoje quebrava justamente para quem tinha registrado descanso, que é o
+ * oposto do que o recurso promete.
+ *
+ * @param days      Dias com treino, em qualquer ordem, com repetições permitidas.
+ * @param today     Dia de referência, no fuso do usuário.
+ * @param descansos Dias marcados como descanso. Os que coincidem com treino são
+ *                  ignorados — o treino já sustenta o elo.
  */
-export function calculateStreak(days: readonly string[], today: string): StreakSummary {
+export function calculateStreak(
+  days: readonly string[],
+  today: string,
+  descansos: readonly string[] = [],
+): StreakSummary {
   const unique = Array.from(new Set(days.filter(isValidDay))).sort();
 
-  if (unique.length === 0) {
+  // a corrente inclui o descanso; a contagem de dias treinados, não
+  const elos = Array.from(
+    new Set([...unique, ...descansos.filter((dia) => isValidDay(dia) && !unique.includes(dia))]),
+  ).sort();
+
+  if (elos.length === 0) {
     return { current: 0, longest: 0, totalDays: 0, lastDay: null };
   }
 
-  const numbers = unique.map(toDayNumber);
+  const numbers = elos.map(toDayNumber);
   const todayNumber = toDayNumber(today);
 
   let longest = 1;
@@ -68,7 +89,9 @@ export function calculateStreak(days: readonly string[], today: string): StreakS
     current,
     longest,
     totalDays: unique.length,
-    lastDay: unique[unique.length - 1],
+    // o último dia é o último TREINO, não o último elo: é o que responde
+    // "quando você treinou pela última vez"
+    lastDay: unique[unique.length - 1] ?? null,
   };
 }
 

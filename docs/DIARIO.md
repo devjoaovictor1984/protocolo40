@@ -9,6 +9,37 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 26/08/2026 · O descanso não segurava a sequência onde importa
+
+**O que estava errado.** `get_user_stats`, no banco, sempre uniu treino e
+descanso na corrente. O cálculo do cliente — `calculateStreak` — só olhava
+treino. Resultado: a tela de Hoje e a de Evolução quebravam a sequência de quem
+tinha registrado descanso, enquanto o perfil público a mostrava inteira. Duas
+telas, dois números, e o errado era o que a pessoa mais olha.
+
+Pior: era exatamente o oposto do que o recurso promete.
+
+**O que passou a valer.** `calculateStreak(dias, hoje, descansos)` espelha o
+banco: o descanso entra como elo da corrente e **não** conta como dia treinado.
+`totalDays` responde "quanto você treinou"; a sequência responde "há quanto
+tempo você não abandona isso", e um descanso deliberado não é abandono.
+
+**As regras, em um lugar só:**
+
+| | |
+|---|---|
+| Descanso quebra a sequência? | Não — conta como elo |
+| Quantos posso ter? | Um por semana (7 dias em volta do dia escolhido) |
+| Vale num dia em que treinei? | Não, e a função recusa: `ja_treinou` |
+| Conta como dia treinado? | Não |
+| **Conta no desafio?** | **Não** — desafio conta só treino concluído |
+
+A última linha é a que mais surpreende: descansar mantém a sequência e a
+insígnia de constância, mas o dia não entra na meta do Desafio de Setembro. Foi
+por isso que a meta virou 25 de 30, e não 30 de 30.
+
+---
+
 ## 26/08/2026 · Instalação no Android
 
 **Relato:** duas opções aparecem no Chrome e "Instalar" não instala.

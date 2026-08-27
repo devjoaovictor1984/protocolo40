@@ -103,3 +103,61 @@ describe('marcos', () => {
     expect(nextMilestone(400)).toBeNull();
   });
 });
+
+/**
+ * O descanso é elo da corrente, não treino.
+ *
+ * O recurso promete "registrar um dia de descanso para não perder a sequência",
+ * e a função do banco (`get_user_stats`) sempre fez isso. A daqui não fazia — a
+ * tela de Hoje quebrava a corrente justamente de quem tinha registrado
+ * descanso, enquanto o perfil público a mostrava inteira. Duas telas, dois
+ * números, e o errado era o que a pessoa mais olha.
+ */
+describe('descanso na sequência', () => {
+  it('segura a corrente no dia pulado', () => {
+    const treinos = ['2026-09-01', '2026-09-02', '2026-09-04', '2026-09-05'];
+
+    expect(calculateStreak(treinos, '2026-09-05').current, 'sem descanso, quebra').toBe(2);
+    expect(calculateStreak(treinos, '2026-09-05', ['2026-09-03']).current).toBe(5);
+  });
+
+  it('não conta como dia treinado', () => {
+    // "quanto você treinou" e "há quanto tempo você não abandona" são
+    // perguntas diferentes, e só a segunda ganha o descanso
+    const resultado = calculateStreak(['2026-09-01', '2026-09-02'], '2026-09-03', ['2026-09-03']);
+
+    expect(resultado.current).toBe(3);
+    expect(resultado.totalDays).toBe(2);
+  });
+
+  it('o último dia continua sendo o do último treino', () => {
+    const resultado = calculateStreak(['2026-09-01'], '2026-09-02', ['2026-09-02']);
+    expect(resultado.lastDay).toBe('2026-09-01');
+  });
+
+  it('descanso no mesmo dia de um treino não conta duas vezes', () => {
+    const resultado = calculateStreak(['2026-09-01', '2026-09-02'], '2026-09-02', ['2026-09-02']);
+    expect(resultado.current).toBe(2);
+    expect(resultado.totalDays).toBe(2);
+  });
+
+  it('só descanso, sem treino nenhum, ainda é uma corrente', () => {
+    const resultado = calculateStreak([], '2026-09-02', ['2026-09-01', '2026-09-02']);
+    expect(resultado.current).toBe(2);
+    expect(resultado.totalDays).toBe(0);
+    expect(resultado.lastDay).toBeNull();
+  });
+
+  it('dois dias parados não são salvos por um descanso só', () => {
+    // o descanso cobre o dia que ele marca, e nenhum outro
+    const treinos = ['2026-09-01', '2026-09-05'];
+    expect(calculateStreak(treinos, '2026-09-05', ['2026-09-03']).current).toBe(1);
+  });
+
+  it('sem descanso informado, o resultado é o de antes', () => {
+    const treinos = ['2026-09-01', '2026-09-02', '2026-09-03'];
+    expect(calculateStreak(treinos, '2026-09-03')).toEqual(
+      calculateStreak(treinos, '2026-09-03', []),
+    );
+  });
+});
