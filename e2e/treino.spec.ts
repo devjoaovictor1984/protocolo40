@@ -274,6 +274,12 @@ test.describe('sino do intervalo', () => {
     await expect(page.getByText(/Esforço · volta 1/)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/^\d+s$/).first()).toBeVisible();
 
+    // a linha da volta: mesma ideia da régua da demonstração, mas de um ciclo só
+    // — vinte voltas na mesma escala virariam um borrão ilegível
+    await expect(
+      page.getByRole('img', { name: /Volta de 60 segundos de esforço e 60 de descanso/ }),
+    ).toBeVisible();
+
     // e dá para desligar sem sair do treino. O rótulo passa a lembrar o último
     // escolhido — é o atalho de quem sempre usa o mesmo intervalo
     await page.getByRole('button', { name: 'Desligar o intervalo' }).click();

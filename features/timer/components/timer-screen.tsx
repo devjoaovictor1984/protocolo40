@@ -203,6 +203,7 @@ export function TimerScreen({
         <IntervalControl
           config={intervalo}
           momento={sino.momento}
+          segundo={timer.elapsed}
           comSom={sino.comSom}
           preferencias={preferencias}
           onPreferencias={salvar}

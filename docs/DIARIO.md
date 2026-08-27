@@ -63,6 +63,15 @@ frequências não são múltiplos inteiros da fundamental, e é isso que separa
 ataque de 4 ms e cauda exponencial; os parciais agudos morrem antes, como num
 sino real. Um compressor na saída é o que permite "alto" ser alto sem distorcer.
 
+**A linha da volta, no treino.** A régua da demonstração mostra dois ciclos numa
+escala fixa; num treino de vinte minutos com 40/20 seriam vinte voltas e as
+marcas virariam um borrão. Na tela do treino ela aparece reescalada para **uma
+volta só**, sempre do mesmo tamanho: esforço à esquerda, descanso à direita,
+agulha correndo, e as faixas mais claras marcando os três segundos de aviso — dá
+para *ver* o bipe chegando antes de ouvi-lo. Escala fixa é o que permite o olho
+aprender a ler num relance, que é o único tipo de leitura disponível para quem
+está no meio de um burpee.
+
 Demonstração em `/admin/intervalos`: roda acelerado (até 8×), desenha a linha do
 tempo com todos os sinais antes de eles tocarem, permite tocar cada som separado
 e tem os mesmos ajustes de timbre e volume do app. Existe para gravar vídeo sem

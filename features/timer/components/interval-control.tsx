@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Bell, BellOff, Play, VolumeX } from 'lucide-react';
+import { useState } from "react";
+import { Bell, BellOff, Play, VolumeX } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Drawer,
   DrawerContent,
@@ -13,28 +13,44 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '@/components/ui/drawer';
-import { liberar, tocar, vibrar, type Timbre, type Volume } from '@/lib/audio/apito';
-import type { PreferenciasDoSino } from '@/features/timer/use-interval-prefs';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/drawer";
 import {
+  liberar,
+  tocar,
+  vibrar,
+  type Timbre,
+  type Volume,
+} from "@/lib/audio/apito";
+import type { PreferenciasDoSino } from "@/features/timer/use-interval-prefs";
+import { cn } from "@/lib/utils";
+import {
+  AVISO_ANTES,
   PRESETS,
+  duracaoDoCiclo,
   nomeDoIntervalo,
   normalizarConfig,
   type ConfiguracaoDeIntervalo,
   type Momento,
-} from '@/services/intervals';
+} from "@/services/intervals";
 
 const VOLUMES: { valor: Volume; rotulo: string }[] = [
-  { valor: 'baixo', rotulo: 'Baixo' },
-  { valor: 'medio', rotulo: 'Médio' },
-  { valor: 'alto', rotulo: 'Alto' },
+  { valor: "baixo", rotulo: "Baixo" },
+  { valor: "medio", rotulo: "Médio" },
+  { valor: "alto", rotulo: "Alto" },
 ];
 
 const TIMBRES: { valor: Timbre; rotulo: string; descricao: string }[] = [
-  { valor: 'campainha', rotulo: 'Campainha', descricao: 'Ressoa. O mais fácil de reconhecer.' },
-  { valor: 'apito', rotulo: 'Apito', descricao: 'Corta ruído. Bom com música alta.' },
-  { valor: 'bipe', rotulo: 'Bipe', descricao: 'Discreto, sem cauda.' },
+  {
+    valor: "campainha",
+    rotulo: "Campainha",
+    descricao: "Ressoa. O mais fácil de reconhecer.",
+  },
+  {
+    valor: "apito",
+    rotulo: "Apito",
+    descricao: "Corta ruído. Bom com música alta.",
+  },
+  { valor: "bipe", rotulo: "Bipe", descricao: "Discreto, sem cauda." },
 ];
 
 /**
@@ -51,6 +67,7 @@ const TIMBRES: { valor: Timbre; rotulo: string; descricao: string }[] = [
 export function IntervalControl({
   config,
   momento,
+  segundo,
   comSom,
   preferencias,
   onEscolher,
@@ -58,6 +75,8 @@ export function IntervalControl({
 }: {
   config: ConfiguracaoDeIntervalo | null;
   momento: Momento | null;
+  /** Segundos decorridos, para posicionar a agulha dentro da volta. */
+  segundo: number;
   comSom: boolean;
   preferencias: PreferenciasDoSino;
   onEscolher: (config: ConfiguracaoDeIntervalo | null) => void;
@@ -67,41 +86,47 @@ export function IntervalControl({
     return (
       <div
         className={cn(
-          'flex w-full max-w-sm items-center gap-3 rounded-xl border px-4 py-3 transition-colors',
-          momento.fase === 'trabalho'
-            ? 'border-primary/40 bg-primary/5'
-            : 'border-border bg-muted/40',
+          "flex w-full max-w-sm flex-col gap-2 rounded-xl border px-4 py-3 transition-colors",
+          momento.fase === "trabalho"
+            ? "border-primary/40 bg-primary/5"
+            : "border-border bg-muted/40",
         )}
       >
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold tracking-wider uppercase opacity-70">
-            {config.descanso === 0
-              ? `Sino · minuto ${momento.ciclo}`
-              : momento.fase === 'trabalho'
-                ? `Esforço · volta ${momento.ciclo}`
-                : `Descanso · volta ${momento.ciclo}`}
-          </p>
-          <p className="tnum text-2xl leading-tight font-extrabold">{momento.restante}s</p>
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold tracking-wider uppercase opacity-70">
+              {config.descanso === 0
+                ? `Sino · minuto ${momento.ciclo}`
+                : momento.fase === "trabalho"
+                  ? `Esforço · volta ${momento.ciclo}`
+                  : `Descanso · volta ${momento.ciclo}`}
+            </p>
+            <p className="tnum text-2xl leading-tight font-extrabold">
+              {momento.restante}s
+            </p>
+          </div>
+
+          {!comSom ? (
+            <span
+              title="O aparelho está em silencioso ou o som não foi liberado"
+              className="text-muted-foreground flex items-center gap-1 text-[11px]"
+            >
+              <VolumeX aria-hidden className="size-3.5" />
+              sem som
+            </span>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => onEscolher(null)}
+            aria-label="Desligar o intervalo"
+            className="text-muted-foreground hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-lg"
+          >
+            <BellOff aria-hidden className="size-4" />
+          </button>
         </div>
 
-        {!comSom ? (
-          <span
-            title="O aparelho está em silencioso ou o som não foi liberado"
-            className="text-muted-foreground flex items-center gap-1 text-[11px]"
-          >
-            <VolumeX aria-hidden className="size-3.5" />
-            sem som
-          </span>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={() => onEscolher(null)}
-          aria-label="Desligar o intervalo"
-          className="text-muted-foreground hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-lg"
-        >
-          <BellOff aria-hidden className="size-4" />
-        </button>
+        <LinhaDoCiclo config={config} segundo={segundo} />
       </div>
     );
   }
@@ -117,7 +142,7 @@ export function IntervalControl({
             <Bell aria-hidden className="size-4" />
             {preferencias.ultimo
               ? `Ligar o sino · ${nomeDoIntervalo(preferencias.ultimo)}`
-              : 'Ligar o sino do intervalo'}
+              : "Ligar o sino do intervalo"}
           </button>
         }
       />
@@ -126,12 +151,16 @@ export function IntervalControl({
         <DrawerHeader>
           <DrawerTitle>Sino do intervalo</DrawerTitle>
           <DrawerDescription>
-            O app avisa quando começar e quando parar, para você treinar sem olhar a tela.
+            O app avisa quando começar e quando parar, para você treinar sem
+            olhar a tela.
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="flex max-h-[70dvh] flex-col gap-5 overflow-y-auto px-4 pb-8">
-          <Ajustes preferencias={preferencias} onPreferencias={onPreferencias} />
+          <Ajustes
+            preferencias={preferencias}
+            onPreferencias={onPreferencias}
+          />
 
           <section className="flex flex-col gap-2">
             <p className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
@@ -155,9 +184,9 @@ export function IntervalControl({
           <NoSeuJeito onEscolher={onEscolher} ultimo={preferencias.ultimo} />
 
           <p className="text-muted-foreground text-xs leading-relaxed">
-            Dois toques subindo = comece. Um grave e longo = pare. Três curtos = está acabando. A
-            tela fica acesa enquanto o sino estiver ligado. No iPhone, a chavinha de silencioso
-            corta o som.
+            Dois toques subindo = comece. Um grave e longo = pare. Três curtos =
+            está acabando. A tela fica acesa enquanto o sino estiver ligado. No
+            iPhone, a chavinha de silencioso corta o som.
           </p>
         </div>
       </DrawerContent>
@@ -177,8 +206,8 @@ function Ajustes({
     onPreferencias(mudanca);
     await liberar();
     const atual = { ...preferencias, ...mudanca };
-    tocar('comecar', atual);
-    vibrar('comecar', atual.vibrar);
+    tocar("comecar", atual);
+    vibrar("comecar", atual.vibrar);
   }
 
   return (
@@ -194,16 +223,20 @@ function Ajustes({
               type="button"
               onClick={() => void provar({ timbre: timbre.valor })}
               className={cn(
-                'flex min-h-14 items-center gap-3 rounded-xl border px-4 text-left transition-colors',
+                "flex min-h-14 items-center gap-3 rounded-xl border px-4 text-left transition-colors",
                 preferencias.timbre === timbre.valor
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:bg-muted',
+                  ? "border-primary bg-primary/10"
+                  : "border-border hover:bg-muted",
               )}
             >
               <Play aria-hidden className="size-4 shrink-0 opacity-60" />
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold">{timbre.rotulo}</span>
-                <span className="text-muted-foreground block text-xs">{timbre.descricao}</span>
+                <span className="block text-sm font-semibold">
+                  {timbre.rotulo}
+                </span>
+                <span className="text-muted-foreground block text-xs">
+                  {timbre.descricao}
+                </span>
               </span>
             </button>
           ))}
@@ -221,10 +254,10 @@ function Ajustes({
               type="button"
               onClick={() => void provar({ volume: volume.valor })}
               className={cn(
-                'min-h-11 flex-1 rounded-lg border text-sm font-medium transition-colors',
+                "min-h-11 flex-1 rounded-lg border text-sm font-medium transition-colors",
                 preferencias.volume === volume.valor
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border hover:bg-muted',
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border hover:bg-muted",
               )}
             >
               {volume.rotulo}
@@ -241,7 +274,9 @@ function Ajustes({
           className="accent-primary size-5"
         />
         Vibrar junto
-        <span className="text-muted-foreground text-xs">(o iPhone não vibra pela web)</span>
+        <span className="text-muted-foreground text-xs">
+          (o iPhone não vibra pela web)
+        </span>
       </label>
     </section>
   );
@@ -300,7 +335,9 @@ function NoSeuJeito({
           {erro}
         </p>
       ) : (
-        <p className="text-muted-foreground text-xs">Descanso zero vira um sino a cada intervalo.</p>
+        <p className="text-muted-foreground text-xs">
+          Descanso zero vira um sino a cada intervalo.
+        </p>
       )}
 
       <Button
@@ -319,5 +356,85 @@ function NoSeuJeito({
         Usar este intervalo
       </Button>
     </section>
+  );
+}
+
+/**
+ * A volta atual, em uma linha.
+ *
+ * A régua da demonstração mostra dois ciclos inteiros numa escala fixa. Num
+ * treino de vinte minutos com 40/20 são vinte voltas, e as marcas virariam um
+ * borrão. Aqui a linha mostra **uma volta só**, do mesmo tamanho sempre: o
+ * esforço à esquerda, o descanso à direita, e a agulha correndo. A escala não
+ * muda, então o olho aprende a ler em um relance — que é o único tipo de leitura
+ * disponível para quem está no meio de um burpee.
+ *
+ * As faixas claras nas pontas são os três segundos de aviso: dá para *ver* o
+ * bipe chegando antes de ouvi-lo.
+ */
+function LinhaDoCiclo({
+  config,
+  segundo,
+}: {
+  config: ConfiguracaoDeIntervalo;
+  segundo: number;
+}) {
+  const ciclo = duracaoDoCiclo(config);
+  const dentro = Math.max(0, Math.floor(segundo)) % ciclo;
+  const pctTrabalho = (config.trabalho / ciclo) * 100;
+  const temDescanso = config.descanso > 0;
+
+  const avisoTrabalho =
+    config.trabalho > AVISO_ANTES ? (AVISO_ANTES / ciclo) * 100 : 0;
+  const avisoDescanso =
+    temDescanso && config.descanso > AVISO_ANTES
+      ? (AVISO_ANTES / ciclo) * 100
+      : 0;
+
+  return (
+    <div
+      role="img"
+      aria-label={`Volta de ${config.trabalho} segundos de esforço${
+        temDescanso ? ` e ${config.descanso} de descanso` : ""
+      }, no segundo ${dentro}`}
+      className="bg-muted relative h-2.5 w-full overflow-hidden rounded-full"
+    >
+      {/* o esforço ocupa a fatia da esquerda */}
+      <span
+        aria-hidden
+        style={{ width: `${pctTrabalho}%` }}
+        className="bg-primary/35 absolute inset-y-0 left-0"
+      />
+
+      {/* os três segundos de aviso, em cada ponta que os comporta */}
+      {avisoTrabalho > 0 ? (
+        <span
+          aria-hidden
+          style={{
+            left: `${pctTrabalho - avisoTrabalho}%`,
+            width: `${avisoTrabalho}%`,
+          }}
+          className="bg-primary/70 absolute inset-y-0"
+        />
+      ) : null}
+
+      {avisoDescanso > 0 ? (
+        <span
+          aria-hidden
+          style={{
+            left: `${100 - avisoDescanso}%`,
+            width: `${avisoDescanso}%`,
+          }}
+          className="bg-foreground/30 absolute inset-y-0"
+        />
+      ) : null}
+
+      {/* a agulha */}
+      <span
+        aria-hidden
+        style={{ left: `${(dentro / ciclo) * 100}%` }}
+        className="bg-foreground absolute inset-y-0 w-[3px] -translate-x-1/2 rounded-full transition-[left] duration-300 ease-linear"
+      />
+    </div>
   );
 }
