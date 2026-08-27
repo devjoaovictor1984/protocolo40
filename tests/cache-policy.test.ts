@@ -48,12 +48,20 @@ describe('o que pode ficar guardado no aparelho', () => {
 
 describe('quais telas abrem sem rede', () => {
   it('as do treino, que são a razão de o app existir', () => {
-    expect(podeAbrirOffline('/hoje')).toBe(true);
     // o cronômetro: a tela que fica aberta justamente quando falta sinal
     expect(podeAbrirOffline('/treinar')).toBe(true);
     expect(podeAbrirOffline('/treino')).toBe(true);
     expect(podeAbrirOffline('/treino/abc-123')).toBe(true);
     expect(podeAbrirOffline('/treinos')).toBe(true);
+  });
+
+  /**
+   * O painel guardava números que envelhecem: água, sequência, dia do
+   * protocolo. Servir isso do cache mostrava dado velho como se fosse de
+   * agora, sem avisar — pior que uma tela honesta de "sem conexão".
+   */
+  it('o painel de hoje não fica guardado: os números dele envelhecem', () => {
+    expect(podeAbrirOffline('/hoje')).toBe(false);
   });
 
   it('nenhuma tela de outra pessoa fica no disco deste aparelho', () => {

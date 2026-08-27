@@ -9,6 +9,50 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/08/2026 · Água sumindo, e o sino do intervalo
+
+### O painel guardado mostrava números de outro dia
+
+**Relato:** "entrei e a água estava em 1,5 L hoje, mas daí foi para zero."
+
+`/hoje` estava no cache do service worker por **sete dias**. O app podia servir
+um painel renderizado dias antes — com a água, a sequência e o dia do protocolo
+daquele momento — e depois corrigir quando a página real chegava.
+
+Um painel desatualizado é pior que um aviso de "sem conexão", porque **não avisa
+que está errado**. `/hoje` saiu da lista de telas offline; ficaram `/treinar`,
+`/treinos` e `/treino/…`, que são conteúdo estável. Sem rede, `/hoje` cai na
+tela de offline, que tem botão para o cronômetro — e esse abre do cache.
+
+### O sino do intervalo
+
+**O pedido foi "um sino a cada minuto". O exemplo dado junto era outra coisa** —
+corrida estacionária um minuto, descanso um minuto, apita para começar e para
+parar. Isso é treino intervalado, e vale muito mais: um sino periódico avisa que
+o tempo passou; o intervalado **conduz**. O sino simples continua existindo como
+o caso em que o descanso vale zero.
+
+**Som sintetizado, não gravado.** Um oscilador do Web Audio em vez de MP3: zero
+bytes num app offline-first, funciona sem rede desde o primeiro segundo,
+latência do relógio do áudio em vez do `setTimeout`, e três timbres distintos de
+graça. Dois agudos = comece; um grave e longo = pare; três curtos = está
+acabando. Distinguir sem olhar é o ponto de existir som.
+
+**O que trava, e como:**
+
+| Obstáculo | Solução |
+|---|---|
+| Áudio exige gesto do usuário | `liberar()` é chamado de dentro do toque que escolhe o preset |
+| Tela apaga e o sistema suspende o app | Wake Lock enquanto o intervalo está ligado |
+| Chavinha de silencioso do iPhone corta o áudio | Não há API; a tela e o vídeo avisam |
+| App volta do segundo plano com minutos de atraso | Sinais atrasados **não** são reproduzidos — só valem no instante certo |
+
+Demonstração em `/admin/intervalos`: roda acelerado (até 8×), desenha a linha do
+tempo com todos os sinais antes de eles tocarem, e permite tocar cada som
+separado. Existe para gravar vídeo sem esperar dois minutos de nada.
+
+---
+
 ## 26/08/2026 · O descanso não segurava a sequência onde importa
 
 **O que estava errado.** `get_user_stats`, no banco, sempre uniu treino e

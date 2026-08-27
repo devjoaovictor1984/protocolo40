@@ -40,7 +40,7 @@ test.describe('service worker', () => {
       return (await c.keys()).map((r) => new URL(r.url).pathname);
     }, cache);
 
-  test('a tela de treino fica guardada, e só ela', async ({ context, page, baseURL }) => {
+  test('o painel não fica guardado, nem tela de outra pessoa', async ({ context, page, baseURL }) => {
     const { id, session } = await criarSessao();
     userId = id;
 
@@ -56,11 +56,11 @@ test.describe('service worker', () => {
     await page.waitForTimeout(1500);
 
     const guardadas = await chaves(page, 'p20x-treino');
-    expect(guardadas, 'a tela de treino precisa abrir sem rede').toContain('/hoje');
 
-    // e nada de tela de outra pessoa no disco deste aparelho
-    for (const rota of ['/perfil', '/comunidade']) {
-      expect(guardadas, `${rota} não pode ficar guardada`).not.toContain(rota);
+    // o painel guarda números que envelhecem — água, sequência, dia do
+    // protocolo. Guardado, ele mostrava dado de outro dia sem avisar.
+    for (const rota of ['/hoje', '/perfil', '/comunidade']) {
+      expect(guardadas ?? [], `${rota} não pode ficar guardada`).not.toContain(rota);
     }
 
     const nomes = await page.evaluate(() => caches.keys());

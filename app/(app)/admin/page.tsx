@@ -9,6 +9,7 @@ import {
   Flag,
   LifeBuoy,
   ScrollText,
+  Timer,
   UserPlus,
   Users,
 } from 'lucide-react';
@@ -70,6 +71,15 @@ export default async function AdminPage() {
       </section>
 
       <nav className="flex flex-col gap-2">
+        <Link
+          href="/admin/intervalos"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <Timer aria-hidden className="text-muted-foreground size-5" />
+          <span className="flex-1 font-medium">Intervalos</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
         <Link
           href="/admin/notificacoes"
           className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"

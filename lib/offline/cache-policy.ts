@@ -10,13 +10,24 @@
 const AUTENTICACAO = ['/login', '/cadastro', '/esqueci-senha', '/auth', '/api'];
 
 /**
- * As telas que precisam abrir sem rede. O resto vale menos que a sessão.
+ * As telas que precisam abrir sem rede.
  *
- * `/treinar` é o cronômetro, e é a mais importante das quatro: é a tela que
- * fica aberta durante o treino, que é justamente quando o telefone costuma
- * estar no bolso, no chão da sala ou num canto sem sinal.
+ * `/treinar` é o cronômetro, e é a mais importante: é a tela que fica aberta
+ * durante o treino, justamente quando o telefone costuma estar no bolso, no
+ * chão da sala ou num canto sem sinal. `/treinos` e `/treino/…` são conteúdo
+ * estável — um circuito de ontem é igual ao de hoje.
+ *
+ * **`/hoje` saiu daqui, e é o ponto todo desta lista.** Guardar o painel fazia o
+ * app servir números velhos como se fossem de agora: a água de outro dia, a
+ * sequência de antes do último treino, o número do dia do protocolo. Alguém
+ * abria o app, via 1,5 L registrados, e o valor virava zero quando a página de
+ * verdade chegava. Um painel desatualizado é pior que um aviso de "sem
+ * conexão", porque ele não avisa que está errado.
+ *
+ * Sem rede, `/hoje` cai na tela de offline — que tem um botão para o
+ * cronômetro, e esse sim abre do cache.
  */
-const OFFLINE = ['/hoje', '/treinar', '/treino', '/treinos'];
+const OFFLINE = ['/treinar', '/treino', '/treinos'];
 
 const sob = (pathname: string, prefixos: string[]) =>
   prefixos.some((prefixo) => pathname === prefixo || pathname.startsWith(`${prefixo}/`));

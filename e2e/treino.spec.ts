@@ -236,3 +236,46 @@ test.describe('treino', () => {
     expect(marcador, 'a sessão foi perdida ao trocar de tela').not.toBe('20:00');
   });
 });
+
+/**
+ * O sino do intervalo.
+ *
+ * O som não dá para testar em navegador automatizado — o áudio precisa de gesto
+ * real e o headless não reproduz. O que dá, e é o que quebra na prática, é o
+ * caminho até ele: o controle aparece, escolher um preset liga a faixa, e a
+ * faixa mostra a fase certa.
+ */
+test.describe('sino do intervalo', () => {
+  test.skip(!configured, 'precisa das credenciais do Supabase');
+
+  let userId = '';
+
+  test.afterEach(async () => {
+    if (userId) {
+      await admin(`/auth/v1/admin/users/${userId}`, { method: 'DELETE' });
+      userId = '';
+    }
+  });
+
+  test('ligar o intervalo mostra a fase e o tempo que falta', async ({ context, page, baseURL }) => {
+    test.setTimeout(120_000);
+    userId = await signIn(context, baseURL!);
+
+    await page.goto('/treinar');
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
+    await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
+
+    await page.getByRole('button', { name: 'Ligar o sino do intervalo' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
+
+    // o preset que originou o pedido: um minuto de cada
+    await page.getByRole('button', { name: /60 \/ 60/ }).click();
+
+    await expect(page.getByText(/Esforço · volta 1/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/^\d+s$/).first()).toBeVisible();
+
+    // e dá para desligar sem sair do treino
+    await page.getByRole('button', { name: 'Desligar o intervalo' }).click();
+    await expect(page.getByRole('button', { name: 'Ligar o sino do intervalo' })).toBeVisible();
+  });
+});

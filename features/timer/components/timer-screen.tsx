@@ -14,6 +14,9 @@ import { useTimer } from '@/features/timer/use-timer';
 import { saveWorkout } from '@/features/workouts/repository';
 import { useOnlineStatus } from '@/lib/offline/network';
 import { cn } from '@/lib/utils';
+import { IntervalControl } from '@/features/timer/components/interval-control';
+import { useIntervals } from '@/features/timer/use-intervals';
+import type { ConfiguracaoDeIntervalo } from '@/services/intervals';
 import { formatClock, MIN_MEANINGFUL_SECONDS } from '@/services/duration';
 import type { LocalWorkoutExercise } from '@/types/offline';
 
@@ -34,6 +37,19 @@ export function TimerScreen({
   const { userId } = useSession();
   const online = useOnlineStatus();
   const timer = useTimer();
+
+  /**
+   * O sino do intervalo.
+   *
+   * A escolha vive aqui e não no cronômetro porque é decisão de sessão, não de
+   * treino: ninguém quer que o intervalo de ontem volte sozinho amanhã.
+   */
+  const [intervalo, setIntervalo] = useState<ConfiguracaoDeIntervalo | null>(null);
+  const sino = useIntervals({
+    config: intervalo,
+    elapsed: timer.elapsed,
+    rodando: timer.running && !timer.paused,
+  });
   const { data: template } = useTemplate(templateId ?? timer.session?.templateId ?? null);
 
   const [saving, setSaving] = useState(false);
@@ -180,6 +196,17 @@ export function TimerScreen({
             {timer.paused ? 'Pausado' : timer.mode === 'regressivo' ? 'Restantes' : 'Decorridos'}
           </span>
         </ProgressRing>
+
+        <IntervalControl
+          config={intervalo}
+          momento={sino.momento}
+          comSom={sino.comSom}
+          onEscolher={async (escolha) => {
+            // liberar o áudio precisa acontecer dentro do toque; este é o toque
+            if (escolha) await sino.ligarSom();
+            setIntervalo(escolha);
+          }}
+        />
 
         {template && template.exercises.length > 0 ? (
           <ul className="w-full max-w-sm space-y-1">
