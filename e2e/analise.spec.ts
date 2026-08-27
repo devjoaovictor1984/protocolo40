@@ -191,7 +191,7 @@ test.describe('análise', () => {
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'Adicionar um round' }).click();
     await page.getByRole('button', { name: 'Finalizar' }).click();
-    await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /TREINO CONCLUÍDO/ })).toBeVisible({ timeout: 20_000 });
 
     await page.getByRole('button', { name: 'Esforço 9 de 10' }).click();
     await expect(page.getByText('9/10')).toBeVisible();

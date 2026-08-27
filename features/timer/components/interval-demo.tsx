@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Bell, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { liberar, tocar, vibrar } from '@/lib/audio/apito';
+import {
+  PREFERENCIAS_PADRAO,
+  liberar,
+  tocar,
+  vibrar,
+  type Timbre,
+  type Volume,
+} from '@/lib/audio/apito';
 import { cn } from '@/lib/utils';
 import {
   PRESETS,
@@ -36,6 +43,9 @@ export function IntervalDemo() {
   const [segundo, setSegundo] = useState(0);
   const [rodando, setRodando] = useState(false);
   const [comSom, setComSom] = useState(false);
+  const [timbre, setTimbre] = useState<Timbre>(PREFERENCIAS_PADRAO.timbre);
+  const [volume, setVolume] = useState<Volume>('alto');
+  const preferencias = { timbre, volume, vibrar: true };
 
   const ultimo = useRef(-1);
   const ciclo = duracaoDoCiclo(config);
@@ -60,8 +70,9 @@ export function IntervalDemo() {
     const sinal = sinalEm(config, segundo);
     if (!sinal) return;
 
-    tocar(sinal);
+    tocar(sinal, preferencias);
     vibrar(sinal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- as preferências são lidas no disparo, não observadas
   }, [config, rodando, segundo]);
 
   async function alternar() {
@@ -195,6 +206,47 @@ export function IntervalDemo() {
         </div>
       </div>
 
+      {/* os mesmos ajustes que o usuário tem: o vídeo precisa mostrar o app,
+          não uma versão simplificada dele */}
+      <div className="flex flex-wrap items-center gap-2">
+        {(['campainha', 'apito', 'bipe'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={async () => {
+              setTimbre(t);
+              if (!comSom) setComSom(await liberar());
+              tocar('comecar', { timbre: t, volume, vibrar: false });
+            }}
+            className={cn(
+              'min-h-11 rounded-lg border px-3 text-sm font-medium capitalize transition-colors',
+              timbre === t ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted',
+            )}
+          >
+            {t}
+          </button>
+        ))}
+
+        <span className="text-muted-foreground px-1 text-xs">volume</span>
+        {(['baixo', 'medio', 'alto'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={async () => {
+              setVolume(v);
+              if (!comSom) setComSom(await liberar());
+              tocar('comecar', { timbre, volume: v, vibrar: false });
+            }}
+            className={cn(
+              'min-h-11 rounded-lg border px-3 text-sm font-medium capitalize transition-colors',
+              volume === v ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted',
+            )}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-2">
         <p className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
           Tocar cada som separado
@@ -207,7 +259,7 @@ export function IntervalDemo() {
               className="h-11"
               onClick={async () => {
                 if (!comSom) setComSom(await liberar());
-                tocar(sinal);
+                tocar(sinal, preferencias);
                 vibrar(sinal);
               }}
             >

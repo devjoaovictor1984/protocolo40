@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { audioLiberado, encerrar, liberar, tocar, vibrar } from '@/lib/audio/apito';
+import { audioLiberado, encerrar, liberar, tocar, vibrar, type Preferencias } from '@/lib/audio/apito';
 import { momentoEm, sinalEm, type ConfiguracaoDeIntervalo } from '@/services/intervals';
 
 /**
@@ -60,12 +60,15 @@ export function useIntervals({
   config,
   elapsed,
   rodando,
+  preferencias,
 }: {
   config: ConfiguracaoDeIntervalo | null;
   /** Segundos decorridos, vindos do cronômetro. */
   elapsed: number;
   /** Falso quando pausado: pausa não deve tocar nada. */
   rodando: boolean;
+  /** Volume, timbre e vibração escolhidos. */
+  preferencias: Preferencias;
 }) {
   const [comSom, setComSom] = useState(false);
   const ultimoSegundo = useRef(-1);
@@ -100,9 +103,9 @@ export function useIntervals({
     const sinal = sinalEm(config, segundo);
     if (!sinal) return;
 
-    tocar(sinal);
-    vibrar(sinal);
-  }, [config, elapsed, rodando]);
+    tocar(sinal, preferencias);
+    vibrar(sinal, preferencias.vibrar);
+  }, [config, elapsed, rodando, preferencias]);
 
   return {
     /** O áudio foi liberado por um gesto e está pronto. */

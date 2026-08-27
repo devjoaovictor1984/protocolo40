@@ -47,9 +47,26 @@ acabando. Distinguir sem olhar é o ponto de existir som.
 | Chavinha de silencioso do iPhone corta o áudio | Não há API; a tela e o vídeo avisam |
 | App volta do segundo plano com minutos de atraso | Sinais atrasados **não** são reproduzidos — só valem no instante certo |
 
+**Personalizável.** Cinco presets, mais esforço e descanso digitados (5 a 600 s),
+três timbres, três volumes e vibração. A escolha fica no aparelho e o último
+intervalo volta como atalho no rótulo do botão — mas **desligado**: retomar o som
+sozinho seria o app fazendo barulho sem ninguém ter pedido naquele momento.
+
+**A primeira versão do som não servia, e a razão é acústica.** Os bipes tinham
+110 ms: abaixo de uns 150 ms o ouvido registra um clique, não um som
+identificável — e quem está ofegante no meio de um burpee precisa reconhecer
+sem pensar. Toda virada passou a durar mais de meio segundo.
+
+**Campainha não é um oscilador.** Um sino tem parciais *inarmônicos* — as
+frequências não são múltiplos inteiros da fundamental, e é isso que separa
+"sino" de "bipe". Cada timbre soma vários osciladores nessas proporções, com
+ataque de 4 ms e cauda exponencial; os parciais agudos morrem antes, como num
+sino real. Um compressor na saída é o que permite "alto" ser alto sem distorcer.
+
 Demonstração em `/admin/intervalos`: roda acelerado (até 8×), desenha a linha do
-tempo com todos os sinais antes de eles tocarem, e permite tocar cada som
-separado. Existe para gravar vídeo sem esperar dois minutos de nada.
+tempo com todos os sinais antes de eles tocarem, permite tocar cada som separado
+e tem os mesmos ajustes de timbre e volume do app. Existe para gravar vídeo sem
+esperar dois minutos de nada.
 
 ---
 

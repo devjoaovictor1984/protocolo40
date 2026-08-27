@@ -158,7 +158,7 @@ test.describe('apagar treino', () => {
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
     await page.getByRole('button', { name: 'Adicionar um round' }).click();
     await page.getByRole('button', { name: 'Finalizar' }).click();
-    await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /TREINO CONCLUÍDO/ })).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'CONCLUIR' }).click();
     await page.waitForURL('**/hoje', { timeout: 20_000 });
 

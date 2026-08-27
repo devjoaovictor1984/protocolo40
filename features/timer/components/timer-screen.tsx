@@ -15,6 +15,7 @@ import { saveWorkout } from '@/features/workouts/repository';
 import { useOnlineStatus } from '@/lib/offline/network';
 import { cn } from '@/lib/utils';
 import { IntervalControl } from '@/features/timer/components/interval-control';
+import { useIntervalPrefs } from '@/features/timer/use-interval-prefs';
 import { useIntervals } from '@/features/timer/use-intervals';
 import type { ConfiguracaoDeIntervalo } from '@/services/intervals';
 import { formatClock, MIN_MEANINGFUL_SECONDS } from '@/services/duration';
@@ -45,10 +46,12 @@ export function TimerScreen({
    * treino: ninguém quer que o intervalo de ontem volte sozinho amanhã.
    */
   const [intervalo, setIntervalo] = useState<ConfiguracaoDeIntervalo | null>(null);
+  const { preferencias, salvar } = useIntervalPrefs();
   const sino = useIntervals({
     config: intervalo,
     elapsed: timer.elapsed,
     rodando: timer.running && !timer.paused,
+    preferencias,
   });
   const { data: template } = useTemplate(templateId ?? timer.session?.templateId ?? null);
 
@@ -201,9 +204,12 @@ export function TimerScreen({
           config={intervalo}
           momento={sino.momento}
           comSom={sino.comSom}
+          preferencias={preferencias}
+          onPreferencias={salvar}
           onEscolher={async (escolha) => {
             // liberar o áudio precisa acontecer dentro do toque; este é o toque
             if (escolha) await sino.ligarSom();
+            if (escolha) salvar({ ultimo: escolha });
             setIntervalo(escolha);
           }}
         />

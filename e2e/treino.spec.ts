@@ -134,7 +134,7 @@ test.describe('treino', () => {
 
     await page.getByRole('button', { name: 'Finalizar' }).click();
 
-    await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /TREINO CONCLUÍDO/ })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/2 rounds/)).toBeVisible();
 
     await page.getByRole('button', { name: 'CONCLUIR' }).click();
@@ -202,7 +202,7 @@ test.describe('treino', () => {
     // agora aceita: grava, e com duração de pelo menos 1 segundo
     page.once('dialog', (dialog) => void dialog.accept());
     await page.getByRole('button', { name: 'Finalizar' }).click();
-    await expect(page.getByText('TREINO CONCLUÍDO')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /TREINO CONCLUÍDO/ })).toBeVisible({ timeout: 20_000 });
 
 
     await expect
@@ -265,7 +265,7 @@ test.describe('sino do intervalo', () => {
     await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
     await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
 
-    await page.getByRole('button', { name: 'Ligar o sino do intervalo' }).click();
+    await page.getByRole('button', { name: /Ligar o sino/ }).click();
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
 
     // o preset que originou o pedido: um minuto de cada
@@ -274,8 +274,9 @@ test.describe('sino do intervalo', () => {
     await expect(page.getByText(/Esforço · volta 1/)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/^\d+s$/).first()).toBeVisible();
 
-    // e dá para desligar sem sair do treino
+    // e dá para desligar sem sair do treino. O rótulo passa a lembrar o último
+    // escolhido — é o atalho de quem sempre usa o mesmo intervalo
     await page.getByRole('button', { name: 'Desligar o intervalo' }).click();
-    await expect(page.getByRole('button', { name: 'Ligar o sino do intervalo' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Ligar o sino · 60 \/ 60/ })).toBeVisible();
   });
 });

@@ -164,3 +164,68 @@ export function linhaDoTempo(
 
   return saida;
 }
+
+/** Limites do que dá para configurar à mão. */
+export const LIMITES = {
+  /** Abaixo de cinco segundos o aviso de três não cabe, e o sino vira ruído. */
+  trabalhoMinimo: 5,
+  /** Dez minutos de esforço contínuo já é outra coisa que não intervalado. */
+  trabalhoMaximo: 600,
+  descansoMinimo: 0,
+  descansoMaximo: 600,
+} as const;
+
+export type Validacao =
+  | { ok: true; config: ConfiguracaoDeIntervalo }
+  | { ok: false; erro: string };
+
+/**
+ * Valida e arredonda o que a pessoa digitou.
+ *
+ * Os limites não são burocracia: abaixo de cinco segundos o aviso de três não
+ * cabe e o sino toca sem parar; acima de dez minutos não é mais intervalado, é
+ * um cronômetro com um bipe no fim — e para isso já existe o cronômetro.
+ *
+ * O erro diz o número aceito, não "valor inválido". Quem digitou 3 quer saber
+ * que o mínimo é 5, não que errou.
+ */
+export function normalizarConfig(trabalho: unknown, descanso: unknown): Validacao {
+  const t = Math.round(Number(trabalho));
+  const d = Math.round(Number(descanso));
+
+  if (!Number.isFinite(t) || !Number.isFinite(d)) {
+    return { ok: false, erro: 'Use só números, em segundos.' };
+  }
+
+  if (t < LIMITES.trabalhoMinimo) {
+    return { ok: false, erro: `O esforço precisa de pelo menos ${LIMITES.trabalhoMinimo} segundos.` };
+  }
+
+  if (t > LIMITES.trabalhoMaximo) {
+    return {
+      ok: false,
+      erro: `Acima de ${LIMITES.trabalhoMaximo / 60} minutos de esforço, o cronômetro comum serve melhor.`,
+    };
+  }
+
+  if (d < LIMITES.descansoMinimo || d > LIMITES.descansoMaximo) {
+    return {
+      ok: false,
+      erro: `O descanso vai de ${LIMITES.descansoMinimo} a ${LIMITES.descansoMaximo / 60} minutos.`,
+    };
+  }
+
+  return { ok: true, config: { trabalho: t, descanso: d } };
+}
+
+/** Como o intervalo se chama numa linha. */
+export function nomeDoIntervalo(config: ConfiguracaoDeIntervalo): string {
+  const preset = PRESETS.find(
+    (p) => p.config.trabalho === config.trabalho && p.config.descanso === config.descanso,
+  );
+  if (preset) return preset.nome;
+
+  return config.descanso === 0
+    ? `Sino a cada ${config.trabalho}s`
+    : `${config.trabalho} / ${config.descanso}`;
+}

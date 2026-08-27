@@ -6,6 +6,8 @@ import {
   duracaoDoCiclo,
   linhaDoTempo,
   momentoEm,
+  nomeDoIntervalo,
+  normalizarConfig,
   sinalEm,
   type ConfiguracaoDeIntervalo,
 } from '@/services/intervals';
@@ -142,5 +144,62 @@ describe('presets', () => {
 
   it('o aviso é o mesmo em todos', () => {
     expect(AVISO_ANTES).toBe(3);
+  });
+});
+
+/**
+ * Quem faz 45/15 não cabe em preset nenhum, e digitar à mão é onde um número
+ * absurdo entra. Os limites existem por razão de produto, não por burocracia.
+ */
+describe('configuração digitada à mão', () => {
+  it('aceita o que faz sentido', () => {
+    expect(normalizarConfig(45, 15)).toEqual({ ok: true, config: { trabalho: 45, descanso: 15 } });
+  });
+
+  it('arredonda em vez de recusar', () => {
+    expect(normalizarConfig('45.6', '14.2')).toEqual({
+      ok: true,
+      config: { trabalho: 46, descanso: 14 },
+    });
+  });
+
+  it('descanso zero é válido — é o sino simples', () => {
+    expect(normalizarConfig(60, 0).ok).toBe(true);
+  });
+
+  it('esforço curto demais não cabe o aviso de três segundos', () => {
+    const r = normalizarConfig(3, 10);
+    expect(r.ok).toBe(false);
+    // o erro diz o número aceito, e não "valor inválido"
+    if (!r.ok) expect(r.erro).toMatch(/5 segundos/);
+  });
+
+  it('esforço longo demais deixa de ser intervalado', () => {
+    const r = normalizarConfig(1200, 60);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.erro).toMatch(/cronômetro/);
+  });
+
+  it('descanso fora da faixa é recusado com o limite escrito', () => {
+    const r = normalizarConfig(60, 900);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.erro).toMatch(/\d+ minutos/);
+  });
+
+  it('texto que não é número não passa', () => {
+    expect(normalizarConfig('quarenta', 20).ok).toBe(false);
+    expect(normalizarConfig(60, '').ok).toBe(true);
+  });
+});
+
+describe('como o intervalo se chama', () => {
+  it('usa o nome do preset quando existe', () => {
+    expect(nomeDoIntervalo({ trabalho: 20, descanso: 10 })).toBe('20 / 10');
+    expect(nomeDoIntervalo({ trabalho: 60, descanso: 0 })).toBe('Sino a cada minuto');
+  });
+
+  it('e monta um nome para o que foi digitado', () => {
+    expect(nomeDoIntervalo({ trabalho: 45, descanso: 15 })).toBe('45 / 15');
+    expect(nomeDoIntervalo({ trabalho: 90, descanso: 0 })).toBe('Sino a cada 90s');
   });
 });
