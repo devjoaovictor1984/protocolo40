@@ -261,17 +261,26 @@ test.describe('sino do intervalo', () => {
     test.setTimeout(120_000);
     userId = await signIn(context, baseURL!);
 
+    /**
+     * A escolha acontece ANTES de começar. Escolher com o relógio correndo
+     * entrava no meio de um ciclo já em curso e o primeiro sinal soava fora de
+     * hora — e o áudio só é liberado dentro de um gesto, que agora é o mesmo
+     * toque que zera o cronômetro.
+     */
     await page.goto('/treinar');
-    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
-    await expect(page.getByText('Restantes')).toBeVisible({ timeout: 15_000 });
-
-    await page.getByRole('button', { name: /Ligar o sino/ }).click();
+    await page.getByRole('button', { name: /sino/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
 
     // o preset que originou o pedido: um minuto de cada
     await page.getByRole('button', { name: /60 \/ 60/ }).click();
 
-    await expect(page.getByText(/Esforço · volta 1/)).toBeVisible({ timeout: 10_000 });
+    // escolhido antes de começar, o gatilho confirma o que vai valer
+    await expect(page.getByRole('button', { name: /Sino ligado · 60 \/ 60/ })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
+    await expect(page.getByText(/Esforço · volta 1/)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/^\d+s$/).first()).toBeVisible();
 
     // o anel ganha as marcas do intervalo, como os riscos de um relógio. A barra
@@ -279,10 +288,9 @@ test.describe('sino do intervalo', () => {
     // segunda régua competia com ele
     await expect(page.locator('svg line')).not.toHaveCount(0);
 
-    // e dá para desligar sem sair do treino. O rótulo passa a lembrar o último
-    // escolhido — é o atalho de quem sempre usa o mesmo intervalo
+    // e dá para desligar sem sair do treino
     await page.getByRole('button', { name: 'Desligar o intervalo' }).click();
-    await expect(page.getByRole('button', { name: /Ligar o sino · 60 \/ 60/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Ligar o sino/ })).toBeVisible();
   });
 });
 
@@ -329,6 +337,42 @@ test.describe('o cronômetro que segue pelo app', () => {
     await page.getByRole('button', { name: 'Recomeçar' }).click();
     await expect(page.getByText('Restantes')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Sair sem salvar' }).click();
+    await page.getByRole('button', { name: /Sair sem salvar/ }).click();
   });
+});
+
+/**
+ * A escolha do sino é persistente: quem sempre treina com 40/20 não deve
+ * reescolher todo dia. A preferência fica no aparelho, e a tela de preparo já
+ * abre com ela ligada.
+ */
+test('o intervalo escolhido volta ligado no treino seguinte', async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+  test.skip(!configured, 'precisa das credenciais do Supabase');
+
+  const id = await signIn(context, baseURL!);
+  page.on('dialog', (dialog) => void dialog.accept());
+
+  try {
+    await page.goto('/treinar');
+    await page.getByRole('button', { name: /sino/i }).click();
+    await page.getByRole('button', { name: /20 \/ 10/ }).click();
+    await expect(page.getByRole('button', { name: /Sino ligado · 20 \/ 10/ })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // sai da tela e volta: a escolha continua lá, e ligada
+    await page.goto('/hoje');
+    await page.goto('/treinar');
+
+    await expect(page.getByRole('button', { name: /Sino ligado · 20 \/ 10/ })).toBeVisible({
+      timeout: 20_000,
+    });
+  } finally {
+    await admin(`/auth/v1/admin/users/${id}`, { method: 'DELETE' });
+  }
 });

@@ -1,27 +1,41 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Check, Minus, Pause, Play, Plus, RefreshCw, X,
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Check,
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  RefreshCw,
+  X,
   RotateCcw,
-} from 'lucide-react';
-import { toast } from 'sonner';
+  ChevronDown,
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { ProgressRing } from '@/components/progress-ring';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { describeMetrics, useTemplate } from '@/features/exercises/catalog';
-import { useSession } from '@/features/session/session-context';
-import { useTimer } from '@/features/timer/use-timer';
-import { saveWorkout } from '@/features/workouts/repository';
-import { useOnlineStatus } from '@/lib/offline/network';
-import { cn } from '@/lib/utils';
-import { IntervalControl } from '@/features/timer/components/interval-control';
-import { useIntervalPrefs } from '@/features/timer/use-interval-prefs';
-import { useIntervals } from '@/features/timer/use-intervals';
-import { marcasDoAnel, type ConfiguracaoDeIntervalo } from '@/services/intervals';
-import { formatClock, MIN_MEANINGFUL_SECONDS } from '@/services/duration';
-import type { LocalWorkoutExercise } from '@/types/offline';
+import { ProgressRing } from "@/components/progress-ring";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { describeMetrics, useTemplate } from "@/features/exercises/catalog";
+import { useSession } from "@/features/session/session-context";
+import { useTimer } from "@/features/timer/use-timer";
+import { saveWorkout } from "@/features/workouts/repository";
+import { useOnlineStatus } from "@/lib/offline/network";
+import { cn } from "@/lib/utils";
+import { IntervalControl } from "@/features/timer/components/interval-control";
+import {
+  useIntervalPrefs,
+  type PreferenciasDoSino,
+} from "@/features/timer/use-interval-prefs";
+import { useIntervals } from "@/features/timer/use-intervals";
+import {
+  marcasDoAnel,
+  type ConfiguracaoDeIntervalo,
+} from "@/services/intervals";
+import { formatClock, MIN_MEANINGFUL_SECONDS } from "@/services/duration";
+import type { LocalWorkoutExercise } from "@/types/offline";
 
 /**
  * Tela do cronômetro.
@@ -47,15 +61,39 @@ export function TimerScreen({
    * A escolha vive aqui e não no cronômetro porque é decisão de sessão, não de
    * treino: ninguém quer que o intervalo de ontem volte sozinho amanhã.
    */
-  const [intervalo, setIntervalo] = useState<ConfiguracaoDeIntervalo | null>(null);
   const { preferencias, salvar } = useIntervalPrefs();
+
+  /**
+   * O intervalo volta ligado com o que foi usado da última vez.
+   *
+   * A primeira versão voltava desligado para não fazer barulho sem ninguém
+   * pedir. Na prática, quem sempre treina com 40/20 tinha que reescolher todo
+   * dia — e escolher com o relógio já correndo entrava no meio de um ciclo, com
+   * o primeiro sinal soando fora de hora. Agora a escolha acontece na tela de
+   * preparo, e o som é liberado no mesmo toque que começa o treino.
+   */
+  /**
+   * A escolha desta sessão, quando houver — senão vale a que ficou guardada.
+   *
+   * Derivar em vez de copiar para o estado não é preciosismo: o inicializador
+   * de `useState` roda na primeira renderização, que no servidor ainda não tem
+   * `localStorage`. Copiando, o intervalo guardado chegava sempre nulo e a
+   * persistência simplesmente não existia. O `null` de dentro significa "ainda
+   * não mexi nisso"; desligar guarda `{ config: null }`, que é diferente.
+   */
+  const [escolha, setEscolha] = useState<{ config: ConfiguracaoDeIntervalo | null } | null>(null);
+  const intervalo = escolha ? escolha.config : preferencias.ultimo;
+
+  const setIntervalo = (config: ConfiguracaoDeIntervalo | null) => setEscolha({ config });
   const sino = useIntervals({
     config: intervalo,
     elapsed: timer.elapsed,
     rodando: timer.running && !timer.paused,
     preferencias,
   });
-  const { data: template } = useTemplate(templateId ?? timer.session?.templateId ?? null);
+  const { data: template } = useTemplate(
+    templateId ?? timer.session?.templateId ?? null,
+  );
 
   const [saving, setSaving] = useState(false);
   const started = useRef(false);
@@ -81,7 +119,21 @@ export function TimerScreen({
   }
 
   if (!timer.running) {
-    return <ReadyScreen timer={timer} template={template} templateId={templateId} />;
+    return (
+      <ReadyScreen
+        timer={timer}
+        template={template}
+        templateId={templateId}
+        intervalo={intervalo}
+        preferencias={preferencias}
+        onPreferencias={salvar}
+        onEscolher={(escolha) => {
+          setIntervalo(escolha);
+          if (escolha) salvar({ ultimo: escolha });
+        }}
+        onAntesDeComecar={sino.ligarSom}
+      />
+    );
   }
 
   const session = timer.session!;
@@ -91,8 +143,8 @@ export function TimerScreen({
     // evita um registro sem sentido no histórico e na sequência.
     if (timer.elapsed < MIN_MEANINGFUL_SECONDS) {
       const confirmado = window.confirm(
-        `O cronômetro rodou ${timer.elapsed} ${timer.elapsed === 1 ? 'segundo' : 'segundos'}. ` +
-          'Registrar assim mesmo?',
+        `O cronômetro rodou ${timer.elapsed} ${timer.elapsed === 1 ? "segundo" : "segundos"}. ` +
+          "Registrar assim mesmo?",
       );
       if (!confirmado) return;
     }
@@ -103,18 +155,20 @@ export function TimerScreen({
       const result = await timer.finish();
       if (!result) return;
 
-      const exercises: LocalWorkoutExercise[] = (template?.exercises ?? []).map((item, index) => ({
-        exercise_id: item.exerciseId,
-        exercise_name: item.name,
-        // com rounds, o volume do treino é o do circuito multiplicado
-        sets: result.rounds > 0 ? result.rounds : item.sets,
-        repetitions: item.repetitions,
-        duration_seconds: item.durationSeconds,
-        distance_meters: item.distanceMeters,
-        weight_kg: item.weightKg,
-        order_index: index,
-        notes: null,
-      }));
+      const exercises: LocalWorkoutExercise[] = (template?.exercises ?? []).map(
+        (item, index) => ({
+          exercise_id: item.exerciseId,
+          exercise_name: item.name,
+          // com rounds, o volume do treino é o do circuito multiplicado
+          sets: result.rounds > 0 ? result.rounds : item.sets,
+          repetitions: item.repetitions,
+          duration_seconds: item.durationSeconds,
+          distance_meters: item.distanceMeters,
+          weight_kg: item.weightKg,
+          order_index: index,
+          notes: null,
+        }),
+      );
 
       await saveWorkout({
         clientId: result.clientId,
@@ -136,8 +190,8 @@ export function TimerScreen({
       router.replace(`/treino/${result.clientId}/finalizar`);
     } catch {
       setSaving(false);
-      toast.error('Não foi possível encerrar o treino.', {
-        description: 'Tente novamente — seu tempo continua contando.',
+      toast.error("Não foi possível encerrar o treino.", {
+        description: "Tente novamente — seu tempo continua contando.",
       });
     }
   }
@@ -145,36 +199,44 @@ export function TimerScreen({
   async function handleDiscard() {
     if (timer.elapsed > 60) {
       const confirmed = window.confirm(
-        'Sair agora descarta este treino. Você já está há mais de um minuto treinando.',
+        "Sair agora descarta este treino. Você já está há mais de um minuto treinando.",
       );
       if (!confirmed) return;
     }
     await timer.discard();
-    router.replace('/hoje');
+    router.replace("/hoje");
   }
 
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between gap-4 px-4 py-4">
+        {/*
+          Voltar ao app não é sair do treino: o cronômetro continua correndo e o
+          balão flutuante mostra isso em qualquer tela. Antes, o único botão
+          neste canto descartava o treino — e um "X" no topo à esquerda é lido
+          como "voltar", não como "apagar o que eu fiz".
+        */}
         <Button
           variant="ghost"
           size="icon-lg"
-          onClick={() => void handleDiscard()}
-          aria-label="Sair sem salvar"
+          onClick={() => router.push("/hoje")}
+          aria-label="Voltar ao app sem parar o treino"
         >
-          <X aria-hidden className="size-5" />
+          <ChevronDown aria-hidden className="size-5" />
         </Button>
 
-        <p className="truncate text-sm font-semibold">{template?.title ?? 'Treino livre'}</p>
+        <p className="truncate text-sm font-semibold">
+          {template?.title ?? "Treino livre"}
+        </p>
 
         <Button
           variant="ghost"
           size="icon-lg"
           onClick={timer.toggleMode}
           aria-label={
-            timer.mode === 'regressivo'
-              ? 'Mudar para cronômetro crescente'
-              : 'Mudar para cronômetro regressivo'
+            timer.mode === "regressivo"
+              ? "Mudar para cronômetro crescente"
+              : "Mudar para cronômetro regressivo"
           }
         >
           <RefreshCw aria-hidden className="size-4.5" />
@@ -186,20 +248,28 @@ export function TimerScreen({
           value={timer.ratio}
           size={272}
           strokeWidth={12}
-          label={`${formatClock(timer.display)} ${timer.mode === 'regressivo' ? 'restantes' : 'decorridos'}`}
-          indicatorClassName={cn(timer.paused && 'stroke-muted-foreground')}
-          marks={intervalo ? marcasDoAnel(intervalo, timer.session?.targetSeconds ?? 0) : undefined}
+          label={`${formatClock(timer.display)} ${timer.mode === "regressivo" ? "restantes" : "decorridos"}`}
+          indicatorClassName={cn(timer.paused && "stroke-muted-foreground")}
+          marks={
+            intervalo
+              ? marcasDoAnel(intervalo, timer.session?.targetSeconds ?? 0)
+              : undefined
+          }
         >
           <span
             className={cn(
-              'tnum text-6xl font-extrabold tracking-tight tabular-nums',
-              timer.paused && 'text-muted-foreground',
+              "tnum text-6xl font-extrabold tracking-tight tabular-nums",
+              timer.paused && "text-muted-foreground",
             )}
           >
             {formatClock(timer.display)}
           </span>
           <span className="text-muted-foreground mt-2 text-xs font-medium tracking-wide uppercase">
-            {timer.paused ? 'Pausado' : timer.mode === 'regressivo' ? 'Restantes' : 'Decorridos'}
+            {timer.paused
+              ? "Pausado"
+              : timer.mode === "regressivo"
+                ? "Restantes"
+                : "Decorridos"}
           </span>
         </ProgressRing>
 
@@ -211,8 +281,10 @@ export function TimerScreen({
           onPreferencias={salvar}
           onEscolher={async (escolha) => {
             // liberar o áudio precisa acontecer dentro do toque; este é o toque
-            if (escolha) await sino.ligarSom();
-            if (escolha) salvar({ ultimo: escolha });
+            if (escolha) {
+              await sino.ligarSom();
+              salvar({ ultimo: escolha });
+            }
             setIntervalo(escolha);
           }}
         />
@@ -228,22 +300,29 @@ export function TimerScreen({
                     onClick={() => timer.toggleChecked(item.exerciseId)}
                     aria-pressed={checked}
                     className={cn(
-                      'flex min-h-12 w-full items-center gap-3 rounded-xl border px-4 text-left transition-colors',
+                      "flex min-h-12 w-full items-center gap-3 rounded-xl border px-4 text-left transition-colors",
                       checked
-                        ? 'border-success/40 bg-success/8 text-muted-foreground'
-                        : 'border-border hover:bg-muted',
+                        ? "border-success/40 bg-success/8 text-muted-foreground"
+                        : "border-border hover:bg-muted",
                     )}
                   >
                     <span
                       aria-hidden
                       className={cn(
-                        'flex size-5 shrink-0 items-center justify-center rounded-md border',
-                        checked ? 'border-success bg-success text-success-foreground' : 'border-border',
+                        "flex size-5 shrink-0 items-center justify-center rounded-md border",
+                        checked
+                          ? "border-success bg-success text-success-foreground"
+                          : "border-border",
                       )}
                     >
                       {checked ? <Check className="size-3.5" /> : null}
                     </span>
-                    <span className={cn('flex-1 font-medium', checked && 'line-through')}>
+                    <span
+                      className={cn(
+                        "flex-1 font-medium",
+                        checked && "line-through",
+                      )}
+                    >
                       {item.name}
                     </span>
                     <span className="text-muted-foreground tnum text-sm">
@@ -257,7 +336,9 @@ export function TimerScreen({
         ) : null}
 
         <div className="flex items-center gap-4">
-          <span className="text-muted-foreground text-sm font-medium">Rounds</span>
+          <span className="text-muted-foreground text-sm font-medium">
+            Rounds
+          </span>
           <div className="border-border flex items-center gap-1 rounded-xl border p-1">
             <Button
               variant="ghost"
@@ -269,7 +350,9 @@ export function TimerScreen({
             >
               <Minus aria-hidden className="size-4" />
             </Button>
-            <span className="tnum w-10 text-center text-lg font-bold">{timer.rounds}</span>
+            <span className="tnum w-10 text-center text-lg font-bold">
+              {timer.rounds}
+            </span>
             <Button
               variant="ghost"
               size="icon"
@@ -308,12 +391,17 @@ export function TimerScreen({
             onClick={() => void handleFinish()}
             disabled={saving}
           >
-            {saving ? 'Salvando…' : 'Finalizar'}
+            {saving ? "Salvando…" : "Finalizar"}
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-10" onClick={() => timer.addMinutes(5)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10"
+            onClick={() => timer.addMinutes(5)}
+          >
             + 5 minutos
           </Button>
 
@@ -329,7 +417,12 @@ export function TimerScreen({
             size="sm"
             className="text-muted-foreground h-10"
             onClick={() => {
-              if (timer.elapsed < 5 || window.confirm('Zerar o cronômetro e recomeçar? O que você já marcou continua.')) {
+              if (
+                timer.elapsed < 5 ||
+                window.confirm(
+                  "Zerar o cronômetro e recomeçar? O que você já marcou continua.",
+                )
+              ) {
                 timer.restart();
               }
             }}
@@ -339,8 +432,20 @@ export function TimerScreen({
           </Button>
         </div>
 
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground h-10"
+          onClick={() => void handleDiscard()}
+        >
+          <X aria-hidden className="size-4" />
+          Sair sem salvar
+        </Button>
+
         <p className="text-muted-foreground pb-4 text-xs">
-          {online ? 'Seu treino é salvo no aparelho antes de subir.' : 'Offline — salvo no aparelho.'}
+          {online
+            ? "Seu treino é salvo no aparelho antes de subir."
+            : "Offline — salvo no aparelho."}
         </p>
       </footer>
     </div>
@@ -351,20 +456,38 @@ function ReadyScreen({
   timer,
   template,
   templateId,
+  intervalo,
+  preferencias,
+  onEscolher,
+  onPreferencias,
+  onAntesDeComecar,
 }: {
   timer: ReturnType<typeof useTimer>;
-  template: ReturnType<typeof useTemplate>['data'];
+  template: ReturnType<typeof useTemplate>["data"];
   templateId: string | null;
+  intervalo: ConfiguracaoDeIntervalo | null;
+  preferencias: PreferenciasDoSino;
+  onEscolher: (config: ConfiguracaoDeIntervalo | null) => void;
+  onPreferencias: (mudanca: Partial<PreferenciasDoSino>) => void;
+  /** Libera o áudio. Só funciona de dentro de um gesto — daí ser chamado no START. */
+  onAntesDeComecar: () => Promise<boolean>;
 }) {
   const router = useRouter();
 
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between px-4 py-4">
-        <Button variant="ghost" size="icon-lg" onClick={() => router.back()} aria-label="Voltar">
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          onClick={() => router.back()}
+          aria-label="Voltar"
+        >
           <X aria-hidden className="size-5" />
         </Button>
-        <p className="truncate text-sm font-semibold">{template?.title ?? 'Treino livre'}</p>
+        <p className="truncate text-sm font-semibold">
+          {template?.title ?? "Treino livre"}
+        </p>
         <span className="size-9" />
       </header>
 
@@ -379,7 +502,9 @@ function ReadyScreen({
         </ProgressRing>
 
         {template?.description ? (
-          <p className="text-muted-foreground max-w-xs text-sm text-balance">{template.description}</p>
+          <p className="text-muted-foreground max-w-xs text-sm text-balance">
+            {template.description}
+          </p>
         ) : null}
 
         {/*
@@ -396,7 +521,9 @@ function ReadyScreen({
                 key={`${item.exerciseId}-${index}`}
                 className="flex items-center justify-between gap-3 px-4 py-3"
               >
-                <span className="truncate text-sm font-medium">{item.name}</span>
+                <span className="truncate text-sm font-medium">
+                  {item.name}
+                </span>
                 <span className="text-muted-foreground tnum shrink-0 text-sm">
                   {describeMetrics(item)}
                 </span>
@@ -405,21 +532,41 @@ function ReadyScreen({
           </ul>
         ) : templateId || timer.session?.templateId ? null : (
           <p className="text-muted-foreground max-w-xs text-sm text-balance">
-            Treino livre: você decide o que fazer. Se quiser um pronto, escolha em Treinos.
+            Treino livre: você decide o que fazer. Se quiser um pronto, escolha
+            em Treinos.
           </p>
         )}
       </div>
 
       <footer className="pb-safe flex flex-col items-center gap-3 px-6 pb-8">
+        {/*
+          O sino se escolhe aqui, com o relógio parado. Escolher depois entrava
+          no meio de um ciclo já em curso, e o primeiro sinal soava fora de hora.
+        */}
+        <IntervalControl
+          config={intervalo}
+          momento={null}
+          comSom={false}
+          preferencias={preferencias}
+          preparo
+          onEscolher={onEscolher}
+          onPreferencias={onPreferencias}
+        />
+
         <Button
           className="h-16 w-full max-w-sm text-base font-bold"
-          onClick={() =>
-            void timer.start({
+          onClick={async () => {
+            // o mesmo toque que começa o treino libera o áudio: é a única
+            // janela em que o navegador aceita, e agora ela coincide com o
+            // instante em que o cronômetro zera
+            if (intervalo) await onAntesDeComecar();
+
+            await timer.start({
               templateId: template?.id ?? templateId ?? null,
               templateTitle: template?.title ?? null,
               targetSeconds: template?.estimatedSeconds,
-            })
-          }
+            });
+          }}
         >
           <Play aria-hidden className="size-5" />
           INICIAR MEUS 20 MINUTOS

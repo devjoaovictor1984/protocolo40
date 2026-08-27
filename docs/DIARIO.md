@@ -9,6 +9,38 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/08/2026 · O sino se escolhe antes, e dá para sair do cronômetro
+
+Três relatos de uso, todos certos:
+
+**1. O relógio começava antes de escolher o som.** A escolha ficava dentro do
+treino, então entrava no meio de um ciclo já em curso e o primeiro sinal soava
+fora de hora. Agora o seletor está na tela de preparo, e **o mesmo toque que
+começa o treino libera o áudio** — que é a única janela em que o navegador
+aceita liberar.
+
+**2. A escolha não persistia.** Ela era guardada, mas voltava desligada por uma
+decisão minha de não fazer barulho sem ninguém pedir. Na prática, quem sempre
+treina com 40/20 reescolhia todo dia. Agora volta ligada.
+
+> ⚠ E não funcionava nem guardada: `useState(() => preferencias.ultimo)` captura
+> o valor da **primeira** renderização, que no servidor ainda não tem
+> `localStorage`. O intervalo chegava sempre nulo. A correção é derivar em vez
+> de copiar — o estado guarda "ainda não mexi nisso" (`null`) ou uma escolha
+> explícita, e `{ config: null }` é diferente de não ter mexido.
+
+**3. Não dava para sair do cronômetro.** A tela é `(focus)`, sem barra de
+navegação — de propósito, porque ali existe uma coisa só a fazer. Mas o único
+botão do canto **descartava o treino**, e um "X" no topo à esquerda é lido como
+"voltar", não como "apagar o que eu fiz". Agora aquele canto minimiza: volta ao
+app com o cronômetro correndo e o balão flutuante à mostra. Descartar foi para o
+rodapé, longe do polegar de quem só queria sair.
+
+E a gaveta de escolha passou a fechar sozinha ao escolher — antes ficava aberta
+em cima da decisão que a pessoa acabara de tomar.
+
+---
+
 ## 27/08/2026 · Água sumindo, e o sino do intervalo
 
 ### O painel guardado mostrava números de outro dia

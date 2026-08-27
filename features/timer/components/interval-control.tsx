@@ -67,17 +67,35 @@ export function IntervalControl({
   momento,
   comSom,
   preferencias,
+  preparo = false,
   onEscolher,
   onPreferencias,
 }: {
   config: ConfiguracaoDeIntervalo | null;
   momento: Momento | null;
   comSom: boolean;
+  /**
+   * Antes de o relógio começar.
+   *
+   * Aqui o controle é sempre um seletor, mesmo com intervalo já escolhido: a
+   * faixa de fase não faz sentido num cronômetro parado, e é neste momento que
+   * a escolha deve acontecer. Escolher com o tempo já correndo entrava no meio
+   * de um ciclo e o primeiro sinal soava fora de hora.
+   */
+  preparo?: boolean;
   preferencias: PreferenciasDoSino;
   onEscolher: (config: ConfiguracaoDeIntervalo | null) => void;
   onPreferencias: (mudanca: Partial<PreferenciasDoSino>) => void;
 }) {
-  if (config && momento) {
+  const [aberta, setAberta] = useState(false);
+
+  /** Escolher fecha a gaveta: a decisão está tomada, não há o que ver ali. */
+  const escolher = (escolha: ConfiguracaoDeIntervalo | null) => {
+    onEscolher(escolha);
+    setAberta(false);
+  };
+
+  if (!preparo && config && momento) {
     return (
       <div
         className={cn(
@@ -120,71 +138,94 @@ export function IntervalControl({
             <BellOff aria-hidden className="size-4" />
           </button>
         </div>
-
       </div>
     );
   }
 
   return (
-    <Drawer>
-      <DrawerTrigger
-        render={
-          <button
-            type="button"
-            className="border-border hover:bg-muted text-muted-foreground flex min-h-11 w-full max-w-sm items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors"
-          >
-            <Bell aria-hidden className="size-4" />
-            {preferencias.ultimo
-              ? `Ligar o sino · ${nomeDoIntervalo(preferencias.ultimo)}`
-              : "Ligar o sino do intervalo"}
-          </button>
-        }
-      />
+    <div className="flex w-full max-w-sm items-center gap-2">
+      {/* controlada para fechar sozinha ao escolher: sem isso a gaveta ficava
+          aberta em cima do que a pessoa acabou de decidir */}
+      <Drawer open={aberta} onOpenChange={setAberta}>
+        <DrawerTrigger
+          render={
+            <button
+              type="button"
+              className={cn(
+                "hover:bg-muted flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors",
+                config
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground",
+              )}
+            >
+              <Bell aria-hidden className="size-4" />
+              {/* o rótulo diz o estado atual, não uma promessa: escolhido, ele
+                  confirma o que vai valer quando o cronômetro começar */}
+              {config
+                ? `Sino ligado · ${nomeDoIntervalo(config)}`
+                : preferencias.ultimo
+                  ? `Ligar o sino · ${nomeDoIntervalo(preferencias.ultimo)}`
+                  : "Ligar o sino do intervalo"}
+            </button>
+          }
+        />
 
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Sino do intervalo</DrawerTitle>
-          <DrawerDescription>
-            O app avisa quando começar e quando parar, para você treinar sem
-            olhar a tela.
-          </DrawerDescription>
-        </DrawerHeader>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Sino do intervalo</DrawerTitle>
+            <DrawerDescription>
+              O app avisa quando começar e quando parar, para você treinar sem
+              olhar a tela.
+            </DrawerDescription>
+          </DrawerHeader>
 
-        <div className="flex max-h-[70dvh] flex-col gap-5 overflow-y-auto px-4 pb-8">
-          <Ajustes
-            preferencias={preferencias}
-            onPreferencias={onPreferencias}
-          />
+          <div className="flex max-h-[70dvh] flex-col gap-5 overflow-y-auto px-4 pb-8">
+            <Ajustes
+              preferencias={preferencias}
+              onPreferencias={onPreferencias}
+            />
 
-          <section className="flex flex-col gap-2">
-            <p className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-              Prontos
+            <section className="flex flex-col gap-2">
+              <p className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+                Prontos
+              </p>
+              {PRESETS.map((preset) => (
+                <button
+                  key={preset.nome}
+                  type="button"
+                  onClick={() => escolher(preset.config)}
+                  className="border-border hover:bg-muted flex min-h-16 flex-col items-start justify-center gap-0.5 rounded-xl border px-4 text-left transition-colors"
+                >
+                  <span className="font-semibold">{preset.nome}</span>
+                  <span className="text-muted-foreground text-xs leading-snug">
+                    {preset.descricao}
+                  </span>
+                </button>
+              ))}
+            </section>
+
+            <NoSeuJeito onEscolher={escolher} ultimo={preferencias.ultimo} />
+
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Dois toques subindo = comece. Um grave e longo = pare. Três curtos
+              = está acabando. A tela fica acesa enquanto o sino estiver ligado.
+              No iPhone, a chavinha de silencioso corta o som.
             </p>
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.nome}
-                type="button"
-                onClick={() => onEscolher(preset.config)}
-                className="border-border hover:bg-muted flex min-h-16 flex-col items-start justify-center gap-0.5 rounded-xl border px-4 text-left transition-colors"
-              >
-                <span className="font-semibold">{preset.nome}</span>
-                <span className="text-muted-foreground text-xs leading-snug">
-                  {preset.descricao}
-                </span>
-              </button>
-            ))}
-          </section>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
-          <NoSeuJeito onEscolher={onEscolher} ultimo={preferencias.ultimo} />
-
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            Dois toques subindo = comece. Um grave e longo = pare. Três curtos =
-            está acabando. A tela fica acesa enquanto o sino estiver ligado. No
-            iPhone, a chavinha de silencioso corta o som.
-          </p>
-        </div>
-      </DrawerContent>
-    </Drawer>
+      {config ? (
+        <button
+          type="button"
+          onClick={() => onEscolher(null)}
+          aria-label="Desligar o sino"
+          className="border-border text-muted-foreground hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-xl border"
+        >
+          <BellOff aria-hidden className="size-4" />
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -352,4 +393,3 @@ function NoSeuJeito({
     </section>
   );
 }
-
