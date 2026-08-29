@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
+import type { MetaDePeso } from '@/services/goals';
 import type { WeightGoalRow } from '@/types/database';
 
 /**
@@ -25,6 +26,25 @@ export async function metaAtiva(userId: string): Promise<WeightGoalRow | null> {
     .maybeSingle();
 
   return data ?? null;
+}
+
+/**
+ * A meta ativa já na forma que `services/goals.ts` espera.
+ *
+ * O `Number()` não é decoração: `numeric` do Postgres chega como string no
+ * cliente JS, e uma comparação de string com número decidiria a direção da
+ * meta errado ("9" > "72").
+ */
+export async function metaParaTela(userId: string): Promise<MetaDePeso | null> {
+  const linha = await metaAtiva(userId);
+  if (!linha) return null;
+
+  return {
+    alvoKg: Number(linha.target_kg),
+    inicioKg: Number(linha.start_kg),
+    inicioEm: linha.started_on,
+    alcancadaEm: linha.achieved_on,
+  };
 }
 
 /** Metas já concluídas, da mais recente para a mais antiga. */

@@ -71,6 +71,24 @@ saúde com o histórico na mão. CSV por assunto, JSON para o pacote completo.
 > ⚠ **`Button` do projeto não tem `asChild`.** Para botão que navega, use
 > `ButtonLink`.
 
+### 3. A meta aparece no `/hoje`, e o "Treinar de novo" saiu
+
+`GoalStrip` é a versão curta do card: uma linha, uma barra fina, sem
+diagnóstico e sem previsão. Fica **depois da faixa da semana** — já saímos do
+"o que eu faço agora" e entramos no "como eu venho indo". Antes do treino ela
+seria cobrança, e `/hoje` é a tela que a pessoa abre todo dia: transformar o
+corpo dela em pendência diária é o oposto do que o app se propõe.
+
+Quem ainda não tem meta recebe um convite de borda tracejada, no mesmo tom do
+"Já treinava antes de chegar aqui?" — oferta, não tarefa. E quem ainda não
+treinou nenhuma vez **não** recebe nem isso: a tela dele já tem um começo para
+oferecer.
+
+O botão "Treinar de novo" saiu do `DoneCard`. Quem terminou o dia e quer
+treinar de novo tem o `+` e o botão de começar; repetir a oferta dentro do
+cartão de "está feito" empurra para mais quando o app acabou de dizer que
+estava bom.
+
 ---
 
 ## 27/08/2026 · O som que atravessa a navegação
@@ -651,6 +669,22 @@ restaura a concessão** — o revoke tem que vir junto no mesmo arquivo.
 Sai com código 0, não imprime nada e não aplica migration nenhuma. Use
 `node scripts/aplicar-migrations.mjs [--aplicar]`, que faz o mesmo trabalho de
 forma verificável e registra em `supabase_migrations.schema_migrations`.
+
+### Tabela nova pede três lugares, não um
+
+`tests/integration/schema.test.ts` lê o schema real do Supabase e falha se
+houver deriva. Uma tabela nova precisa de:
+
+1. o tipo em `types/database.ts` (`XRow` + a entrada em `TableDef`);
+2. `TABLE_TO_TYPE` no teste — senão "todas as tabelas do schema estão mapeadas"
+   falha;
+3. `INHERITED` no teste, quando o tipo usa `Timestamps &` — senão o teste de
+   colunas acusa `faltam no tipo — created_at, updated_at`, porque o parser lê
+   só o corpo literal do tipo.
+
+O teste só acusa **depois** de a migration ser aplicada no banco: antes disso a
+tabela não existe no OpenAPI e o teste passa. Ou seja, `npm test` verde antes de
+aplicar não significa nada aqui.
 
 ### Valor novo de enum não pode ser usado na mesma transação
 

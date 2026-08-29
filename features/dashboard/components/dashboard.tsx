@@ -23,12 +23,14 @@ import { useSession, useToday } from '@/features/session/session-context';
 import { BadgeSpotlight } from '@/features/badges/components/badge-spotlight';
 import { ChallengeCard } from '@/features/challenges/components/challenge-card';
 import type { DesafioResumo } from '@/features/challenges/repository';
+import { GoalStrip } from '@/features/goals/components/goal-strip';
 import { DailyCards } from '@/features/dashboard/components/daily-cards';
 import { RestDayButton } from '@/features/rest/components/rest-day-button';
 import { DailyMessage } from '@/features/messages/components/daily-message';
 import { InstallCard } from '@/features/pwa/components/install-card';
 import type { MensagemDoDia } from '@/features/messages/repository';
 import { cn } from '@/lib/utils';
+import type { MetaDePeso } from '@/services/goals';
 import { formatClock, formatDurationShort } from '@/services/duration';
 import {
   addDays,
@@ -55,6 +57,7 @@ export function Dashboard({
   ultimaInsignia,
   desafio,
   diasNoDesafio,
+  meta,
 }: {
   mensagem: MensagemDoDia | null;
   agua: number;
@@ -63,6 +66,7 @@ export function Dashboard({
   ultimaInsignia: { emblem: string; tier: BadgeTier; name: string } | null;
   desafio: DesafioResumo | null;
   diasNoDesafio: readonly string[];
+  meta: MetaDePeso | null;
 }) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
@@ -125,6 +129,12 @@ export function Dashboard({
       ) : (
         <WeekStrip today={today} days={data!.days} />
       )}
+
+      {/* A meta entra aqui, depois da semana: já saímos do "o que eu faço
+          agora" e entramos no "como eu venho indo". Antes do treino ela seria
+          cobrança; e quem ainda não treinou nenhuma vez não recebe o convite,
+          porque a tela dele já tem um começo para oferecer. */}
+      {!isLoading && data!.workouts.length > 0 ? <GoalStrip meta={meta} /> : null}
 
       {/* depois da semana, não antes: quem abriu o app quer ver o treino de
           hoje. O convite some sozinho quando o app já está instalado */}
@@ -248,10 +258,6 @@ function DoneCard({ workouts, day }: { workouts: LocalWorkout[]; day: number }) 
           {workouts.length > 1 ? ` em ${workouts.length} treinos` : ''}
         </p>
       </div>
-
-      <ButtonLink href="/treinar" variant="outline" className="h-11">
-        Treinar de novo
-      </ButtonLink>
     </section>
   );
 }

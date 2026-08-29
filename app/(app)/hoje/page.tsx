@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { conquistasDoUsuario } from '@/features/badges/repository';
 import { desafioEmDestaque, meusDiasPorDesafio } from '@/features/challenges/repository';
 import { Dashboard } from '@/features/dashboard/components/dashboard';
+import { metaParaTela } from '@/features/goals/repository';
 import { painelDeSaude } from '@/features/health/repository';
 import { mensagemDoDia } from '@/features/messages/repository';
 import { requireSession } from '@/lib/auth/session';
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
 
-  const [mensagem, saude, { data: descanso }, conquistas, desafio, diasPorDesafio] =
+  const [mensagem, saude, { data: descanso }, conquistas, desafio, diasPorDesafio, meta] =
     await Promise.all([
       mensagemDoDia(hoje),
       painelDeSaude(profile, hoje),
@@ -32,6 +33,7 @@ export default async function DashboardPage() {
       // os dias de todos os desafios de uma vez: qual deles vai aparecer só se
       // sabe depois, e pedir pelo slug obrigaria a esperar a outra consulta
       meusDiasPorDesafio(),
+      metaParaTela(profile.id),
     ]);
 
   // as conquistadas já vêm da mais recente para a mais antiga
@@ -48,6 +50,7 @@ export default async function DashboardPage() {
       }
       desafio={desafio}
       diasNoDesafio={desafio ? (diasPorDesafio.get(desafio.id) ?? []) : []}
+      meta={meta}
     />
   );
 }

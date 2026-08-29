@@ -28,6 +28,7 @@ const INHERITED: Record<string, string[]> = {
   PlanRow: ['created_at', 'updated_at'],
   SubscriptionRow: ['created_at', 'updated_at'],
   ChallengeRow: ['created_at', 'updated_at'],
+  WeightGoalRow: ['created_at', 'updated_at'],
   WorkoutTemplateExerciseRow: [
     'sets',
     'repetitions',
@@ -78,6 +79,7 @@ const TABLE_TO_TYPE: Record<string, string> = {
   challenge_participants: 'ChallengeParticipantRow',
   push_subscriptions: 'PushSubscriptionRow',
   notification_campaigns: 'NotificationCampaignRow',
+  weight_goals: 'WeightGoalRow',
 };
 
 type OpenApiSpec = {
