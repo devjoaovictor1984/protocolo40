@@ -9,6 +9,70 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 28/08/2026 · Meta de peso, e os dados que vão embora com o dono
+
+Duas entregas que respondem à mesma queixa: o app media, calculava e analisava,
+e não apontava para lugar nenhum — nem para um destino, nem para fora dele.
+
+### 1. Meta de peso (`services/goals.ts`, `weight_goals`)
+
+A pessoa escolhe o alvo; **quem calcula o prazo é o app**. Não existe campo de
+data, e isso é decisão de produto, não simplificação: deixar escolher "8 kg em 4
+semanas" e derivar o déficit necessário é receitar dieta perigosa com outro
+nome. A previsão sai de ~0,5% do peso por semana em perda e ~0,25% em ganho.
+
+Quatro decisões que não devem ser desfeitas sem discussão:
+
+- **O progresso olha a tendência, nunca a pesagem do dia.** Média móvel de 7
+  dias, que abre para 14 e 21 quando não há registro recente. Peso oscila 1 a 2
+  kg por água, sal e ciclo menstrual; um app que reage a isso dá notícia falsa
+  toda semana e ensina a pessoa a ignorá-lo. Testado em `tests/goals.test.ts`.
+- **Quando o ritmo real passa do seguro, a previsão usa o seguro.** Quem está
+  perdendo 1,2 kg/semana não pode ler "você chega em seis semanas": essa data só
+  se cumpre mantendo um ritmo que custa massa magra. Há teste exatamente para
+  isso.
+- **`start_kg` é congelado no dia em que a meta nasce.** Se fosse lido do
+  histórico, registrar uma medida antiga depois (o app permite — `bm_day_key` é
+  por dia, não por ordem de chegada) faria a barra de progresso andar sozinha.
+- **O piso mora no banco.** O gatilho `weight_goals_piso` recusa alvo abaixo de
+  IMC 17 ("magreza moderada", OMS), lendo a altura do perfil. Entre 17 e 18,5 é
+  aviso, não recusa — barrar quem está com IMC 19 e quer 18,7 seria o app dando
+  palpite sobre o corpo de alguém. Sem altura no perfil não há piso.
+
+A meta **não** vira notificação, não aparece no perfil e não entra na
+comunidade. Vale a regra de `services/notifications.ts`: a notificação nunca
+fala de corpo, e "faltam 3 kg" na tela bloqueada quebraria isso duas vezes.
+
+Fechar a meta como alcançada é **botão**, não gravação automática: a conta que
+decide isso roda no navegador, e escrever no banco a partir de um cálculo do
+cliente é confiar no lugar errado.
+
+### 2. Exportar os dados (`/configuracoes/dados`, `/api/exportar`)
+
+Portabilidade (LGPD, art. 18, V) e o que permite chegar num profissional de
+saúde com o histórico na mão. CSV por assunto, JSON para o pacote completo.
+
+- **CSV com `;`, decimal com vírgula e BOM.** É o que faz o Excel em português
+  abrir as colunas separadas em vez de despejar tudo na coluna A. Com `,` como
+  separador, o mesmo Excel quebraria cada número decimal em duas colunas.
+- **Treinos saem em formato longo** — uma linha por exercício, colunas do treino
+  repetidas. É o que serve para tabela dinâmica.
+- **Síncrono, sem fila.** Milhares de linhas de uma pessoa, não um data
+  warehouse. Fila com worker e e-mail transformaria "quero meus dados" em
+  "espere um e-mail".
+- O escape de campo tem teste próprio (`tests/export.test.ts`): observação de
+  treino com `;` dentro desalinharia o arquivo a partir dali, e o erro só
+  apareceria na planilha de quem baixou.
+
+> ⚠ **`.select()` do Supabase precisa de string literal inteira.** Concatenar
+> com `+` para caber na linha faz o cliente perder a forma da linha, e o
+> `typecheck` acusa `Property 'x' does not exist on type 'GenericStringError'`.
+
+> ⚠ **`Button` do projeto não tem `asChild`.** Para botão que navega, use
+> `ButtonLink`.
+
+---
+
 ## 27/08/2026 · O som que atravessa a navegação
 
 Três relatos, um deles o mais grave da leva:

@@ -402,6 +402,17 @@ export type RestDayRow = {
   created_at: string;
 };
 
+export type WeightGoalRow = Timestamps & {
+  id: string;
+  user_id: string;
+  target_kg: number;
+  /** peso do dia em que a meta nasceu; congelado de propósito */
+  start_kg: number;
+  started_on: string;
+  achieved_on: string | null;
+  deleted_at: string | null;
+};
+
 export type PlanRow = Timestamps & {
   slug: string;
   name: string;
@@ -619,6 +630,14 @@ export interface Database {
         InsertOf<WaterLogRow, 'user_id' | 'day'>,
         Partial<WaterLogRow>,
         [FK<'water_logs_user_id_fkey', 'user_id', 'profiles'>]
+      >;
+      // Um gatilho recusa alvo abaixo de IMC 17; o índice parcial garante uma
+      // meta ativa por pessoa. Meta batida vira histórico, não é apagada.
+      weight_goals: TableDef<
+        WeightGoalRow,
+        InsertOf<WeightGoalRow, 'user_id' | 'target_kg' | 'start_kg'>,
+        Partial<WeightGoalRow>,
+        [FK<'weight_goals_user_id_fkey', 'user_id', 'profiles'>]
       >;
       // Sem policy de INSERT: quem concede é `conceder_conquistas`, no banco.
       user_badges: TableDef<

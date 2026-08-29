@@ -52,6 +52,12 @@ Camada de baixo nunca importa camada de cima. Componente de design system
   `services/notifications.ts`, não string solta no envio.
 - **Um lembrete por dia, no fuso da pessoa.** O cron roda de hora em hora e quem
   decide é `quem_lembrar()`, no banco. Ninguém recebe se já treinou ou descansou.
+- **Peso é tendência, nunca a balança do dia.** Progresso, meta e previsão saem da
+  média móvel de 7 dias. O número cru oscila 1 a 2 kg por água e sal, e um app que
+  reage a isso ensina a pessoa a não confiar nele.
+- **A meta de peso não escolhe prazo.** A pessoa dá o alvo; a data sai do ritmo que
+  se sustenta (~0,5%/semana para perder, ~0,25% para ganhar). Quando o ritmo real
+  passa disso, a previsão continua usando o seguro. Meta nenhuma vira notificação.
 - **20 minutos é referência, não regra.** Nada bloqueia um treino de 10 ou de 60 minutos.
 - **Migrations versionadas.** Nada de alterar o banco pelo painel; tudo em `supabase/migrations`.
 - **Exercícios vêm do seed**, nunca hardcoded em componente.

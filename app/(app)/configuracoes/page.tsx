@@ -73,6 +73,14 @@ export default async function ConfiguracoesPage() {
           <ChevronRight aria-hidden className="text-muted-foreground size-4" />
         </Link>
 
+        <Link
+          href="/configuracoes/dados"
+          className="border-border hover:bg-muted flex min-h-14 items-center gap-3 rounded-xl border px-4 transition-colors"
+        >
+          <span className="flex-1 font-medium">Seus dados</span>
+          <ChevronRight aria-hidden className="text-muted-foreground size-4" />
+        </Link>
+
         <SignOutButton />
       </section>
 

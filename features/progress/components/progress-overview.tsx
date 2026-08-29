@@ -21,11 +21,13 @@ import { EmptyState, StatCard } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExercises } from '@/features/exercises/catalog';
+import { GoalCard } from '@/features/goals/components/goal-card';
 import { useRestDays } from '@/features/rest/use-rest-days';
 import { localMeasurements } from '@/features/measurements/repository';
 import { useSession, useToday } from '@/features/session/session-context';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
 import { cn } from '@/lib/utils';
+import type { MetaDePeso } from '@/services/goals';
 import { calculateStreak } from '@/services/streak';
 import {
   exerciseVolume,
@@ -42,7 +44,7 @@ import {
  * Poucas métricas, escolhidas para responder "estou melhorando?": peso,
  * frequência, minutos e volume. Nada de painel corporativo.
  */
-export function ProgressOverview() {
+export function ProgressOverview({ meta }: { meta: MetaDePeso | null }) {
   const { userId } = useSession();
   const today = useToday();
   const { data: workouts, isLoading } = useLocalWorkouts();
@@ -138,6 +140,9 @@ export function ProgressOverview() {
             : `${delta < 0 ? '−' : '+'}${Math.abs(delta).toFixed(1).replace('.', ',')} kg desde o primeiro registro.`}
         </p>
       ) : null}
+
+      {/* A meta vem depois da curva: primeiro o que aconteceu, depois para onde vai */}
+      <GoalCard meta={meta} medidas={measurements ?? []} hoje={today} />
 
       <BarChart
         title="Dias treinados por semana"
