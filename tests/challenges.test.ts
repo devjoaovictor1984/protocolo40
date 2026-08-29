@@ -7,6 +7,9 @@ import {
   posicoes,
   progressoNoDesafio,
   recadoDoDesafio,
+  esbocoDoMes,
+  diasNoMes,
+  MESES,
 } from '@/services/challenges';
 
 const SETEMBRO = { starts_on: '2026-09-01', ends_on: '2026-09-30', goal: 25 };
@@ -254,5 +257,60 @@ describe('o desafio em destaque', () => {
     const lista = [d('a', '2026-09-01', '2026-09-30', 1), d('b', '2026-09-01', '2026-09-30', 9)];
     desafioEmDestaque(lista, '2026-09-15');
     expect(lista[0].slug).toBe('a');
+  });
+});
+
+/**
+ * O esboço mensal existe para tirar da mão seis campos que dependem uns dos
+ * outros. Se ele errar, o erro vai para o ar e só aparece depois que alguém já
+ * entrou no desafio — daí estes testes.
+ */
+describe('esboço de desafio mensal', () => {
+  it('monta o mês inteiro, do primeiro ao último dia', () => {
+    const outubro = esbocoDoMes(2026, 10);
+
+    expect(outubro).toMatchObject({
+      slug: 'outubro-2026',
+      title: 'Desafio de Outubro',
+      starts_on: '2026-10-01',
+      ends_on: '2026-10-31',
+      badge_slug: 'outubro',
+    });
+  });
+
+  it('acerta fevereiro, inclusive bissexto', () => {
+    expect(esbocoDoMes(2026, 2)?.ends_on).toBe('2026-02-28');
+    expect(esbocoDoMes(2028, 2)?.ends_on).toBe('2028-02-29');
+    expect(diasNoMes(2100, 2)).toBe(28);
+  });
+
+  it('deixa cinco dias de folga na meta', () => {
+    // 31 dias menos 5 é 26; 30 menos 5 é 25, a mesma conta do Desafio de Setembro
+    expect(esbocoDoMes(2026, 1)?.goal).toBe(26);
+    expect(esbocoDoMes(2026, 9)?.goal).toBe(25);
+    expect(esbocoDoMes(2026, 2)?.goal).toBe(23);
+  });
+
+  it('gera endereço que passa na constraint do banco', () => {
+    for (const mes of MESES) {
+      const esboco = esbocoDoMes(2027, mes.numero);
+      expect(esboco).not.toBeNull();
+      // challenge_slug_forma: ^[a-z0-9-]{3,40}$ — março não pode virar "março"
+      expect(esboco!.slug).toMatch(/^[a-z0-9-]{3,40}$/);
+    }
+
+    expect(esbocoDoMes(2027, 3)?.slug).toBe('marco-2027');
+  });
+
+  it('a insígnia é do mês e não do ano: repetir março não dá insígnia nova', () => {
+    expect(esbocoDoMes(2026, 3)?.badge_slug).toBe('marco');
+    expect(esbocoDoMes(2027, 3)?.badge_slug).toBe('marco');
+  });
+
+  it('recusa mês e ano fora do mundo real', () => {
+    expect(esbocoDoMes(2026, 0)).toBeNull();
+    expect(esbocoDoMes(2026, 13)).toBeNull();
+    expect(esbocoDoMes(1800, 5)).toBeNull();
+    expect(esbocoDoMes(2026.5, 5)).toBeNull();
   });
 });

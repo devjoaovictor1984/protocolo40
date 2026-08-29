@@ -9,6 +9,77 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 29/08/2026 · Não dava para subir a arte do desafio, e só existia uma insígnia
+
+Dois relatos da administração, e o primeiro é o pior tipo de defeito: o que faz
+a pessoa achar que a funcionalidade não existe.
+
+### 1. A arte só aceitava o nome do arquivo
+
+O formulário do desafio tinha um campo `image_path` de **texto**. Para pôr arte,
+era preciso subir o arquivo pelo painel do Supabase e voltar para digitar o nome
+sem errar uma letra. Quem não sabia disso simplesmente não conseguia — e o
+bucket `challenge-art` já tinha quatro arquivos subidos à mão, o que mostra o
+tamanho do contorno que estava sendo feito.
+
+Agora é `features/challenges/components/art-upload.tsx`: escolhe o arquivo,
+sobe, mostra a prévia em 16:9. O envio vai **direto do navegador para o
+bucket**, não por Server Action — imagem de fundo tem megabytes e o limite de
+corpo de uma action é bem menor. A policy de escrita do bucket já exigia
+`eh_admin()`, então a autorização não mudou de lugar.
+
+O nome do arquivo é um carimbo de tempo (`169…​.webp`): o bucket é público e
+servido com cache, e reaproveitar o nome deixaria a arte nova escondida atrás
+da antiga.
+
+> O caminho fica num input escondido e quem grava a coluna continua sendo o
+> `salvarDesafio`. Enviar a imagem e desistir do desafio não deixa linha meio
+> preenchida no banco — só um arquivo órfão no bucket, que é barato.
+
+### 2. Insígnia só de setembro
+
+Existia uma: `setembro`, criada junto com o primeiro desafio. Ou seja, criar o
+desafio de outubro exigia uma migration — e um deploy — só para existir a
+insígnia que ele entrega. Decisão de comunicação virando tarefa de programador,
+exatamente o que a coluna `image_path` tinha sido criada para evitar.
+
+Os doze meses entraram no catálogo (`0044`). Três decisões:
+
+- **O slug não leva o ano.** A insígnia de Março é a mesma em 2026 e 2027, e
+  `user_badges` tem chave `(user_id, badge_slug)` justamente para que repetir o
+  mês no ano seguinte não dê insígnia nova.
+- **Todas douradas.** Ouro é o que é difícil e datado, e um mês fechado é as
+  duas coisas. Graduar por tier inventaria uma hierarquia entre janeiro e julho
+  que não existe.
+- **O emblema é o numeral romano do mês**, dentro do louro
+  (`MESES_DESENHADOS` em `emblem.tsx`). Reaproveitar doze desenhos que já
+  significam outra coisa embaralharia o catálogo: a pessoa veria a tocha e não
+  saberia se é a de sequência ou a de março.
+
+`setembro` foi realinhada para `mes-9` **com uma guarda**: o `update` só roda
+se ninguém tiver a insígnia ainda. Depois que a primeira pessoa ganha, mudar o
+desenho é mexer no que já é dela.
+
+> ⚠ **`badges.threshold` é decorativo nas de métrica `desafio`.** Quem decide se
+> a insígnia cai é `concluir_desafio()`, comparando os dias treinados com
+> `challenges.goal`. O `threshold` de 25 que estava em `setembro` nunca foi lido.
+
+### 3. Escolher o mês em vez de digitar seis campos
+
+`esbocoDoMes(ano, mes)` em `services/challenges.ts` devolve nome, endereço, as
+duas datas, a meta e a insígnia. A meta é o mês inteiro **menos cinco dias** — a
+mesma margem do Desafio de Setembro, pela mesma razão: desafio sem folga quebra
+na primeira gripe e a pessoa abandona o mês.
+
+O formulário virou controlado para isso — o seletor precisa escrever em seis
+campos de uma vez, e `defaultValue` obrigaria a mexer no DOM por `ref`.
+
+> ⚠ **Março não pode virar `março`.** `challenge_slug_forma` só aceita
+> `[a-z0-9-]`, então o slug do mês é `marco`. Há teste passando os doze meses
+> pela mesma expressão da constraint.
+
+---
+
 ## 28/08/2026 · Meta de peso, e os dados que vão embora com o dono
 
 Duas entregas que respondem à mesma queixa: o app media, calculava e analisava,

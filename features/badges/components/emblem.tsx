@@ -389,7 +389,58 @@ function Legiao({ cor, brilho }: { cor: string; brilho: string }) {
   );
 }
 
+/**
+ * O mês, em numeral romano.
+ *
+ * Doze insígnias precisam ser distinguíveis num emblema de 48px, e reaproveitar
+ * doze desenhos que já significam outra coisa (âncora, tocha, martelo) só
+ * embaralharia o catálogo — a pessoa veria "tocha" e não saberia se é a de
+ * sequência ou a de março.
+ *
+ * O numeral resolve isso com um desenho só: é legível em qualquer tamanho, já é
+ * o idioma visual do app, e ordena sozinho. O louro em volta é o que diz que
+ * este é um emblema de mês fechado, e não uma patente.
+ */
+const ROMANOS = [
+  'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII',
+] as const;
+
+function Mes({ numero, cor, brilho }: { numero: number; cor: string; brilho: string }) {
+  const romano = ROMANOS[numero - 1] ?? 'I';
+
+  return (
+    <g>
+      <Louro cor={cor} />
+      <text
+        x="24"
+        y="30"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={brilho}
+        // a fonte encolhe conforme o numeral cresce: XII em corpo de I
+        // estouraria o escudo, e reduzir todos ao tamanho do maior deixaria o
+        // I minúsculo dentro do louro
+        fontSize={romano.length >= 4 ? 11 : romano.length === 3 ? 13 : 16}
+        fontWeight="800"
+        fontFamily="ui-serif, Georgia, serif"
+        letterSpacing="0.5"
+      >
+        {romano}
+      </text>
+    </g>
+  );
+}
+
+const MESES_DESENHADOS = Object.fromEntries(
+  ROMANOS.map((_, indice) => [
+    `mes-${indice + 1}`,
+    (p: Paleta) => <Mes numero={indice + 1} cor={p.traco} brilho={p.brilho} />,
+  ]),
+) as Record<string, (p: Paleta) => React.ReactNode>;
+
 const DESENHOS: Record<string, (p: Paleta) => React.ReactNode> = {
+  ...MESES_DESENHADOS,
+
   recruta: (p) => <Galoes quantidade={1} cor={p.traco} />,
   legionario: (p) => <Galoes quantidade={2} cor={p.traco} />,
   hastati: (p) => <Lanca cor={p.traco} />,

@@ -208,3 +208,86 @@ export function desafioEmDestaque<T extends Pick<Desafio, 'starts_on' | 'ends_on
 
   return porVir[0] ?? null;
 }
+
+// -----------------------------------------------------------------------------
+// Desafio mensal
+//
+// Quase todo desafio do app é um mês fechado, e montar um à mão significava
+// acertar seis campos que dependem uns dos outros: nome, endereço, as duas
+// datas, a meta e a insígnia. Errar o último dia de fevereiro ou apontar a
+// insígnia de outubro num desafio de novembro é o tipo de erro que só aparece
+// quando alguém já entrou.
+//
+// Aqui é uma escolha só — mês e ano — e o resto sai daqui. Tudo continua
+// editável depois: isto preenche, não trava.
+// -----------------------------------------------------------------------------
+
+/**
+ * Os doze meses.
+ *
+ * `slug` é o da insígnia, e é o mesmo do endereço do desafio com o ano colado.
+ * Sem acento e sem cedilha porque `challenge_slug_forma` só aceita
+ * `[a-z0-9-]` — "março" viraria um endereço inválido no meio do salvamento.
+ */
+export const MESES = [
+  { numero: 1, slug: 'janeiro', nome: 'Janeiro' },
+  { numero: 2, slug: 'fevereiro', nome: 'Fevereiro' },
+  { numero: 3, slug: 'marco', nome: 'Março' },
+  { numero: 4, slug: 'abril', nome: 'Abril' },
+  { numero: 5, slug: 'maio', nome: 'Maio' },
+  { numero: 6, slug: 'junho', nome: 'Junho' },
+  { numero: 7, slug: 'julho', nome: 'Julho' },
+  { numero: 8, slug: 'agosto', nome: 'Agosto' },
+  { numero: 9, slug: 'setembro', nome: 'Setembro' },
+  { numero: 10, slug: 'outubro', nome: 'Outubro' },
+  { numero: 11, slug: 'novembro', nome: 'Novembro' },
+  { numero: 12, slug: 'dezembro', nome: 'Dezembro' },
+] as const;
+
+/** Dias de folga que a meta de um desafio mensal deixa. */
+const FOLGA_DO_MES = 5;
+
+export type EsbocoDeDesafio = {
+  slug: string;
+  title: string;
+  starts_on: DayKey;
+  ends_on: DayKey;
+  goal: number;
+  badge_slug: string;
+  /** quantos dias o mês tem, para a tela explicar a meta */
+  diasDoMes: number;
+};
+
+/** Último dia do mês, com fevereiro bissexto resolvido pelo próprio calendário. */
+export function diasNoMes(ano: number, mes: number): number {
+  // dia 0 do mês seguinte é o último dia deste
+  return new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+}
+
+/**
+ * O desafio de um mês, pronto para o formulário.
+ *
+ * A meta é o mês inteiro menos cinco dias — a mesma margem do Desafio de
+ * Setembro, e pela mesma razão: um desafio que quebra na primeira gripe não é
+ * desafio, é armadilha. Quem falha no dia 4 de um mês perfeito abandona o mês;
+ * quem tem folga volta no dia 5.
+ */
+export function esbocoDoMes(ano: number, mes: number): EsbocoDeDesafio | null {
+  const dados = MESES.find((item) => item.numero === mes);
+  if (!dados || !Number.isInteger(ano) || ano < 2020 || ano > 2100) return null;
+
+  const dias = diasNoMes(ano, mes);
+  const dd = (valor: number) => String(valor).padStart(2, '0');
+
+  return {
+    slug: `${dados.slug}-${ano}`,
+    title: `Desafio de ${dados.nome}`,
+    starts_on: `${ano}-${dd(mes)}-01`,
+    ends_on: `${ano}-${dd(mes)}-${dd(dias)}`,
+    goal: dias - FOLGA_DO_MES,
+    // a insígnia é do mês, não do ano: quem já tem a de Março não ganha de
+    // novo por repetir Março no ano seguinte
+    badge_slug: dados.slug,
+    diasDoMes: dias,
+  };
+}
