@@ -121,14 +121,33 @@ try {
   const appHtml = await app.text();
   check('dashboard abre com sessão', app.status === 200);
   check('dashboard saúda o usuário', appHtml.includes('João'), appHtml.match(/Bom (dia|tarde|noite), \w+/)?.[0]);
-  check('dashboard mostra a navegação', appHtml.includes('Histórico') && appHtml.includes('Evolução'));
+  check('dashboard mostra a navegação', appHtml.includes('Calendário') && appHtml.includes('Evolução'));
 
-  for (const path of ['/historico', '/calendario', '/evolucao', '/medidas', '/treinos', '/recordes', '/perfil', '/configuracoes/privacidade', '/treinar']) {
+  for (const path of ['/calendario', '/evolucao', '/medidas', '/treinos', '/recordes', '/trilha', '/desafios', '/perfil', '/configuracoes/privacidade', '/treinar']) {
     const page = await get(path);
     check(`${path} responde 200`, page.status === 200, page.status === 200 ? '' : String(page.status));
   }
 
-  // ---- 6. perfil público continua invisível enquanto for privado
+  // o histórico virou o calendário; o endereço antigo está em favorito e em
+  // atalho de PWA, então ele precisa continuar levando a algum lugar
+  const historico = await get('/historico');
+  check(
+    '/historico leva ao calendário',
+    historico.status === 308 && (historico.headers.get('location') ?? '').includes('/calendario'),
+    `${historico.status} ${historico.headers.get('location') ?? ''}`,
+  );
+
+  // ---- 6. perfil privado continua invisível para estranhos
+  //
+  // O perfil nasce público desde 26/08 — é o que faz a Comunidade existir. Quem
+  // sai da lista é que precisa de prova, e é isso que se verifica aqui: fecha,
+  // confere que sumiu, reabre e confere que voltou. Verificar o padrão não
+  // provava nada sobre a configuração que importa.
+  await admin(`/rest/v1/user_settings?user_id=eq.${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ profile_visibility: 'private' }),
+  });
+
   const publicProfile = await fetch(`${APP}/u/${row.username}`, { redirect: 'manual' });
   check('perfil privado dá 404 para estranhos', publicProfile.status === 404, String(publicProfile.status));
 

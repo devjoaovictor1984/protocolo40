@@ -9,6 +9,32 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 07/09/2026 · O smoke conferia um app que não existe mais
+
+Rodado contra o deploy de produção depois da trilha: 19 de 22. Nenhuma das três
+falhas era regressão — eram expectativas que envelheceram e ninguém releu.
+
+- **"dashboard mostra a navegação"** exigia o rótulo `Histórico`. A tela foi
+  dobrada no calendário há semanas; o rótulo não existe. Agora exige
+  `Calendário` e `Evolução`.
+- **`/historico` respondia 308**, e o script pedia 200. O 308 é de propósito
+  (`permanentRedirect` para `/calendario`, por causa de favorito e atalho de
+  PWA). Virou verificação do redirect, com destino conferido — o endereço
+  antigo continua tendo que levar a algum lugar.
+- **"perfil privado dá 404 para estranhos" era uma frase, não um teste.** Ele
+  media o perfil recém-criado, e o perfil nasce **público** desde 26/08. Ou
+  seja: passou verde por dez dias sem nunca ter aberto um perfil privado, e
+  continuaria verde se a policy caísse. Agora o script fecha o perfil, confere o
+  404, reabre e confere o 200 — que é a configuração que precisa de prova.
+
+Teste que afirma o padrão em vez da exceção não segura nada: ele falha quando o
+padrão muda e cala quando a regra quebra, que é exatamente ao contrário.
+
+`/trilha` e `/desafios` entraram na lista de telas verificadas. 24/24 contra
+produção.
+
+---
+
 ## 07/09/2026 · A meta dizia que faltava menos do que falta
 
 Relato real: partida 95,9 kg, alvo 85, tendência de hoje em 96,3 — e o cartão
