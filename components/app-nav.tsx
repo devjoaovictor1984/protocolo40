@@ -12,6 +12,7 @@ import {
   Home,
   LineChart,
   ListChecks,
+  Map,
   Plus,
   Scale,
   Timer,
@@ -71,6 +72,9 @@ const PRIMARY: NavItem[] = [
 ];
 
 const SECONDARY: NavItem[] = [
+  // a trilha vem antes dos treinos avulsos: quem procura "o que eu faço hoje"
+  // encontra primeiro a resposta com ordem, e depois a lista sem ela
+  { href: '/trilha', label: 'Trilha', icon: Map },
   { href: '/treinos', label: 'Treinos', icon: ListChecks },
   { href: '/medidas', label: 'Medidas', icon: Scale },
   { href: '/recordes', label: 'Recordes', icon: Trophy },
@@ -104,6 +108,12 @@ const QUICK_ACTIONS: {
         description: 'Abre o cronômetro em 20:00',
         icon: Timer,
         primary: true,
+      },
+      {
+        href: '/trilha',
+        label: 'Seguir a trilha',
+        description: 'A sequência do iniciante: 28 sessões, na ordem certa',
+        icon: Map,
       },
       {
         href: '/treinos',

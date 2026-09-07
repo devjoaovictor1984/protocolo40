@@ -299,6 +299,24 @@ function Bota({ cor, brilho }: { cor: string; brilho: string }) {
   );
 }
 
+/**
+ * Caminho: a estrada de pedra que se estreita ao longe.
+ *
+ * A trilha entrega isto no fim, e o desenho tinha que ser o do percurso, não o
+ * de um troféu — o que ela constrói é a estrada, não a chegada.
+ */
+function Caminho({ cor, brilho }: { cor: string; brilho: string }) {
+  return (
+    <g fill="none" stroke={cor} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
+      <path d="M15 43 L21 15 H27 L33 43 Z" fill={brilho} fillOpacity="0.15" />
+      <path d="M17 36 H31" strokeWidth="1.6" />
+      <path d="M18.5 29 H29.5" strokeWidth="1.5" />
+      <path d="M20 23 H28" strokeWidth="1.4" />
+      <path d="M21.5 18.5 H26.5" strokeWidth="1.3" />
+    </g>
+  );
+}
+
 /** Peitoral: o tronco é a armadura que não se tira. */
 function Peitoral({ cor, brilho }: { cor: string; brilho: string }) {
   return (
@@ -476,6 +494,7 @@ const DESENHOS: Record<string, (p: Paleta) => React.ReactNode> = {
   ariete: (p) => <Ariete cor={p.traco} brilho={p.brilho} />,
   bota: (p) => <Bota cor={p.traco} brilho={p.brilho} />,
   peitoral: (p) => <Peitoral cor={p.traco} brilho={p.brilho} />,
+  caminho: (p) => <Caminho cor={p.traco} brilho={p.brilho} />,
   olho: (p) => <Olho cor={p.traco} brilho={p.brilho} />,
   pergaminho: (p) => <Pergaminho cor={p.traco} brilho={p.brilho} />,
   sol: (p) => <Sol cor={p.traco} brilho={p.brilho} />,

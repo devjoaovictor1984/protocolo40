@@ -3,6 +3,7 @@
 import {
   deleteWorkout as deleteLocalWorkout,
   getWorkout,
+  listDeletedWorkouts,
   listWorkouts,
   putWorkout,
 } from '@/lib/offline/db';
@@ -127,6 +128,31 @@ export async function localWorkouts(userId: string): Promise<LocalWorkout[]> {
 export async function unsyncedWorkouts(userId: string): Promise<LocalWorkout[]> {
   const all = await listWorkouts(userId);
   return all.filter((workout) => workout.sync_state !== 'synced');
+}
+
+/**
+ * Os dias com treino segundo o aparelho.
+ *
+ * Serve para corrigir um número que veio do servidor: `feitos` são os dias que
+ * já existem aqui — inclusive os que a fila ainda não subiu — e `apagados` são
+ * os dias de treinos apagados aqui cuja exclusão ainda não chegou lá.
+ *
+ * `finished_at` é exigido porque é o que as funções do desafio exigem no banco.
+ * Um treino em andamento não é um dia cumprido nem aqui nem lá.
+ */
+export async function localWorkoutDays(
+  userId: string,
+): Promise<{ feitos: string[]; apagados: string[] }> {
+  const [vivos, removidos] = await Promise.all([
+    listWorkouts(userId),
+    listDeletedWorkouts(userId),
+  ]);
+
+  const dias = (lista: LocalWorkout[]) => [
+    ...new Set(lista.filter((w) => w.finished_at !== null).map((w) => w.workout_date)),
+  ];
+
+  return { feitos: dias(vivos), apagados: dias(removidos) };
 }
 
 export async function workoutsOn(userId: string, day: string): Promise<LocalWorkout[]> {

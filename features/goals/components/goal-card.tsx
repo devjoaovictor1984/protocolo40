@@ -20,6 +20,7 @@ import {
   formatarKg,
   type MetaDePeso,
   type PesoRegistrado,
+  type ProgressoDaMeta,
   type SituacaoDaMeta,
 } from '@/services/goals';
 
@@ -110,11 +111,15 @@ export function GoalCard({
 
       <Barra fracao={progresso.fracao} marcos={progresso.marcos} percentual={percentual} />
 
-      <p className="text-muted-foreground flex justify-between text-xs">
+      <p className="text-muted-foreground flex justify-between gap-3 text-xs">
         <span>
-          Partida {formatarKg(progresso.inicioKg)} · {formatarKg(progresso.percorridoKg)} percorridos
+          Partida {formatarKg(progresso.inicioKg)} · {desdeAPartida(progresso)}
         </span>
-        <span>Faltam {formatarKg(progresso.restanteKg)}</span>
+        <span className="shrink-0">
+          {progresso.situacao === 'alcancada'
+            ? 'alvo alcançado'
+            : `Faltam ${formatarKg(progresso.restanteKg)}`}
+        </span>
       </p>
 
       <div className="border-border/60 flex gap-3 border-t pt-4">
@@ -154,6 +159,25 @@ export function GoalCard({
       </p>
     </section>
   );
+}
+
+/**
+ * O que aconteceu desde a partida, dito por inteiro.
+ *
+ * "0,0 kg percorridos" era a frase que aparecia tanto para quem não saiu do
+ * lugar quanto para quem andou para trás — e esconder a segunda situação faz o
+ * card parecer quebrado justamente para quem mais precisa entender o número.
+ * O texto é factual e sem adjetivo: subir de peso numa semana não é fracasso, é
+ * informação.
+ */
+function desdeAPartida(progresso: ProgressoDaMeta): string {
+  const { movimentoKg, direcao } = progresso;
+
+  if (movimentoKg > 0) return `${formatarKg(movimentoKg)} percorridos`;
+  if (movimentoKg === 0) return 'no mesmo ponto';
+
+  const lado = direcao === 'perder' ? 'acima' : 'abaixo';
+  return `${formatarKg(Math.abs(movimentoKg))} ${lado} da partida`;
 }
 
 /** Barra com os degraus marcados: mostra o caminho, e não só a fração. */

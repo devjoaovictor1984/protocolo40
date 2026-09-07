@@ -6,6 +6,7 @@ import { Dashboard } from '@/features/dashboard/components/dashboard';
 import { metaParaTela } from '@/features/goals/repository';
 import { painelDeSaude } from '@/features/health/repository';
 import { mensagemDoDia } from '@/features/messages/repository';
+import { minhaTrilha, trilhaEmDestaque } from '@/features/tracks/repository';
 import { requireSession } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { todayIn } from '@/services/calendar';
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
 
-  const [mensagem, saude, { data: descanso }, conquistas, desafio, diasPorDesafio, meta] =
+  const [mensagem, saude, { data: descanso }, conquistas, desafio, diasPorDesafio, meta, trilha] =
     await Promise.all([
       mensagemDoDia(hoje),
       painelDeSaude(profile, hoje),
@@ -34,7 +35,12 @@ export default async function DashboardPage() {
       // sabe depois, e pedir pelo slug obrigaria a esperar a outra consulta
       meusDiasPorDesafio(),
       metaParaTela(profile.id),
+      minhaTrilha(),
     ]);
+
+  // o convite só é buscado para quem não está em trilha nenhuma: uma consulta a
+  // menos em toda abertura de quem já entrou
+  const trilhaOferecida = trilha ? null : await trilhaEmDestaque();
 
   // as conquistadas já vêm da mais recente para a mais antiga
   const ultima = conquistas.conquistadas[0] ?? null;
@@ -51,6 +57,8 @@ export default async function DashboardPage() {
       desafio={desafio}
       diasNoDesafio={desafio ? (diasPorDesafio.get(desafio.id) ?? []) : []}
       meta={meta}
+      trilha={trilha}
+      trilhaOferecida={trilhaOferecida}
     />
   );
 }

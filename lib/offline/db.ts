@@ -165,6 +165,19 @@ export async function listUnsyncedWorkouts(userId: string): Promise<LocalWorkout
   return workouts.filter((workout) => workout.sync_state !== 'synced');
 }
 
+/**
+ * Treinos apagados aqui cuja exclusão ainda não subiu.
+ *
+ * `listWorkouts` os esconde, e é o certo para quem está olhando a tela. Mas
+ * quem precisa corrigir um número que veio do servidor precisa justamente
+ * destes: o servidor ainda conta o dia que este aparelho já apagou.
+ */
+export async function listDeletedWorkouts(userId: string): Promise<LocalWorkout[]> {
+  const db = await getDb();
+  const all = await db.getAll('workouts');
+  return all.filter((workout) => workout.user_id === userId && Boolean(workout.deleted_at));
+}
+
 // ---------------------------------------------------------------------------
 // Medidas
 // ---------------------------------------------------------------------------

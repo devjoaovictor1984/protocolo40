@@ -53,11 +53,23 @@ export async function entrarNoDesafio(
 
   if (!desafio) return { erro: 'Este desafio não está mais aberto.' };
 
-  // entrar duas vezes não é erro: a chave primária resolve, e a tela não
-  // precisa saber se o toque anterior chegou
+  /*
+   * Entrar duas vezes não é erro, e `ignoreDuplicates` é o que faz isso ser
+   * verdade. Sem ele o upsert vira `on conflict do update`, e aí o Postgres
+   * passa a exigir a policy de UPDATE da tabela — que é `conclusao admin`,
+   * porque ninguém marca a própria conclusão. O segundo toque voltava
+   * `42501 new row violates row-level security policy (USING expression)`, e
+   * quem já estava inscrito lia "não conseguimos te inscrever".
+   *
+   * Com `do nothing` só a policy de INSERT é consultada, e `joined_at` e
+   * `completed_at` de quem já entrou ficam intactos.
+   */
   const { error } = await supabase
     .from('challenge_participants')
-    .upsert({ challenge_id: desafio.id, user_id: user.id }, { onConflict: 'challenge_id,user_id' });
+    .upsert(
+      { challenge_id: desafio.id, user_id: user.id },
+      { onConflict: 'challenge_id,user_id', ignoreDuplicates: true },
+    );
 
   if (error) {
     return { erro: 'Não conseguimos te inscrever agora. Tente de novo em instantes.' };

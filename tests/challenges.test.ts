@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   desafioEmDestaque,
+  diasComOAparelho,
   diasDoDesafio,
   faseDo,
   posicoes,
@@ -312,5 +313,51 @@ describe('esboço de desafio mensal', () => {
     expect(esbocoDoMes(2026, 13)).toBeNull();
     expect(esbocoDoMes(1800, 5)).toBeNull();
     expect(esbocoDoMes(2026.5, 5)).toBeNull();
+  });
+});
+
+/**
+ * A correção do aparelho.
+ *
+ * O cartão do desafio é renderizado no servidor, e a contagem sai dos treinos
+ * que já subiram. Sem isto, quem terminava o treino sem rede via o painel dizer
+ * "treino de hoje feito" e o cartão do desafio dizer "hoje ainda está em
+ * aberto", lado a lado na mesma tela.
+ */
+describe('os dias do desafio corrigidos pelo aparelho', () => {
+  const vazio = { feitos: [], apagados: [] };
+
+  it('sem nada guardado, devolve o que veio do servidor', () => {
+    expect(diasComOAparelho(dias(1, 2), vazio)).toEqual(dias(1, 2));
+  });
+
+  it('o treino que ainda não subiu entra', () => {
+    expect(diasComOAparelho(dias(1, 2), { feitos: dias(3), apagados: [] })).toEqual(dias(1, 2, 3));
+  });
+
+  it('não duplica o dia que já está nos dois lados', () => {
+    expect(diasComOAparelho(dias(1, 2), { feitos: dias(2), apagados: [] })).toEqual(dias(1, 2));
+  });
+
+  it('o treino apagado aqui sai, mesmo que o servidor ainda o conte', () => {
+    expect(diasComOAparelho(dias(1, 2), { feitos: dias(1), apagados: dias(2) })).toEqual(dias(1));
+  });
+
+  it('apagar um de dois treinos do mesmo dia não tira o dia', () => {
+    // dois treinos num dia contam como um; enquanto sobrar um, o dia fica
+    expect(diasComOAparelho(dias(1), { feitos: dias(1), apagados: dias(1) })).toEqual(dias(1));
+  });
+
+  it('o resultado sai em ordem, para a grade do mês não embaralhar', () => {
+    expect(diasComOAparelho(dias(5, 1), { feitos: dias(3), apagados: [] })).toEqual(dias(1, 3, 5));
+  });
+
+  it('o progresso passa a contar o treino que não subiu', () => {
+    const doServidor = dias(1, 2);
+    const comOAparelho = diasComOAparelho(doServidor, { feitos: dias(3), apagados: [] });
+
+    expect(progressoNoDesafio(SETEMBRO, doServidor, '2026-09-03').hoje).toBe(false);
+    expect(progressoNoDesafio(SETEMBRO, comOAparelho, '2026-09-03').hoje).toBe(true);
+    expect(progressoNoDesafio(SETEMBRO, comOAparelho, '2026-09-03').cumpridos).toBe(3);
   });
 });

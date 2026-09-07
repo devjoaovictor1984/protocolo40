@@ -58,6 +58,10 @@ Camada de baixo nunca importa camada de cima. Componente de design system
 - **A meta de peso não escolhe prazo.** A pessoa dá o alvo; a data sai do ritmo que
   se sustenta (~0,5%/semana para perder, ~0,25% para ganhar). Quando o ritmo real
   passa disso, a previsão continua usando o seguro. Meta nenhuma vira notificação.
+- **A trilha anda com dias treinados, nunca com o calendário.** Quem falta na terça
+  encontra a mesma sessão na quarta. E qualquer treino avança a trilha: a ordem é
+  sugestão de quem entende, não portaria. Progresso contado a partir de `workouts`,
+  como o do desafio — não existe coluna de sessões feitas para ficar errada.
 - **20 minutos é referência, não regra.** Nada bloqueia um treino de 10 ou de 60 minutos.
 - **Migrations versionadas.** Nada de alterar o banco pelo painel; tudo em `supabase/migrations`.
 - **Exercícios vêm do seed**, nunca hardcoded em componente.

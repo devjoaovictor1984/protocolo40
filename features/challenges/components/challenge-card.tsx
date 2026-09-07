@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { ChevronRight, Flame, Trophy, Users } from 'lucide-react';
+import { ChevronRight, Trophy, Users } from 'lucide-react';
 
+import { ProgressoResumido } from '@/features/challenges/components/meu-progresso';
 import type { DesafioResumo } from '@/features/challenges/repository';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { formatDayShort } from '@/services/calendar';
-import { progressoNoDesafio, recadoDoDesafio } from '@/services/challenges';
+import { faseDo } from '@/services/challenges';
 
 /**
  * O desafio na tela de Hoje.
@@ -27,8 +28,9 @@ export function ChallengeCard({
   meusDias: readonly string[];
   hoje: string;
 }) {
-  const progresso = progressoNoDesafio(desafio, meusDias, hoje);
-  const porcento = Math.round(progresso.fracao * 100);
+  // só a fase sai daqui: ela depende das datas, e não do que este aparelho
+  // sabe. O número de dias é da ilha de cliente, que conta o que não subiu.
+  const fase = faseDo(desafio, hoje);
   const arte = arteDoDesafio(desafio.image_path);
 
   return (
@@ -55,7 +57,7 @@ export function ChallengeCard({
 
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-4">
             <p className="text-[11px] font-semibold tracking-wider text-white/80 uppercase">
-              {progresso.fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
+              {fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
             </p>
             <p className="text-lg leading-tight font-extrabold tracking-tight text-white">
               {desafio.title}
@@ -79,7 +81,7 @@ export function ChallengeCard({
 
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold tracking-wider uppercase opacity-70">
-            {progresso.fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
+            {fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
           </p>
           <p className="truncate text-base font-extrabold tracking-tight">{desafio.title}</p>
           {desafio.tagline ? (
@@ -95,26 +97,7 @@ export function ChallengeCard({
       )}
 
       {desafio.participando ? (
-        <div className="flex flex-col gap-2">
-          <Barra porcento={porcento} concluido={progresso.concluido} />
-
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="tnum text-sm font-semibold">
-              {progresso.cumpridos}
-              <span className="text-muted-foreground font-normal"> de {desafio.goal} dias</span>
-            </p>
-            {progresso.hoje ? (
-              <span className="text-success flex items-center gap-1 text-[11px] font-semibold">
-                <Flame aria-hidden className="size-3" />
-                Hoje está feito
-              </span>
-            ) : null}
-          </div>
-
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {recadoDoDesafio(progresso, desafio.goal)}
-          </p>
-        </div>
+        <ProgressoResumido desafio={desafio} meusDias={meusDias} hoje={hoje} />
       ) : (
         <div className="flex flex-col gap-1.5">
           <p className="text-muted-foreground text-xs leading-relaxed">
@@ -152,32 +135,4 @@ export function ChallengeCard({
 export function arteDoDesafio(caminho: string | null): string | null {
   if (!caminho) return null;
   return `${env.supabaseUrl}/storage/v1/object/public/challenge-art/${caminho}`;
-}
-
-/**
- * A barra.
- *
- * Sem número dentro dela: o número está do lado, e repetir dentro da barra
- * transforma um sinal em ruído. O estado de concluído muda a cor, mas o texto
- * ao lado é quem comunica — cor sozinha não conta nada a quem não a distingue.
- */
-export function Barra({ porcento, concluido }: { porcento: number; concluido: boolean }) {
-  return (
-    <div
-      role="progressbar"
-      aria-valuenow={porcento}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-label="Progresso no desafio"
-      className="bg-muted h-2 w-full overflow-hidden rounded-full"
-    >
-      <div
-        className={cn(
-          'h-full rounded-full transition-[width] duration-500',
-          concluido ? 'bg-success' : 'bg-primary',
-        )}
-        style={{ width: `${Math.max(porcento === 0 ? 0 : 3, porcento)}%` }}
-      />
-    </div>
-  );
 }

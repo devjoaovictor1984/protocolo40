@@ -54,7 +54,9 @@ export type BadgeMetric =
   | 'convites'
   | 'fundador'
   // insígnia datada, que vem de um desafio e não do acúmulo
-  | 'desafio';
+  | 'desafio'
+  // conclusão de trilha: nem acumula como os dias, nem tem data marcada
+  | 'trilha';
 export type BadgeTier = 'bronze' | 'ferro' | 'prata' | 'ouro' | 'imperial';
 export type BiologicalSex = 'feminino' | 'masculino' | 'nao_informado';
 export type SubscriptionStatus =
@@ -195,6 +197,52 @@ export type ChallengeRankRow = {
   concluido: boolean;
 };
 
+export type TrackFocus =
+  | 'forca'
+  | 'cardio'
+  | 'core'
+  | 'mobilidade'
+  | 'recuperacao'
+  | 'referencia';
+
+export type TrackRow = Timestamps & {
+  id: string;
+  slug: string;
+  title: string;
+  tagline: string | null;
+  description: string;
+  level: WorkoutLevel;
+  place: WorkoutPlace;
+  weeks: number;
+  /** Nome de cada semana, na ordem. Vazio quando a trilha não nomeia as semanas. */
+  week_titles: string[];
+  badge_slug: string | null;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export type TrackSessionRow = {
+  id: string;
+  track_id: string;
+  /** 1 a N, na ordem em que as sessões acontecem. */
+  position: number;
+  week: number;
+  title: string;
+  focus: TrackFocus;
+  /** A frase do treinador: por que esta sessão existe e o que observar nela. */
+  note: string;
+  template_id: string;
+};
+
+export type TrackEnrollmentRow = {
+  track_id: string;
+  user_id: string;
+  /** Dia em que a trilha começou a contar. Treino anterior a ele não avança nada. */
+  started_on: string;
+  joined_at: string;
+  completed_at: string | null;
+};
+
 export type WorkoutTemplateRow = Timestamps & {
   id: string;
   owner_id: string | null;
@@ -209,6 +257,8 @@ export type WorkoutTemplateRow = Timestamps & {
   sort_order: number;
   is_favorite: boolean;
   use_count: number;
+  /** Treino que só existe dentro de uma trilha: fica fora da lista de /treinos. */
+  program_only: boolean;
   is_active: boolean;
   deleted_at: string | null;
 };
@@ -596,6 +646,27 @@ export interface Database {
           FK<'support_tickets_answered_by_fkey', 'answered_by', 'profiles'>,
         ]
       >;
+      tracks: TableDef<TrackRow, InsertOf<TrackRow, 'slug' | 'title' | 'description' | 'weeks'>>;
+      track_sessions: TableDef<
+        TrackSessionRow,
+        InsertOf<TrackSessionRow, 'track_id' | 'position' | 'week' | 'title' | 'focus' | 'note' | 'template_id'>,
+        Partial<TrackSessionRow>,
+        [
+          FK<'track_sessions_track_id_fkey', 'track_id', 'tracks'>,
+          FK<'track_sessions_template_id_fkey', 'template_id', 'workout_templates'>,
+        ]
+      >;
+      // Sem policy de UPDATE para o dono: quem marca `completed_at` é
+      // `concluir_trilha`, pelo mesmo motivo de `challenge_participants`.
+      track_enrollments: TableDef<
+        TrackEnrollmentRow,
+        InsertOf<TrackEnrollmentRow, 'track_id' | 'user_id' | 'started_on'>,
+        Partial<TrackEnrollmentRow>,
+        [
+          FK<'track_enrollments_track_id_fkey', 'track_id', 'tracks'>,
+          FK<'track_enrollments_user_id_fkey', 'user_id', 'profiles'>,
+        ]
+      >;
       badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
       daily_messages: TableDef<DailyMessageRow, InsertOf<DailyMessageRow, 'day_of_year'>>;
       plans: TableDef<PlanRow, InsertOf<PlanRow, 'slug' | 'name'>>;
@@ -733,6 +804,14 @@ export interface Database {
         Returns: { challenge_id: string; total: number }[];
       };
       concluir_desafio: {
+        Args: { p_slug: string };
+        Returns: boolean;
+      };
+      meus_dias_na_trilha: {
+        Args: { p_slug: string };
+        Returns: string[];
+      };
+      concluir_trilha: {
         Args: { p_slug: string };
         Returns: boolean;
       };

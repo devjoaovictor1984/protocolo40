@@ -319,6 +319,126 @@ test.describe('desafios', () => {
     }
   });
 
+  /**
+   * Entrar de novo não pode dizer que falhou.
+   *
+   * O `upsert` do PostgREST é `on conflict do update`, e no caminho do conflito
+   * o Postgres passa a exigir a policy de UPDATE — que aqui é só de admin, de
+   * propósito, porque ninguém marca a própria conclusão. O segundo toque voltava
+   * `42501` e a tela dizia "não conseguimos te inscrever" para quem já estava
+   * inscrito. Duas abas abertas é o jeito mais simples de reproduzir o que
+   * acontece com toque duplo, aba velha e inscrição feita em outro aparelho.
+   */
+  test('entrar de novo não acusa erro para quem já está inscrito', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const { session } = await novoUsuario();
+    const { slug } = await criarDesafio(3);
+
+    try {
+      await gravarSessao(context, baseURL!, session);
+
+      // a segunda aba carrega antes da inscrição: ela ainda mostra "ENTRAR"
+      const aba = await context.newPage();
+      await aba.goto(`/desafios/${slug}`);
+      await expect(aba.getByRole('button', { name: 'ENTRAR NO DESAFIO' })).toBeVisible({
+        timeout: 30_000,
+      });
+
+      await page.goto(`/desafios/${slug}`);
+      await page.getByRole('button', { name: 'ENTRAR NO DESAFIO' }).click();
+      await expect(page.getByRole('button', { name: 'Sair do desafio' })).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // e agora o toque da aba velha, que é o que quebrava
+      await aba.getByRole('button', { name: 'ENTRAR NO DESAFIO' }).click();
+      await expect(aba.getByRole('button', { name: 'Sair do desafio' })).toBeVisible({
+        timeout: 30_000,
+      });
+      // e nenhuma mensagem de falha: o texto exato que a tela mostrava antes
+      await expect(aba.getByText(/não conseguimos te inscrever/i)).toHaveCount(0);
+
+      await aba.close();
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
+
+  /**
+   * O treino que ainda não subiu já conta no desafio.
+   *
+   * A contagem nasce no servidor, e é assim que tem que ser — ela sai dos
+   * treinos gravados. Só que entre terminar o treino e a fila subir existe um
+   * intervalo, e sem rede ele dura o que durar. Nesse intervalo a tela de Hoje
+   * dizia "Dia 1 está feito" e o cartão do desafio dizia "hoje ainda está em
+   * aberto", uma embaixo da outra.
+   *
+   * O teste corta a escrita de treinos no navegador: o treino fica no
+   * IndexedDB, a fila não consegue subir, e o desafio tem que contar assim
+   * mesmo.
+   */
+  test('o treino que a fila não subiu já conta no desafio', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const { id, session } = await novoUsuario();
+    const { slug, title } = await criarDesafio(3);
+
+    // treino curto cai na confirmação de "tem certeza"
+    page.on('dialog', (dialog) => void dialog.accept());
+
+    try {
+      await gravarSessao(context, baseURL!, session);
+
+      await page.goto(`/desafios/${slug}`);
+      await page.getByRole('button', { name: 'ENTRAR NO DESAFIO' }).click();
+      await expect(page.getByRole('button', { name: 'Sair do desafio' })).toBeVisible({
+        timeout: 30_000,
+      });
+
+      // a partir daqui nenhum treino chega ao servidor
+      await page.route('**/rest/v1/workouts**', (route) => route.abort());
+
+      await page.goto('/hoje');
+      const cartao = page.getByLabel('Treino de hoje');
+      await cartao.getByRole('link', { name: 'COMEÇAR TREINO' }).click();
+      await page.waitForURL('**/treinar**');
+
+      await page.getByRole('button', { name: /INICIAR MEUS 20 MINUTOS/ }).click();
+      await expect(page.getByText('Restantes')).toBeVisible({ timeout: 20_000 });
+      await page.waitForTimeout(2000);
+
+      await page.getByRole('button', { name: 'Finalizar' }).click();
+      await expect(page.getByRole('heading', { name: /TREINO CONCLUÍDO/ })).toBeVisible({
+        timeout: 20_000,
+      });
+      await page.getByRole('button', { name: 'CONCLUIR' }).click();
+      await page.waitForURL('**/hoje', { timeout: 20_000 });
+
+      // o treino realmente não subiu
+      const linhas = await (await admin(`/rest/v1/workouts?user_id=eq.${id}&select=id`)).json();
+      expect(linhas, 'o treino subiu e o teste deixou de valer').toHaveLength(0);
+
+      // e mesmo assim o desafio já conta o dia
+      await page.goto('/desafios');
+      const doDesafio = page.getByRole('link', { name: new RegExp(title) }).first();
+      await expect(doDesafio).toBeVisible({ timeout: 30_000 });
+      await expect(doDesafio).toContainText(/1\s*de 3 dias/);
+      await expect(doDesafio).toContainText('Hoje está feito');
+
+      // inclusive na tela do desafio, com a grade do mês
+      await page.goto(`/desafios/${slug}`);
+      const progresso = page.getByRole('region', { name: 'Seu progresso' });
+      await expect(progresso).toContainText(/1\s*de 3 dias/, { timeout: 30_000 });
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
+
   test('desafio desligado some das telas', async ({ context, page, baseURL }) => {
     const { session } = await novoUsuario();
     const { slug, title } = await criarDesafio(3);

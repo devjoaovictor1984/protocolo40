@@ -9,6 +9,263 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 07/09/2026 · A meta dizia que faltava menos do que falta
+
+Relato real: partida 95,9 kg, alvo 85, tendência de hoje em 96,3 — e o cartão
+dizia **"Faltam 10,9 kg"**. De 96,3 para 85 são 11,3. O número que a pessoa via
+era o do plano na largada (`total - percorrido`), não a distância entre onde ela
+está e onde quer chegar.
+
+O erro tem uma direção só, e é a pior possível: ele mente **para menos**
+exatamente para quem subiu de peso desde que criou a meta. Quem andou para trás
+abre o app e recebe a notícia de que está mais perto — e quando a balança
+insistir, a conta terá que se corrigir sozinha, que é como um app perde a
+confiança de quem o consulta.
+
+Agora `restanteKg` é `|tendência − alvo|` em `services/goals.ts`: sai de onde a
+pessoa está hoje, sempre. O caso está em `tests/goals.test.ts` com os números do
+relato.
+
+### "0,0 kg percorridos" era duas frases diferentes
+
+`percorridoKg` nunca é negativo — andar para o lado errado deixa a barra em zero,
+e isso continua certo, porque barra que anda para trás não significa nada. Mas o
+texto ao lado dela usava o mesmo número, então **quem não saiu do lugar e quem
+subiu 400 g liam a mesma coisa**, e a segunda pessoa via um cartão que parecia
+quebrado.
+
+Entrou `movimentoKg`, que é o mesmo deslocamento **com sinal**: positivo é na
+direção do alvo, negativo é contra. A barra continua com `percorridoKg`; só o
+texto usa o sinal, em `desdeAPartida()`:
+
+- `0,4 kg percorridos` — andou;
+- `no mesmo ponto` — não andou;
+- `0,4 kg acima da partida` — andou para trás (`abaixo`, quando a meta é ganhar).
+
+Sem adjetivo e sem juízo: subir de peso numa semana é água e sal, e o app não
+comenta corpo. E quando o alvo é alcançado, o lado direito passa a dizer
+`alvo alcançado` em vez de "Faltam 0,0 kg", que é a frase que faz a pessoa achar
+que o app não percebeu.
+
+Tudo continua saindo da média móvel de 7 dias — a balança do dia nunca aparece
+nessas contas.
+
+---
+
+## 06/09/2026 · A Trilha do Iniciante em Casa
+
+O app tinha quinze treinos e nenhuma ordem entre eles. Quem chega sem nunca ter
+treinado abre `/treinos`, vê quinze cartões igualmente plausíveis e faz o que
+todo mundo faz diante de quinze opções: escolhe o primeiro, repete até enjoar,
+ou fecha o app. A biblioteca responde "o que eu faço hoje?"; ela não respondia
+"o que eu faço nas próximas quatro semanas?".
+
+A trilha é essa segunda resposta: **28 sessões numeradas, quatro semanas, sem
+equipamento**, cada uma com a frase que explica por que ela está ali. Migrations
+`20260906090000_metrica_trilha` e `20260906100000_trilha_do_iniciante`.
+
+### A decisão que define tudo: a trilha anda com dias treinados
+
+Não com o calendário. Quem entra na segunda e treina na sexta está na **sessão
+2** na sexta, não na sessão 5. Um programa que anda sozinho enquanto a pessoa
+não treina só serve para informar a ela o tamanho do atraso, e essa informação
+nunca fez ninguém voltar — e quem falta na terça da semana 1 é exatamente a
+pessoa para quem a trilha foi feita.
+
+A conta é `progressoNaTrilha` em `services/tracks.ts`: pura, testada, e o "hoje"
+é sempre argumento. `feitas = dias distintos com treino entre a matrícula e
+hoje`, limitado ao total de sessões.
+
+### O progresso é contado, não gravado
+
+Como nos desafios. Não existe coluna "sessões feitas": o número sai de
+`workouts`, pela função `meus_dias_na_trilha(slug)`. Apagar um treino corrige a
+trilha sozinho, e não há caminho para escrever um progresso que não aconteceu.
+
+Isso também é o que faz a contagem funcionar offline sem caminho de escrita
+novo: `features/tracks/use-meus-dias.ts` soma o que ainda não subiu, com a mesma
+regra do desafio (`diasComOAparelho`, em `services/challenges`) — importada de
+lá de propósito, porque duplicá-la criaria uma segunda fonte de verdade para "o
+que o aparelho corrige", que é justamente o defeito que ela conserta.
+
+### Qualquer treino conta
+
+Se a sessão do dia é "Ritmo 2" e a pessoa fez um treino livre, a trilha avança.
+A ordem é sugestão de quem entende de treino, não portaria: o que a trilha cobra
+é o dia, e o dia foi cumprido. É também o que impede a trilha de discordar da
+sequência e do painel na mesma tela.
+
+Consequência aceita: quem treinar 28 dias sem seguir a ordem fecha a trilha e
+ganha a insígnia. Tudo bem — a promessa dela é "28 dias e você não é mais
+iniciante", e quem treinou 28 dias não é.
+
+### A trilha é privada
+
+`track_enrollments` só é visível para o dono, sem exceção. Desafio tem ranking
+porque é competição declarada; trilha é aula particular — e "em que sessão você
+está" é, na prática, "há quanto tempo você treina", que é dado de corpo por
+outro nome. Coberto em `tests/integration/rls.test.ts`.
+
+### Sair apaga o ponto de partida, e isso é de propósito
+
+`started_on` é o que separa "treino que conta" de "treino que já tinha
+acontecido". Guardar a matrícula antiga faria alguém voltar direto para a sessão
+20 sem ter feito as dezenove. Os treinos ficam todos no histórico; só a
+contagem recomeça. A tela diz isso **antes** do clique.
+
+### `program_only`: circuito de programa não aparece na biblioteca
+
+A trilha trouxe onze circuitos novos. Jogados em `/treinos`, dobrariam a lista
+com coisas que só fazem sentido dentro de uma sequência — "Fundação A+", sem o
+"A" antes, não é um treino, é um pedaço.
+
+A coluna nova é `workout_templates.program_only`. O catálogo offline continua
+trazendo **todos** (o cronômetro precisa abrir a sessão pela trilha, inclusive
+sem rede); quem filtra é `TemplateList`. Se um dia a sessão da trilha abrir em
+branco offline, é aqui que o filtro escapou para o lugar errado.
+
+### O conteúdo, e por que ele é assim
+
+- **Quatro exercícios novos** — flexão na parede, agachamento na cadeira,
+  prancha nos joelhos e bom dia. A biblioteca começava na flexão de joelhos, que
+  para quem nunca treinou já é o segundo degrau; sem o primeiro, a sessão 1 vira
+  "faça o que você ainda não consegue", e o dia 1 é o dia em que ninguém volta
+  depois de falhar.
+- **Semanas 1 e 2 usam circuitos de trilha; 3 e 4 usam a biblioteca do app.** A
+  trilha não termina num beco: ela desemboca onde a pessoa vai treinar depois.
+  No dia 15 ela descobre que o "P20X Start" que a assustava virou treino normal.
+- **O mesmo circuito de referência nos dias 6, 13, 20 e 28.** É a única medida
+  honesta de progresso que quatro semanas oferecem: mesmo treino, mesmo tempo,
+  número de rounds diferente. Peso não serve (oscila com água e sal, e a trilha
+  não fala de corpo) e "sensação" não se compara.
+- **Nenhum dia em branco.** O método é "todos os dias"; o que varia é a
+  intensidade — daí um dia de mobilidade e um de recuperação ativa por semana,
+  em vez de dois dias parados. Quem para dois dias por semana no primeiro mês
+  costuma parar de vez.
+
+### Insígnia
+
+`via-apia` — Via Ápia, métrica `trilha`, emblema `caminho` (novo desenho em
+`emblem.tsx`: a estrada de pedra que se estreita ao longe, não um troféu — o que
+a trilha constrói é o caminho, não a chegada). Cai sozinha ao abrir a tela, por
+`concluir_trilha()`, que é idempotente.
+
+A métrica precisou de migration própria: valor novo de enum não pode ser usado
+na mesma transação em que é criado.
+
+### Onde isso aparece
+
+- `/trilha` — Server Component; só a barra e o mapa são ilha de cliente, porque
+  só eles dependem do treino que ainda não subiu. Quem abre pela primeira vez
+  está decidindo se começa, e essa decisão não precisa de JavaScript.
+- `/hoje` — para quem está na trilha, o cartão do dia deixa de ser "COMEÇAR
+  TREINO" e passa a ser "INICIAR SESSÃO 6", com o motivo dela. Depois do treino
+  vira uma faixa fina com o que vem a seguir. Quem não está vê o convite
+  enquanto tiver menos de dez treinos.
+- Barra lateral e menu do `+`. **Não** na barra de baixo: seis é o limite dela, e
+  um sétimo destino obrigaria a tirar um dos que estão lá.
+
+---
+
+## 01/09/2026 · Dois defeitos no primeiro dia do Desafio de Setembro
+
+Varredura do caminho inteiro antes de alguém treinar, contra o banco real: a
+inscrição, a contagem dos dias, o ranking, a conclusão e a insígnia. Dois
+defeitos — um que dizia à pessoa que ela não estava inscrita, e outro que dizia
+que o treino dela não contou.
+
+### Entrar duas vezes voltava erro de RLS
+
+`entrarNoDesafio` gravava com `upsert(..., { onConflict })`, com o comentário de
+que "entrar duas vezes não é erro: a chave primária resolve". Não resolvia. O
+`upsert` do PostgREST é `insert ... on conflict do update`, e o Postgres, no
+caminho do conflito, passa a exigir a **policy de UPDATE** da tabela. A de
+`challenge_participants` é `conclusao admin`, que existe justamente para que
+ninguém marque a própria conclusão — então o segundo toque voltava:
+
+```
+42501  new row violates row-level security policy (USING expression)
+       for table "challenge_participants"
+```
+
+E a tela dizia "Não conseguimos te inscrever agora" para quem já estava
+inscrito. Acontecia com toque duplo, com aba antiga aberta e com quem entrou
+por outro aparelho.
+
+Agora é `ignoreDuplicates: true` — `on conflict do nothing`, que só consulta a
+policy de INSERT e deixa `joined_at` e `completed_at` de quem já entrou
+intactos. Nenhuma policy mudou: abrir UPDATE para o dono da linha seria
+devolver a ele a chave de `completed_at`.
+
+Segurado em dois níveis: `tests/integration/rls.test.ts` → "entrar duas vezes no
+desafio não é erro", que roda contra o banco de verdade porque o defeito só
+existe lá, e `e2e/desafios.spec.ts` → "entrar de novo não acusa erro para quem
+já está inscrito", com duas abas abertas, que é o que reproduz toque duplo, aba
+velha e inscrição feita em outro aparelho.
+
+### O que foi conferido e está de pé
+
+Contra o projeto real, com usuário novo e treino gravado pelo caminho do app:
+
+- treino de hoje entra em `meus_dias_no_desafio`, em `meus_dias_nos_desafios` e
+  no `ranking_do_desafio` na mesma hora — não há número guardado para ficar
+  errado;
+- `concluir_desafio` devolve `false` com 1 de 25 e não entrega insígnia adiantada;
+- `conceder_conquistas` **não** concede as de métrica `desafio`: o `case` não tem
+  `when 'desafio'` nem `else`, então o `where` recebe `null` e a linha fica de
+  fora. O mesmo vale para o `delete`. É por isso que o `threshold = 0` das doze
+  insígnias de mês é inofensivo;
+- `finished_at` é gravado nos três caminhos que criam treino (cronômetro,
+  formulário e "registrar dias"), e as funções do desafio exigem ele;
+- o dia é `todayIn(profile.timezone)`, com queda para `America/Sao_Paulo` quando
+  o fuso do perfil é inválido.
+
+### O treino que ainda não subiu não contava no desafio
+
+Mesma tela, duas respostas para a mesma pergunta. O painel de Hoje lê o
+IndexedDB e dizia "Dia 1 está feito"; o cartão do desafio é renderizado no
+servidor, a contagem sai dos treinos que já subiram, e ele dizia "hoje ainda
+está em aberto" logo abaixo. Online o intervalo é de segundos. Sem rede, dura o
+que durar — e o desafio é justamente o que a pessoa abre para conferir se o dia
+contou.
+
+O servidor continua sendo a base — a contagem sai dos treinos, e não de uma
+coluna que pode ficar errada. O aparelho entra como **correção**:
+
+- o que existe aqui e ainda não subiu **entra**;
+- o que foi apagado aqui e a exclusão ainda não subiu **sai** — só se nenhum
+  outro treino sustentar o dia, porque dois treinos num dia contam como um.
+
+A ordem importa, e é a parte fácil de errar: soma antes, subtrai depois.
+Invertida, um dia apagado e treinado de novo sumiria da tela.
+
+A regra é pura, mora em `services/challenges.ts` → `diasComOAparelho`, e está
+testada com os cinco casos, inclusive o dos dois treinos no mesmo dia.
+
+**O que mudou de lugar.** O cálculo de "quantos dias EU cumpri" virou ilha de
+cliente em `features/challenges/components/meu-progresso.tsx`
+(`ProgressoResumido` no cartão, `ProgressoDetalhado` na tela do desafio, com a
+grade do mês e a `Barra`). O `useMeusDias` lê o IndexedDB por
+`localWorkoutDays`, que exige `finished_at` pelo mesmo motivo que as funções do
+banco exigem: treino em andamento não é dia cumprido nem aqui nem lá.
+
+O resto continua RSC. `ChallengeCard` e `ChallengeDetail` seguem no servidor e
+só calculam o que depende do calendário — a fase e o "Dia 3 de 30", que são
+iguais para todo mundo. Ranking, história e arte nunca dependeram deste
+aparelho.
+
+> O primeiro render devolve exatamente o que veio do servidor: a consulta local
+> ainda não respondeu. É de propósito — é o que o HTML do servidor tem, e é o
+> que a hidratação espera encontrar.
+
+Segurado por `e2e/desafios.spec.ts` → "o treino que a fila não subiu já conta no
+desafio", que corta a escrita de `/rest/v1/workouts` no navegador, faz um treino
+de verdade pelo cronômetro, confere que o servidor está mesmo com zero e exige
+que o desafio conte o dia assim mesmo. Verificado que ele falha sem a correção,
+com "0 de 3 dias" — teste que passa dos dois jeitos não segura nada.
+
+---
+
 ## 29/08/2026 · Não dava para subir a arte do desafio, e só existia uma insígnia
 
 Dois relatos da administração, e o primeiro é o pior tipo de defeito: o que faz

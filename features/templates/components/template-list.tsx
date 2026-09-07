@@ -130,9 +130,15 @@ export function TemplateList({ onlyFavorites = false }: { onlyFavorites?: boolea
   }, [exercises, today, workouts]);
 
   const visiveis = useMemo(() => {
-    let lista = (templates ?? []).filter((template) =>
-      onlyFavorites ? !template.isSystem || template.isFavorite : true,
-    );
+    /*
+     * Circuito de trilha não aparece aqui. Ele existe como degrau de uma
+     * sequência — "Fundação A+", sem o "A" antes, não é um treino, é um pedaço
+     * — e continua no catálogo offline porque o cronômetro precisa abri-lo
+     * pela trilha, inclusive sem rede.
+     */
+    let lista = (templates ?? [])
+      .filter((template) => !template.programOnly)
+      .filter((template) => (onlyFavorites ? !template.isSystem || template.isFavorite : true));
 
     if (nivel !== 'todos') lista = lista.filter((template) => template.level === nivel);
     if (objetivo) lista = lista.filter((template) => template.tags.includes(objetivo));

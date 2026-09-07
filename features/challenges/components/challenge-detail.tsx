@@ -2,14 +2,14 @@ import Link from 'next/link';
 import { Check, Flame, Trophy, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Barra } from '@/features/challenges/components/challenge-card';
 import { JoinButton } from '@/features/challenges/components/join-button';
+import { ProgressoDetalhado } from '@/features/challenges/components/meu-progresso';
 import type { DesafioCompleto } from '@/features/challenges/repository';
 import { env } from '@/lib/env';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { cn } from '@/lib/utils';
-import { WEEKDAY_LABELS, formatDay, parseDay, weekdayIndex } from '@/services/calendar';
-import { diasDoDesafio, posicoes, progressoNoDesafio, recadoDoDesafio } from '@/services/challenges';
+import { formatDay } from '@/services/calendar';
+import { faseDo, posicoes, progressoNoDesafio } from '@/services/challenges';
 
 /**
  * A tela do desafio.
@@ -27,18 +27,24 @@ export function ChallengeDetail({
   hoje: string;
   meuId: string;
 }) {
-  const progresso = progressoNoDesafio(desafio, desafio.meusDias, hoje);
+  /*
+   * Daqui saem só os números que dependem do calendário — "Dia 3 de 30" é o
+   * mesmo para todo mundo. Quantos dias EU cumpri é da ilha de cliente, que
+   * conta também o treino que a fila ainda não subiu.
+   */
+  const fase = faseDo(desafio, hoje);
+  const { decorridos, total } = progressoNoDesafio(desafio, [], hoje);
   const ranking = posicoes(desafio.ranking);
 
   return (
     <div className="flex flex-col gap-8 py-6">
       <header className="flex flex-col gap-2">
         <p className="text-primary text-[11px] font-semibold tracking-wider uppercase">
-          {progresso.fase === 'antes'
+          {fase === 'antes'
             ? 'Começa em breve'
-            : progresso.fase === 'depois'
+            : fase === 'depois'
               ? 'Encerrado'
-              : `Dia ${progresso.decorridos} de ${progresso.total}`}
+              : `Dia ${decorridos} de ${total}`}
         </p>
         <h1 className="text-3xl font-extrabold tracking-tight text-balance">{desafio.title}</h1>
         {desafio.tagline ? (
@@ -56,27 +62,7 @@ export function ChallengeDetail({
 
       {desafio.participando ? (
         <section aria-label="Seu progresso" className="border-border flex flex-col gap-4 rounded-2xl border p-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="tnum text-3xl font-extrabold tracking-tight">
-              {progresso.cumpridos}
-              <span className="text-muted-foreground text-lg font-normal">
-                {' '}
-                de {desafio.goal} dias
-              </span>
-            </p>
-            {progresso.concluido ? (
-              <span className="text-success flex items-center gap-1 text-sm font-semibold">
-                <Check aria-hidden className="size-4" />
-                Concluído
-              </span>
-            ) : null}
-          </div>
-
-          <Barra porcento={Math.round(progresso.fracao * 100)} concluido={progresso.concluido} />
-
-          <p className="text-sm leading-relaxed">{recadoDoDesafio(progresso, desafio.goal)}</p>
-
-          {progresso.fase !== 'antes' ? <GradeDoDesafio desafio={desafio} hoje={hoje} /> : null}
+          <ProgressoDetalhado desafio={desafio} meusDias={desafio.meusDias} hoje={hoje} />
         </section>
       ) : null}
 
@@ -96,58 +82,7 @@ export function ChallengeDetail({
 
       <JoinButton slug={desafio.slug} participando={desafio.participando} />
 
-      <Ranking linhas={ranking} meuId={meuId} comecou={progresso.fase !== 'antes'} />
-    </div>
-  );
-}
-
-/**
- * A grade do mês.
- *
- * Um quadradinho por dia da janela. É a mesma leitura do calendário, e serve
- * para uma pergunta que a barra não responde: onde exatamente eu falhei.
- */
-function GradeDoDesafio({ desafio, hoje }: { desafio: DesafioCompleto; hoje: string }) {
-  const janela = diasDoDesafio(desafio);
-  const feitos = new Set(desafio.meusDias);
-  // alinha o primeiro dia na coluna certa da semana
-  const vazios = weekdayIndex(janela[0] ?? hoje);
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="text-muted-foreground grid grid-cols-7 gap-1 text-center text-[10px] font-semibold">
-        {WEEKDAY_LABELS.map((letra, i) => (
-          <span key={i}>{letra}</span>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: vazios }, (_, i) => (
-          <span key={`vazio-${i}`} aria-hidden />
-        ))}
-
-        {janela.map((dia) => {
-          const feito = feitos.has(dia);
-          const futuro = dia > hoje;
-          const { date } = parseDay(dia);
-
-          return (
-            <span
-              key={dia}
-              title={`${formatDay(dia)}${feito ? ' · treinado' : futuro ? '' : ' · sem treino'}`}
-              className={cn(
-                'tnum flex aspect-square items-center justify-center rounded-md text-[11px] font-semibold',
-                feito && 'bg-primary text-primary-foreground',
-                !feito && futuro && 'border-border text-muted-foreground border border-dashed',
-                !feito && !futuro && 'bg-muted text-muted-foreground',
-                dia === hoje && !feito && 'ring-primary ring-2',
-              )}
-            >
-              {date}
-            </span>
-          );
-        })}
-      </div>
+      <Ranking linhas={ranking} meuId={meuId} comecou={fase !== 'antes'} />
     </div>
   );
 }

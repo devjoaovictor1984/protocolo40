@@ -181,6 +181,36 @@ describe('progresso da meta', () => {
     expect(progresso.previsaoEm).toBeNull();
   });
 
+  /**
+   * Reprodução de um caso real relatado: partida 95,9, alvo 85, tendência 96,3.
+   *
+   * O card dizia "faltam 10,9 kg" porque descontava do total planejado na
+   * largada. De 96,3 para 85 são 11,3. A conta antiga mentia para menos
+   * justamente para quem tinha subido de peso — que é quem mais precisa de um
+   * número honesto.
+   */
+  it('a distância que falta sai de onde a pessoa está, não do plano original', () => {
+    const dela: MetaDePeso = {
+      alvoKg: 85,
+      inicioKg: 95.9,
+      inicioEm: '2026-08-20',
+      alcancadaEm: null,
+    };
+
+    const pesos: PesoRegistrado[] = [
+      { measured_on: '2026-08-27', weight_kg: 96.1 },
+      { measured_on: '2026-08-29', weight_kg: 96.5 },
+    ];
+
+    const progresso = analisarMeta(dela, pesos, '2026-08-30');
+
+    expect(progresso.tendenciaKg).toBeCloseTo(96.3, 5);
+    expect(progresso.restanteKg).toBeCloseTo(11.3, 5);
+    // e não esconde que o peso subiu 0,4 desde a partida
+    expect(progresso.movimentoKg).toBeCloseTo(-0.4, 5);
+    expect(progresso.percorridoKg).toBe(0);
+  });
+
   it('andar para o lado errado não vira progresso negativo', () => {
     const pesos = serie('2026-01-05', 40, 80, 0.05);
     const progresso = analisarMeta(meta, pesos, '2026-02-13');

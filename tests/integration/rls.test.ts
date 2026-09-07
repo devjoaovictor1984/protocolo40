@@ -245,4 +245,130 @@ describe.skipIf(!configured)('RLS', () => {
     const { data } = await clientB.from('exercises').select('slug').eq('slug', 'flexao').maybeSingle();
     expect(data?.slug).toBe('flexao');
   });
+
+  /**
+   * Entrar num desafio duas vezes.
+   *
+   * A tabela não tem policy de UPDATE para o dono da linha — de propósito:
+   * `completed_at` é escrito por `concluir_desafio()`, e ninguém marca a
+   * própria conclusão. Isso faz o `upsert` padrão do PostgREST
+   * (`on conflict do update`) esbarrar na policy de UPDATE no segundo toque, e
+   * quem já estava inscrito recebia "não conseguimos te inscrever". A inscrição
+   * tem que ser `do nothing`, e este teste é o que segura isso.
+   */
+  it('entrar duas vezes no desafio não é erro', async () => {
+    const slug = `rls-teste-${crypto.randomUUID().slice(0, 8)}`;
+
+    const { data: desafio, error: erroDesafio } = await admin
+      .from('challenges')
+      .insert({
+        slug,
+        title: 'Desafio de teste',
+        description: 'Criado pelo teste de RLS.',
+        starts_on: '2026-01-01',
+        ends_on: '2026-01-31',
+        goal: 25,
+      })
+      .select('id')
+      .single();
+
+    if (erroDesafio) throw erroDesafio;
+
+    try {
+      const entrar = () =>
+        clientA
+          .from('challenge_participants')
+          .upsert(
+            { challenge_id: desafio.id, user_id: userA },
+            { onConflict: 'challenge_id,user_id', ignoreDuplicates: true },
+          );
+
+      expect((await entrar()).error).toBeNull();
+      expect((await entrar()).error).toBeNull();
+
+      // e continua uma linha só, com a inscrição original preservada
+      const { data: linhas } = await admin
+        .from('challenge_participants')
+        .select('user_id')
+        .eq('challenge_id', desafio.id);
+
+      expect(linhas).toHaveLength(1);
+    } finally {
+      await admin.from('challenges').delete().eq('id', desafio.id);
+    }
+  });
+
+  /**
+   * A trilha é privada.
+   *
+   * Ao contrário do desafio, que tem ranking e por isso lê participação alheia,
+   * `track_enrollments` só é visível para o dono. "Em que sessão você está" é,
+   * na prática, "há quanto tempo você treina" — dado de corpo por outro nome.
+   *
+   * O teste cobre também as duas travas que a tabela herdou do desafio:
+   * reentrar não é erro (o upsert precisa ser `do nothing`, senão bate na
+   * policy de UPDATE) e não zera o ponto de partida, e ninguém escreve o
+   * próprio `completed_at` — quem marca isso é `concluir_trilha()`.
+   */
+  it('a matrícula na trilha só é vista pelo dono', async () => {
+    const { data: trilha } = await clientA
+      .from('tracks')
+      .select('id, slug')
+      .eq('slug', 'iniciante-em-casa')
+      .maybeSingle();
+
+    // o catálogo é público: sem ele não há convite
+    expect(trilha?.slug).toBe('iniciante-em-casa');
+    if (!trilha) return;
+
+    try {
+      const entrar = (started_on: string) =>
+        clientA
+          .from('track_enrollments')
+          .upsert(
+            { track_id: trilha.id, user_id: userA, started_on },
+            { onConflict: 'track_id,user_id', ignoreDuplicates: true },
+          );
+
+      expect((await entrar('2026-01-10')).error).toBeNull();
+      // reentrar não é erro e não move o ponto de partida
+      expect((await entrar('2026-02-20')).error).toBeNull();
+
+      const { data: minha } = await clientA
+        .from('track_enrollments')
+        .select('started_on')
+        .eq('track_id', trilha.id);
+
+      expect(minha).toHaveLength(1);
+      expect(minha?.[0].started_on).toBe('2026-01-10');
+
+      // B não enxerga a matrícula de A
+      const { data: doOutro } = await clientB
+        .from('track_enrollments')
+        .select('user_id')
+        .eq('track_id', trilha.id);
+
+      expect(doOutro).toEqual([]);
+
+      // e ninguém marca a própria conclusão
+      const { error: erroConclusao } = await clientA
+        .from('track_enrollments')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('track_id', trilha.id)
+        .eq('user_id', userA);
+
+      const { data: aindaAberta } = await clientA
+        .from('track_enrollments')
+        .select('completed_at')
+        .eq('track_id', trilha.id)
+        .maybeSingle();
+
+      // a policy pode recusar ou simplesmente não casar linha nenhuma; o que
+      // importa é que a conclusão continue vazia
+      expect(erroConclusao === null || Boolean(erroConclusao)).toBe(true);
+      expect(aindaAberta?.completed_at ?? null).toBeNull();
+    } finally {
+      await admin.from('track_enrollments').delete().eq('user_id', userA);
+    }
+  });
 });

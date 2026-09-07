@@ -149,6 +149,39 @@ export function recadoDoDesafio(progresso: Progresso, meta: number): string {
     : `Dia garantido. Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}.`;
 }
 
+/**
+ * Os dias do desafio corrigidos pelo que o aparelho sabe.
+ *
+ * O cartão do desafio é renderizado no servidor, e a contagem sai dos treinos
+ * que já subiram. Quem termina um treino sem rede via "hoje ainda está em
+ * aberto" no mesmo instante em que o painel dizia que tinha treinado — duas
+ * respostas para a mesma pergunta, na mesma tela, e a errada era a do desafio.
+ *
+ * A regra é: o servidor é a base, o aparelho é a correção.
+ *
+ * - o que existe aqui e ainda não subiu **entra**;
+ * - o que foi apagado aqui e a exclusão ainda não subiu **sai** — mas só se
+ *   nenhum outro treino sustentar aquele dia, porque dois treinos no mesmo dia
+ *   contam como um só.
+ *
+ * A ordem importa: soma antes, subtrai depois. Invertida, um dia apagado que
+ * foi treinado de novo sumiria da tela.
+ */
+export function diasComOAparelho(
+  doServidor: readonly string[],
+  locais: { feitos: readonly string[]; apagados: readonly string[] },
+): string[] {
+  const dias = new Set(doServidor);
+  const feitos = new Set(locais.feitos);
+
+  for (const dia of feitos) dias.add(dia);
+  for (const dia of locais.apagados) {
+    if (!feitos.has(dia)) dias.delete(dia);
+  }
+
+  return [...dias].sort();
+}
+
 export type LinhaDoRanking = {
   user_id: string;
   username: string | null;

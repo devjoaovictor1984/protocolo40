@@ -83,7 +83,21 @@ export type ProgressoDaMeta = {
   ultimoEm: string | null;
   /** 0 a 1, já limitado nas pontas */
   fracao: number;
+  /**
+   * Quanto o peso andou desde a partida, com sinal: positivo é na direção do
+   * alvo, negativo é para o lado contrário.
+   */
+  movimentoKg: number;
+  /** O mesmo, mas nunca negativo — é o que a barra preenche. */
   percorridoKg: number;
+  /**
+   * Distância de **onde você está hoje** até o alvo.
+   *
+   * Não é "o que sobra do plano". Quem partiu de 95,9 rumo a 85 e hoje está em
+   * 96,3 tem 11,3 kg pela frente, não 10,9: descontar do total planejado faz a
+   * conta mentir para menos justamente na semana em que a pessoa mais precisa
+   * de um número honesto.
+   */
   restanteKg: number;
   /** kg por semana no sentido do alvo; negativo é afastar-se dele */
   ritmoSemanal: number | null;
@@ -421,14 +435,19 @@ export function analisarMeta(
       .at(-1) ?? null;
 
   const referencia = tendenciaKg ?? meta.inicioKg;
-  const avancou = direcao === 'perder' ? referencia < meta.inicioKg : referencia > meta.inicioKg;
 
-  // andar para o lado errado não vira progresso negativo: a barra fica em zero
-  const percorridoKg = arredondar(
-    avancou ? Math.min(Math.abs(referencia - meta.inicioKg), total) : 0,
+  // com sinal: perder é andar para baixo, ganhar é andar para cima
+  const movimentoKg = arredondar(
+    direcao === 'perder' ? meta.inicioKg - referencia : referencia - meta.inicioKg,
     1,
   );
-  const restanteKg = arredondar(Math.max(total - percorridoKg, 0), 1);
+
+  // andar para o lado errado não vira progresso negativo: a barra fica em zero
+  const percorridoKg = arredondar(Math.min(Math.max(movimentoKg, 0), total), 1);
+
+  // a distância sai de onde a pessoa está hoje, e não do que sobrou do plano
+  const restanteKg = arredondar(Math.abs(referencia - meta.alvoKg), 1);
+
   const fracao = total === 0 ? 1 : Math.min(Math.max(percorridoKg / total, 0), 1);
 
   const ritmoSeguro = ritmoSeguroSemanal(referencia, direcao);
@@ -475,6 +494,7 @@ export function analisarMeta(
     ultimoKg: ultimo?.weight_kg ?? null,
     ultimoEm: ultimo?.measured_on ?? null,
     fracao,
+    movimentoKg,
     percorridoKg,
     restanteKg,
     ritmoSemanal,

@@ -24,6 +24,8 @@ import { BadgeSpotlight } from '@/features/badges/components/badge-spotlight';
 import { ChallengeCard } from '@/features/challenges/components/challenge-card';
 import type { DesafioResumo } from '@/features/challenges/repository';
 import { GoalStrip } from '@/features/goals/components/goal-strip';
+import type { TrilhaCompleta } from '@/features/tracks/repository';
+import { ConviteDaTrilha, TrilhaDeHoje } from '@/features/tracks/components/track-today';
 import { DailyCards } from '@/features/dashboard/components/daily-cards';
 import { RestDayButton } from '@/features/rest/components/rest-day-button';
 import { DailyMessage } from '@/features/messages/components/daily-message';
@@ -40,7 +42,7 @@ import {
   startOfWeek,
   WEEKDAY_LABELS,
 } from '@/services/calendar';
-import type { BadgeTier } from '@/types/database';
+import type { BadgeTier, TrackRow } from '@/types/database';
 import type { LocalWorkout } from '@/types/offline';
 
 /**
@@ -58,6 +60,8 @@ export function Dashboard({
   desafio,
   diasNoDesafio,
   meta,
+  trilha,
+  trilhaOferecida,
 }: {
   mensagem: MensagemDoDia | null;
   agua: number;
@@ -67,6 +71,10 @@ export function Dashboard({
   desafio: DesafioResumo | null;
   diasNoDesafio: readonly string[];
   meta: MetaDePeso | null;
+  /** A trilha em que a pessoa está. Nula quando ela não entrou em nenhuma. */
+  trilha: TrilhaCompleta | null;
+  /** A trilha que o app oferece a quem não está em nenhuma. */
+  trilhaOferecida: TrackRow | null;
 }) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
@@ -112,10 +120,17 @@ export function Dashboard({
           não tarefa — quem abriu o app para treinar não precisa passar por ele */}
       {desafio ? <ChallengeCard desafio={desafio} meusDias={diasNoDesafio} hoje={today} /> : null}
 
+      {/*
+        Quem está numa trilha tem a resposta pronta para "o que eu faço hoje?", e
+        é ela que ocupa o lugar do cartão genérico. Quem não está continua com o
+        cronômetro em 20:00, que nunca exigiu roteiro.
+      */}
       {isLoading ? (
         <Skeleton className="h-80 w-full rounded-2xl" />
       ) : doneToday ? (
         <DoneCard workouts={data!.todayWorkouts} day={data!.protocolDay} />
+      ) : trilha ? (
+        <TrilhaDeHoje dados={trilha} jaTreinou={false} goalSeconds={dailyGoalSeconds} />
       ) : (
         <TodayCard
           day={data?.protocolDay ?? 1}
@@ -123,6 +138,11 @@ export function Dashboard({
           descansouHoje={descansouHoje}
         />
       )}
+
+      {/* com o dia já resolvido, a trilha vira uma linha: o que vem depois */}
+      {!isLoading && doneToday && trilha ? (
+        <TrilhaDeHoje dados={trilha} jaTreinou goalSeconds={dailyGoalSeconds} />
+      ) : null}
 
       {isLoading ? (
         <Skeleton className="h-28 w-full rounded-2xl" />
@@ -155,6 +175,12 @@ export function Dashboard({
             </ButtonLink>
           }
         />
+      ) : null}
+
+      {/* o convite só enquanto "o que eu faço hoje?" ainda não tem resposta
+          automática: quem já criou rotina não precisa dele toda manhã */}
+      {!isLoading && !trilha && trilhaOferecida && data!.workouts.length < 10 ? (
+        <ConviteDaTrilha trilha={trilhaOferecida} />
       ) : null}
 
       {!isLoading && data!.workouts.length < 5 ? (
