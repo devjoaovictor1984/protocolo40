@@ -94,8 +94,9 @@ export async function salvarDesafio(
     };
   }
 
-  revalidatePath('/admin/desafios');
-  revalidatePath('/desafios');
+  // 'layout' leva junto a tela de edição, que mora embaixo da lista
+  revalidatePath('/admin/desafios', 'layout');
+  revalidatePath('/desafios', 'layout');
   revalidatePath('/hoje');
 
   return { status: 'ok', mensagem: id ? 'Desafio atualizado.' : 'Desafio criado.' };

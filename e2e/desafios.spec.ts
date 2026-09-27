@@ -553,4 +553,51 @@ test.describe('desafios', () => {
       await apagarDesafio(slug);
     }
   });
+  /**
+   * Clicar no nome de um desafio desligado, no admin, levava à página pública —
+   * que não abre desafio desligado — e dava "Esta página não existe". Era o
+   * único caminho de edição, e ele não existia.
+   */
+  test('o admin edita um desafio desligado', async ({ context, page, baseURL }) => {
+    const { id, session } = await novoUsuario();
+    await admin(`/rest/v1/profiles?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ is_admin: true }),
+    });
+    const { slug, title } = await criarDesafio(18, 'alimentacao', 21);
+    await admin(`/rest/v1/challenges?slug=eq.${slug}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ is_active: false }),
+    });
+
+    try {
+      await gravarSessao(context, baseURL!, session);
+      await page.goto('/admin/desafios');
+      await page.getByRole('link', { name: title, exact: true }).click();
+
+      await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/Esta página não existe/)).toHaveCount(0);
+      await expect(page.getByLabel('Tipo')).toHaveValue('alimentacao');
+      await expect(page.getByLabel(/Duração em dias/)).toHaveValue('21');
+
+      await page.getByLabel('Frase curta').fill('Frase editada pelo teste');
+      await page.getByRole('button', { name: 'Salvar' }).click();
+      await expect(page.getByRole('status')).toContainText('Desafio atualizado.', { timeout: 30_000 });
+
+      const [linha] = await (
+        await admin(`/rest/v1/challenges?slug=eq.${slug}&select=tagline,is_active,duration_days,kind`)
+      ).json();
+      expect(linha).toEqual({
+        tagline: 'Frase editada pelo teste',
+        // salvar não liga o desafio por tabela
+        is_active: false,
+        duration_days: 21,
+        kind: 'alimentacao',
+      });
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
 });

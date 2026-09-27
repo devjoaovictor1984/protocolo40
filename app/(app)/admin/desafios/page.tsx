@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
 import { alternarDesafio } from '@/features/challenges/admin-actions';
 import { ChallengeForm } from '@/features/challenges/components/challenge-form';
 import { DeleteChallenge } from '@/features/challenges/components/delete-challenge';
@@ -60,8 +61,10 @@ export default async function AdminDesafiosPage() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    {/* o nome abre a edição: a página pública não abre desafio
+                        desligado, e era ali que o clique dava "não existe" */}
                     <Link
-                      href={`/desafios/${desafio.slug}`}
+                      href={`/admin/desafios/${desafio.id}`}
                       className="truncate font-semibold hover:underline"
                     >
                       {desafio.title}
@@ -80,10 +83,12 @@ export default async function AdminDesafiosPage() {
 
                   <p className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
                     <span>
-                      {formatDay(desafio.starts_on)} a {formatDay(desafio.ends_on)}
+                      {desafio.duration_days
+                        ? `${desafio.duration_days} dias, cada um escolhe quando`
+                        : `${formatDay(desafio.starts_on)} a ${formatDay(desafio.ends_on)}`}
                     </span>
                     <span aria-hidden>·</span>
-                    <span>{desafio.goal} dias</span>
+                    <span>meta {desafio.goal}</span>
                     <span aria-hidden>·</span>
                     <span className="flex items-center gap-1">
                       <Users aria-hidden className="size-3" />
@@ -93,6 +98,15 @@ export default async function AdminDesafiosPage() {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1">
+                  <ButtonLink
+                    href={`/admin/desafios/${desafio.id}`}
+                    variant="outline"
+                    size="sm"
+                    className="h-10"
+                  >
+                    Editar
+                  </ButtonLink>
+
                   <form action={alternarDesafio}>
                     <input type="hidden" name="id" value={desafio.id} />
                     <input type="hidden" name="valor" value={desafio.is_active ? '0' : '1'} />

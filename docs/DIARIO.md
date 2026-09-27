@@ -9,6 +9,19 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · Editar um desafio dava "Esta página não existe"
+
+A lista do admin não tinha edição. O nome do desafio levava para a página
+pública, e ela só abre desafio ligado. O "21 dias sem açúcar", desligado
+esperando revisão, dava 404. O `ChallengeForm` já sabia editar, mas nenhuma tela
+o abria com um desafio existente.
+
+Agora existe `/admin/desafios/[id]`: lida pelo id, porque o slug é editável, e
+permitida pela policy de admin mesmo com o desafio desligado. O nome na lista e
+o botão "Editar" levam para lá. O `salvarDesafio` revalida com `'layout'` para
+levar a tela de edição junto. Salvar não liga o desafio: o checkbox parte do
+estado atual.
+
 ## 27/09/2026 · O PWA velho não conseguia entrar no desafio
 
 Relato: "não consigo me inscrever no desafio de outubro". No banco a inscrição
