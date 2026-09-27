@@ -3,7 +3,7 @@ import 'server-only';
 import { getUser, requireUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { desafiosDoHoje as escolherDoHoje, type DesafioNoHoje } from '@/services/challenges';
-import type { ChallengeRankRow, ChallengeRow } from '@/types/database';
+import type { BadgeRow, ChallengeRankRow, ChallengeRow } from '@/types/database';
 
 /**
  * Desafios.
@@ -28,6 +28,8 @@ export type DesafioResumo = ChallengeRow & {
 export type DesafioCompleto = DesafioResumo & {
   meusDias: string[];
   ranking: ChallengeRankRow[];
+  /** A medalha de quem concluir. Nula quando o desafio não dá medalha. */
+  medalha: Pick<BadgeRow, 'name' | 'description' | 'tier' | 'emblem'> | null;
 };
 
 /**
@@ -109,7 +111,7 @@ export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | nu
 
   if (!desafio) return null;
 
-  const [{ data: dias }, { data: ranking }, { data: contagens }, { data: minhas }] =
+  const [{ data: dias }, { data: ranking }, { data: contagens }, { data: minhas }, { data: medalha }] =
     await Promise.all([
       supabase.rpc('meus_dias_no_desafio', { p_slug: slug }),
       supabase.rpc('ranking_do_desafio', { p_slug: slug, p_limite: 50 }),
@@ -121,6 +123,13 @@ export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | nu
         .select('challenge_id, started_on')
         .eq('challenge_id', desafio.id)
         .eq('user_id', user.id),
+      desafio.badge_slug
+        ? supabase
+            .from('badges')
+            .select('name, description, tier, emblem')
+            .eq('slug', desafio.badge_slug)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
   const totais = new Map((contagens ?? []).map((linha) => [linha.challenge_id, linha.total]));
@@ -132,6 +141,7 @@ export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | nu
     meuInicio: minhas?.[0]?.started_on ?? null,
     meusDias: (dias ?? []) as unknown as string[],
     ranking: (ranking ?? []) as ChallengeRankRow[],
+    medalha: medalha ?? null,
   };
 }
 

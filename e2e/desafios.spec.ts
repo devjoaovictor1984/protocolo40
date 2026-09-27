@@ -541,14 +541,14 @@ test.describe('desafios', () => {
       await page.getByRole('button', { name: 'COMEÇAR MEUS 21 DIAS' }).click();
 
       const progresso = page.getByRole('region', { name: 'Seu progresso' });
-      await expect(progresso).toContainText(/0\s*de 18 dias/, { timeout: 30_000 });
+      await expect(progresso).toContainText(/0\s*de 21 dias/, { timeout: 30_000 });
       await expect(page.getByText(/Dia 1 de 21/)).toBeVisible();
 
       // o primeiro dia é o de hoje: ontem é antes do começo e não se marca
       await expect(progresso.getByRole('button', { name: /Venci ontem/ })).toHaveCount(0);
       await progresso.getByRole('button', { name: 'VENCI HOJE' }).click();
       await expect(progresso.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
-      await expect(progresso).toContainText(/1\s*de 18 dias/);
+      await expect(progresso).toContainText(/1\s*de 21 dias/);
     } finally {
       await apagarDesafio(slug);
     }

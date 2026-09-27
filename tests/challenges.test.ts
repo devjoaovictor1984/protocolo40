@@ -5,6 +5,7 @@ import {
   datasParaComecar,
   desafiosDoHoje,
   janelaDoDesafio,
+  placarDoDesafio,
   diasMarcaveis,
   emSemanas,
   erroDaMarcacao,
@@ -592,5 +593,31 @@ describe('desafio com data pessoal', () => {
     expect(
       desafiosDoHoje([{ ...ACUCAR, participando: true, meuInicio: '2026-09-01' }], '2026-10-01'),
     ).toEqual([]);
+  });
+});
+
+describe('o placar do desafio', () => {
+  it('com duração própria, conta de 21 — e a medalha fica dita à parte', () => {
+    expect(placarDoDesafio({ goal: 18, duration_days: 21 }, 0)).toEqual({
+      de: 21,
+      fracao: 0,
+      medalhaAParte: true,
+    });
+  });
+
+  it('a barra anda pelos 21 dias, não pela meta', () => {
+    expect(placarDoDesafio({ goal: 18, duration_days: 21 }, 7).fracao).toBeCloseTo(1 / 3);
+  });
+
+  it('meta igual à duração: nada a dizer à parte', () => {
+    expect(placarDoDesafio({ goal: 21, duration_days: 21 }, 0).medalhaAParte).toBe(false);
+  });
+
+  it('desafio do mês continua contando pela meta', () => {
+    expect(placarDoDesafio({ goal: 25, duration_days: null }, 5)).toEqual({
+      de: 25,
+      fracao: 0.2,
+      medalhaAParte: false,
+    });
   });
 });

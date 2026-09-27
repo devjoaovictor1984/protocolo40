@@ -141,7 +141,7 @@ export function ChallengeCard({
         <div className="flex flex-col gap-1.5">
           <p className="text-muted-foreground text-xs leading-relaxed">
             {pessoal
-              ? `${desafio.duration_days} dias a partir do dia que você escolher · ${desafio.goal} para concluir`
+              ? `${desafio.duration_days} dias a partir do dia que você escolher · medalha com ${desafio.goal}`
               : `${formatDayShort(desafio.starts_on)} a ${formatDayShort(desafio.ends_on)} · ${desafio.goal} dias para concluir`}
           </p>
           {/*

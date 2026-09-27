@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Check, Flame, Trophy, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Emblem } from '@/features/badges/components/emblem';
 import { JoinButton } from '@/features/challenges/components/join-button';
 import { MarcacaoDetalhada } from '@/features/challenges/components/marcacao';
 import { ProgressoDetalhado } from '@/features/challenges/components/meu-progresso';
@@ -53,6 +54,7 @@ export function ChallengeDetail({
   const ranking = posicoes(desafio.ranking);
   const podeComecar = pessoal ? datasParaComecar(desafio, hoje) : null;
   const meuDesafio = janela ? { ...desafio, ...janela } : null;
+  const concluiu = desafio.ranking.some((linha) => linha.user_id === meuId && linha.concluido);
 
   return (
     <div className="flex flex-col gap-8 py-6">
@@ -106,6 +108,39 @@ export function ChallengeDetail({
           </p>
         ))}
       </section>
+
+      {/*
+        A medalha antes do botão: é o que se leva do desafio, e quem decide se
+        entra precisa ver o que está em jogo. Cinza até ser conquistada — o
+        mesmo código das conquistas, para a medalha daqui e a da grade serem a
+        mesma coisa aos olhos de quem usa.
+      */}
+      {desafio.medalha ? (
+        <section
+          aria-label="A medalha do desafio"
+          className="border-border flex items-center gap-4 rounded-2xl border p-4"
+        >
+          <Emblem
+            emblem={desafio.medalha.emblem}
+            tier={desafio.medalha.tier}
+            earned={concluiu}
+            className="size-16"
+          />
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+              {concluiu ? 'Medalha conquistada' : 'A medalha de quem vencer'}
+            </p>
+            <p className="font-extrabold tracking-tight">{desafio.medalha.name}</p>
+            <p className="text-muted-foreground text-sm leading-snug">
+              {concluiu
+                ? desafio.medalha.description
+                : `Sai com ${desafio.goal} ${desafio.goal === 1 ? 'dia' : 'dias'}${
+                    desafio.kind === 'alimentacao' ? ' vencidos' : ' treinados'
+                  }${desafio.duration_days ? ` dos seus ${desafio.duration_days}` : ''}.`}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {/* data pessoal sem dia livre para começar: o desafio fechou para novos começos */}
       {desafio.participando || !pessoal || podeComecar ? (

@@ -212,8 +212,8 @@ export function recadoDoDesafio(
       // nunca "hoje não pode faltar": pressão sobre comida é o caminho para a
       // culpa, e culpa derruba desafio mais rápido do que doce
       return folga <= 0
-        ? `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'} e a folga acabou. Hoje ainda está em aberto.`
-        : `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}. Hoje ainda está em aberto.`;
+        ? `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'} para a medalha e a folga acabou. Hoje ainda está em aberto.`
+        : `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'} para a medalha. Hoje ainda está em aberto.`;
     }
 
     return folga <= 0
@@ -222,10 +222,11 @@ export function recadoDoDesafio(
   }
 
   const garantido = alimentacao ? 'Dia vencido.' : 'Dia garantido.';
+  const destino = alimentacao ? ' para a medalha' : '';
 
   return folga <= 2
-    ? `${garantido} Faltam ${faltam} e a folga está curta — ${folga} ${folga === 1 ? 'dia' : 'dias'}.`
-    : `${garantido} Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}.`;
+    ? `${garantido} Faltam ${faltam}${destino} e a folga está curta — ${folga} ${folga === 1 ? 'dia' : 'dias'}.`
+    : `${garantido} Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}${destino}.`;
 }
 
 // -----------------------------------------------------------------------------
@@ -286,6 +287,26 @@ export function linhaDoTempo(
 
     return { dia, numero: i + 1, estado, marcavel, hoje: dia === hoje };
   });
+}
+
+/**
+ * O placar: "X de N dias".
+ *
+ * No desafio de duração própria, N é a duração — quem entra nos "21 dias sem
+ * açúcar" espera ler "0 de 21", e "0 de 18" parecia um desafio de outro
+ * tamanho. A meta da medalha continua valendo, mas é dita à parte ("faltam X
+ * para a medalha"). Nos de janela única, N segue sendo a meta, como sempre foi.
+ */
+export function placarDoDesafio(
+  desafio: Pick<Desafio, 'goal'> & { duration_days?: number | null },
+  cumpridos: number,
+): { de: number; fracao: number; medalhaAParte: boolean } {
+  const de = desafio.duration_days || desafio.goal;
+  return {
+    de,
+    fracao: de > 0 ? Math.min(1, cumpridos / de) : 0,
+    medalhaAParte: de !== desafio.goal,
+  };
 }
 
 /** Linha do tempo em semanas de sete, para desenhar uma fileira por semana. */

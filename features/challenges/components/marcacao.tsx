@@ -12,6 +12,7 @@ import {
   diasMarcaveis,
   emSemanas,
   linhaDoTempo,
+  placarDoDesafio,
   progressoNoDesafio,
   recadoDoDesafio,
   type Desafio,
@@ -27,7 +28,9 @@ import {
  * tocar duas vezes. Se o banco recusar, o estado volta e a frase explica.
  */
 
-type Janela = Pick<Desafio, 'slug' | 'starts_on' | 'ends_on' | 'goal'>;
+type Janela = Pick<Desafio, 'slug' | 'starts_on' | 'ends_on' | 'goal'> & {
+  duration_days?: number | null;
+};
 
 type Toque = { dia: string; feito: boolean };
 
@@ -150,15 +153,16 @@ export function MarcacaoResumida({
 }) {
   const { dias, marcar, pendente, erro } = useMarcacao(desafio.slug, meusDias);
   const progresso = progressoNoDesafio(desafio, dias, hoje);
+  const placar = placarDoDesafio(desafio, progresso.cumpridos);
 
   return (
     <div className="flex flex-col gap-3">
-      <Barra porcento={Math.round(progresso.fracao * 100)} concluido={progresso.concluido} />
+      <Barra porcento={Math.round(placar.fracao * 100)} concluido={progresso.concluido} />
 
       <div className="flex items-baseline justify-between gap-3">
         <p className="tnum text-sm font-semibold">
           {progresso.cumpridos}
-          <span className="text-muted-foreground font-normal"> de {desafio.goal} dias vencidos</span>
+          <span className="text-muted-foreground font-normal"> de {placar.de} dias vencidos</span>
         </p>
         {progresso.fase === 'durante' ? (
           <span className="text-muted-foreground tnum text-[11px] font-semibold">
@@ -189,13 +193,14 @@ export function MarcacaoDetalhada({
 }) {
   const { dias, marcar, pendente, erro } = useMarcacao(desafio.slug, meusDias);
   const progresso = progressoNoDesafio(desafio, dias, hoje);
+  const placar = placarDoDesafio(desafio, progresso.cumpridos);
 
   return (
     <>
       <div className="flex items-baseline justify-between gap-3">
         <p className="tnum text-3xl font-extrabold tracking-tight">
           {progresso.cumpridos}
-          <span className="text-muted-foreground text-lg font-normal"> de {desafio.goal} dias</span>
+          <span className="text-muted-foreground text-lg font-normal"> de {placar.de} dias</span>
         </p>
         {progresso.concluido ? (
           <span className="text-success flex items-center gap-1 text-sm font-semibold">
@@ -205,7 +210,14 @@ export function MarcacaoDetalhada({
         ) : null}
       </div>
 
-      <Barra porcento={Math.round(progresso.fracao * 100)} concluido={progresso.concluido} />
+      <Barra porcento={Math.round(placar.fracao * 100)} concluido={progresso.concluido} />
+
+      {placar.medalhaAParte ? (
+        <p className="text-muted-foreground text-xs">
+          A medalha sai com {desafio.goal} dias vencidos
+          {placar.de > desafio.goal ? ` — ${placar.de - desafio.goal} podem escapar` : ''}.
+        </p>
+      ) : null}
 
       <p className="text-sm leading-relaxed">
         {recadoDoDesafio(progresso, desafio.goal, 'alimentacao')}

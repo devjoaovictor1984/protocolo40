@@ -9,6 +9,27 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · "0 de 21", e a medalha do açúcar ganha desenho próprio
+
+"Por que aparece 1 de 18? Seria 0 de 21." O placar dividia pela **meta** (18,
+com três dias de folga), e quem entra nos "21 dias sem açúcar" lê o número de
+baixo como o tamanho do desafio.
+
+- `placarDoDesafio` (`services/challenges.ts`): com `duration_days`, o placar e a
+  barra contam da duração ("0 de 21"). A meta da medalha é dita à parte ("A
+  medalha sai com 18 dias vencidos — 3 podem escapar"), e o recado de comida
+  diz "faltam X **para a medalha**". O desafio do mês segue contando pela meta.
+- A página do desafio mostra **a medalha de quem vencer**: cinza até ser
+  conquistada, dourada depois, com quantos dias ela pede.
+- Emblema novo, `sem-acucar`: um cubo de açúcar riscado. O risco leva antes um
+  contorno da cor do fundo, para cortar o cubo em vez de passar por cima dele.
+  Migration `20260927130000_medalha_sem_acucar.sql`: troca o emblema e tira o
+  "dezoito em vinte e um" da descrição, porque a meta é editável no painel e o
+  número escrito ali ficaria mentindo.
+
+**Ordem de publicação:** esta migration vai **depois** do deploy. Aplicada
+antes, a produção não conhece o emblema `sem-acucar` e mostra o genérico.
+
 ## 27/09/2026 · Editar um desafio dava "Esta página não existe"
 
 A lista do admin não tinha edição. O nome do desafio levava para a página

@@ -178,6 +178,34 @@ function Muralha({ cor }: { cor: string }) {
   );
 }
 
+/**
+ * Cubo de açúcar riscado: o desafio de 21 dias sem açúcar.
+ *
+ * O risco leva primeiro um contorno da cor do fundo, para cortar o cubo de
+ * verdade em vez de passar por cima dele — é o que faz ler "sem" de longe, no
+ * tamanho de uma medalha na grade de conquistas.
+ */
+function CuboDeAcucar({ cor, brilho, fundo }: { cor: string; brilho: string; fundo: string }) {
+  return (
+    <g strokeLinejoin="round" strokeLinecap="round">
+      <g stroke={cor} strokeWidth="2" fill="none">
+        <path d="M24 16 L35 21.5 L24 27 L13 21.5 Z" fill={brilho} fillOpacity="0.25" />
+        <path d="M13 21.5 V32.5 L24 38 V27" />
+        <path d="M35 21.5 V32.5 L24 38" />
+      </g>
+      {/* os grãos na face de cima */}
+      <g fill={cor}>
+        <circle cx="20" cy="21.5" r="0.9" />
+        <circle cx="24" cy="19.5" r="0.9" />
+        <circle cx="28" cy="21.5" r="0.9" />
+        <circle cx="24" cy="23.5" r="0.9" />
+      </g>
+      <path d="M12 39 L36 15" stroke={fundo} strokeWidth="6" />
+      <path d="M12 39 L36 15" stroke={brilho} strokeWidth="2.6" />
+    </g>
+  );
+}
+
 /** Falange: escudos encostados, que é o ponto da formação. */
 function Falange({ cor, brilho }: { cor: string; brilho: string }) {
   return (
@@ -479,6 +507,7 @@ const DESENHOS: Record<string, (p: Paleta) => React.ReactNode> = {
   imperator: (p) => <Louro cor={p.traco} dentro={<Coroa cor={p.brilho} brilho={p.traco} />} />,
   gancho: (p) => <Barra cor={p.traco} />,
   muralha: (p) => <Muralha cor={p.traco} />,
+  'sem-acucar': (p) => <CuboDeAcucar cor={p.traco} brilho={p.brilho} fundo={p.fundo} />,
   falange: (p) => <Falange cor={p.traco} brilho={p.brilho} />,
   fundador: (p) => <Louro cor={p.traco} dentro={<Estrela cor={p.brilho} r={8} />} />,
 
