@@ -600,4 +600,64 @@ test.describe('desafios', () => {
       await apagarDesafio(slug);
     }
   });
+  /**
+   * Um salvamento gravou o "21 dias sem açúcar" como treino e sem medalha: o
+   * que o formulário não mandava virava "treino" e nulo por cima do banco — e
+   * o desafio passou a disputar o convite de treino com o de outubro.
+   */
+  test('salvar não troca o tipo nem apaga a medalha por engano', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const { id, session } = await novoUsuario();
+    await admin(`/rest/v1/profiles?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ is_admin: true }),
+    });
+    const { slug, title } = await criarDesafio(18, 'alimentacao', 21);
+    await admin(`/rest/v1/challenges?slug=eq.${slug}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ badge_slug: 'sem-acucar' }),
+    });
+    const [{ id: desafioId }] = await (await admin(`/rest/v1/challenges?slug=eq.${slug}&select=id`)).json();
+    // alguém dentro: é o que torna a troca de tipo perigosa
+    await admin('/rest/v1/challenge_participants', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ challenge_id: desafioId, user_id: id }),
+    });
+    const ler = async () =>
+      (await (await admin(`/rest/v1/challenges?slug=eq.${slug}&select=kind,badge_slug,goal`)).json())[0];
+
+    try {
+      await gravarSessao(context, baseURL!, session);
+      await page.goto(`/admin/desafios/${desafioId}`);
+      await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 30_000 });
+
+      // 1. trocar o tipo com gente dentro é recusado, com explicação
+      await page.getByLabel('Tipo').selectOption('treino');
+      await page.getByRole('button', { name: 'Salvar' }).click();
+      await expect(page.getByRole('status')).toContainText(/trocar o tipo mudaria a contagem/, {
+        timeout: 30_000,
+      });
+      expect(await ler()).toMatchObject({ kind: 'alimentacao', badge_slug: 'sem-acucar' });
+
+      // 2. formulário sem o campo de tipo: o que não veio fica como estava
+      await page.reload();
+      await page.getByLabel('Tipo').waitFor({ timeout: 30_000 });
+      // no WebKit, digitar antes da hidratação terminar perde o valor
+      await page.waitForLoadState('networkidle');
+      await page.getByLabel('Tipo').evaluate((el) => el.remove());
+      await page.getByLabel('Dias para concluir').fill('21');
+      await expect(page.getByLabel('Dias para concluir')).toHaveValue('21');
+      await page.getByRole('button', { name: 'Salvar' }).click();
+      await expect(page.getByRole('status')).toContainText('Desafio atualizado.', { timeout: 30_000 });
+      expect(await ler()).toEqual({ kind: 'alimentacao', badge_slug: 'sem-acucar', goal: 21 });
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
 });

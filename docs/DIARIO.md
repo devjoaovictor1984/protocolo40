@@ -9,6 +9,27 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · Outubro sumiu do Hoje: o açúcar tinha virado treino
+
+Relato: "o de açúcar apareceu no Hoje, o de outubro não". No banco, o
+"21 dias sem açúcar" estava como `kind = 'treino'` e sem medalha, salvo pelo
+painel às 21:22 (a meta 21 foi mudança de propósito; o resto não). Como "treino"
+de data pessoal começando em 28/09, ele ganhava de outubro (01/10) a única vaga
+de convite de treino.
+
+A causa foi o `salvarDesafio`: `kind` tinha `.default('treino')`, e `tagline`,
+`badge_slug` e `image_path` viravam `null` quando ausentes. Um formulário que
+não mandasse o campo, como uma tela desatualizada, gravava "treino" e "sem
+medalha" por cima do banco.
+
+- Campo **ausente** agora não mexe no que está gravado; campo **vazio** (a
+  opção "Nenhuma") continua limpando.
+- Trocar o tipo de um desafio que já tem participantes é recusado, com a
+  explicação na tela: isso mudaria a contagem de todo mundo, então vira desafio
+  novo.
+- O banco foi corrigido à mão: `alimentacao` e `sem-acucar`, com a meta 21 que o
+  admin escolheu.
+
 ## 27/09/2026 · "0 de 21", e a medalha do açúcar ganha desenho próprio
 
 "Por que aparece 1 de 18? Seria 0 de 21." O placar dividia pela **meta** (18,
