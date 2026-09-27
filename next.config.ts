@@ -7,6 +7,16 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  /**
+   * A versão do deploy, igual no servidor e no cliente (ver `lib/versao.ts`).
+   *
+   * Não é o `deploymentId` do Next de propósito: ele põe `?dpl=` em todo JS,
+   * e o precache do service worker guarda os arquivos sem isso — o treino
+   * offline passaria a procurar no cache um endereço que não está lá.
+   */
+  env: {
+    NEXT_PUBLIC_VERSAO: process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || 'dev',
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

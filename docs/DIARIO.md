@@ -9,6 +9,40 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · O PWA velho não conseguia entrar no desafio
+
+Relato: "não consigo me inscrever no desafio de outubro". No banco a inscrição
+funcionava, e no e2e contra produção também. O que falhava era **o app aberto
+no celular**.
+
+Cada deploy gera identificadores novos para as Server Actions. O PWA fica dias
+na memória com o JavaScript do build anterior, e o botão "ENTRAR NO DESAFIO"
+chamava uma ação que o servidor já não conhecia. O servidor respondia
+`404 Server action not found` (header `x-nextjs-action-not-found: 1`), e na tela
+não acontecia nada. Houve dois deploys no mesmo dia, e ninguém conseguiu entrar
+em outubro.
+
+- `lib/versao.ts` + `/api/versao`: a versão do deploy (`VERCEL_DEPLOYMENT_ID`,
+  com o commit como reserva) é embutida no build pelo `next.config.ts`, no
+  servidor e no cliente. `AtualizarVersao` confere ao voltar para o app e a cada
+  10 minutos; se a versão mudou, recarrega. **Nunca em `/treinar`**, e nunca sem
+  rede.
+- `app/error.tsx`: se mesmo assim um botão velho for tocado
+  (`unstable_isUnrecognizedActionError`), recarrega uma vez em vez de falhar calado.
+
+**Por que não o `deploymentId` do Next:** ele põe `?dpl=` em todo JS. O
+precache do service worker guarda os arquivos sem isso, e o treino offline
+passaria a procurar no cache um endereço que não está lá. A *Skew Protection*
+da Vercel também resolve, mas depende de configuração no painel e de plano.
+
+### A barra de baixo "soltava" no PWA
+
+`overscroll-behavior-y: none` em `html, body`: o elástico do fim da rolagem no
+iPhone puxava a página inteira, inclusive a barra fixa. A barra também ganhou
+`translateZ(0)`, porque no WebKit elemento fixo com `backdrop-blur` atrasa na
+rolagem com inércia. O menu do "+" abre num portal, então o transform não o
+afeta.
+
 ## 27/09/2026 · No desafio de açúcar, cada um escolhe quando começa
 
 O desafio do mês é um evento, com a mesma data para todo mundo. O de açúcar é

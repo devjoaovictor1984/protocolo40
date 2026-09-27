@@ -175,6 +175,16 @@
     @apply border-border outline-ring/50;
   }
 
+  html,
+  body {
+    /*
+     * Sem o elástico no fim da rolagem. No PWA do iPhone ele puxa a página
+     * inteira — inclusive a barra de navegação fixa, que "descola" do rodapé e
+     * sobe junto com o conteúdo. Num app, o fim da tela é o fim da tela.
+     */
+    overscroll-behavior-y: none;
+  }
+
   html {
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;

@@ -251,7 +251,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegação principal"
-      className="border-border bg-background/95 pb-safe fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur lg:hidden"
+      // translateZ põe a barra na própria camada: no WebKit, elemento fixo com
+      // backdrop-blur atrasa na rolagem com inércia e parece "soltar" do rodapé
+      className="border-border bg-background/95 pb-safe fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur [transform:translateZ(0)] lg:hidden"
     >
       <ul className="mx-auto flex max-w-md items-stretch justify-between px-2 pt-1.5">
         {PRIMARY.slice(0, 3).map((item) => (

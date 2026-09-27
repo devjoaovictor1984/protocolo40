@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { unstable_isUnrecognizedActionError } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,24 @@ export default function AppError({
   reset: () => void;
 }) {
   useEffect(() => {
+    /*
+     * Botão de um build velho: o app ficou aberto durante um deploy e chamou
+     * uma Server Action que não existe mais. Não é erro de ninguém — é só o
+     * app desatualizado. Recarregar traz a versão nova, e a pessoa toca de
+     * novo. Uma vez só: se o erro voltar depois do recarregamento, é outra
+     * coisa, e aí a tela abaixo aparece.
+     */
+    if (unstable_isUnrecognizedActionError(error)) {
+      try {
+        if (!sessionStorage.getItem('p20x:recarregou')) {
+          sessionStorage.setItem('p20x:recarregou', '1');
+          window.location.reload();
+          return;
+        }
+      } catch {
+        // sem sessionStorage: cai na tela de erro, que ao menos oferece saída
+      }
+    }
     console.error('[p20x]', error);
   }, [error]);
 

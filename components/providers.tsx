@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { SerwistProvider } from '@serwist/next/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { AtualizarVersao } from '@/components/atualizar-versao';
 import { Toaster } from '@/components/ui/sonner';
 
 /**
@@ -44,6 +45,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
+          <AtualizarVersao />
           <Toaster position="top-center" richColors closeButton />
         </ThemeProvider>
       </QueryClientProvider>
