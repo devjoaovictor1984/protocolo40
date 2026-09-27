@@ -22,7 +22,11 @@ test.describe('desafios', () => {
   };
 
   /** Um desafio de teste, com janela em volta de hoje. */
-  async function criarDesafio(goal = 3, kind: 'treino' | 'alimentacao' = 'treino') {
+  async function criarDesafio(
+    goal = 3,
+    kind: 'treino' | 'alimentacao' = 'treino',
+    duration_days: number | null = null,
+  ) {
     const marca = crypto.randomUUID().slice(0, 8);
     const slug = `teste-${marca}`;
     // título único: os testes rodam em paralelo e o desafio de um worker
@@ -44,6 +48,7 @@ test.describe('desafios', () => {
         ends_on: fim,
         goal,
         kind,
+        duration_days,
         is_active: true,
       }),
     });
@@ -106,7 +111,6 @@ test.describe('desafios', () => {
       const progresso = page.getByRole('region', { name: 'Seu progresso' });
       await expect(progresso).toBeVisible({ timeout: 30_000 });
       await expect(progresso).toContainText(/2\s*de 3 dias/);
-      await expect(progresso.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
       await expect(page.getByRole('button', { name: 'Sair do desafio' })).toBeVisible();
     } finally {
       await apagarDesafio(slug);
@@ -498,6 +502,7 @@ test.describe('desafios', () => {
       // ontem ainda dá para marcar, e conta
       await progresso.getByRole('button', { name: /Venci ontem também/ }).click();
       await expect(progresso).toContainText(/2\s*de 3 dias/);
+      await expect(progresso.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
 
       // desfazer tira o dia
       await progresso.getByRole('button', { name: 'Desfazer' }).click();
@@ -509,6 +514,41 @@ test.describe('desafios', () => {
       await expect(
         page.getByRole('region', { name: 'Linha do tempo do desafio' }).getByText(/: vencido/),
       ).toHaveCount(1);
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
+  /**
+   * Com data pessoal, cada um começa os seus dias quando quiser: o desafio não
+   * tem "Dia 7 de 21" para todo mundo, tem o dia de cada pessoa.
+   */
+  test('no desafio de data pessoal, a pessoa escolhe quando começa', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const { session } = await novoUsuario();
+    const { slug, title } = await criarDesafio(18, 'alimentacao', 21);
+
+    try {
+      await gravarSessao(context, baseURL!, session);
+      await page.goto(`/desafios/${slug}`);
+      await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/21 dias, você escolhe quando/)).toBeVisible();
+
+      // a data já vem em hoje; é só confirmar
+      await expect(page.getByLabel('Quando você começa?')).toBeVisible();
+      await page.getByRole('button', { name: 'COMEÇAR MEUS 21 DIAS' }).click();
+
+      const progresso = page.getByRole('region', { name: 'Seu progresso' });
+      await expect(progresso).toContainText(/0\s*de 18 dias/, { timeout: 30_000 });
+      await expect(page.getByText(/Dia 1 de 21/)).toBeVisible();
+
+      // o primeiro dia é o de hoje: ontem é antes do começo e não se marca
+      await expect(progresso.getByRole('button', { name: /Venci ontem/ })).toHaveCount(0);
+      await progresso.getByRole('button', { name: 'VENCI HOJE' }).click();
+      await expect(progresso.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
+      await expect(progresso).toContainText(/1\s*de 18 dias/);
     } finally {
       await apagarDesafio(slug);
     }

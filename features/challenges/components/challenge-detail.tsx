@@ -10,7 +10,14 @@ import { env } from '@/lib/env';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { cn } from '@/lib/utils';
 import { formatDay } from '@/services/calendar';
-import { faseDo, posicoes, progressoNoDesafio, rotuloDoTipo } from '@/services/challenges';
+import {
+  datasParaComecar,
+  faseDo,
+  janelaDoDesafio,
+  posicoes,
+  progressoNoDesafio,
+  rotuloDoTipo,
+} from '@/services/challenges';
 
 /**
  * A tela do desafio.
@@ -33,20 +40,32 @@ export function ChallengeDetail({
    * mesmo para todo mundo. Quantos dias EU cumpri é da ilha de cliente, que
    * conta também o treino que a fila ainda não subiu.
    */
-  const fase = faseDo(desafio, hoje);
-  const { decorridos, total } = progressoNoDesafio(desafio, [], hoje);
+  /*
+   * No desafio de data pessoal, "Dia 3 de 21" é o dia DESTA pessoa, e antes
+   * de ela escolher o início não existe dia nenhum — o desafio está aberto.
+   */
+  const pessoal = Boolean(desafio.duration_days);
+  const janela = janelaDoDesafio(desafio, desafio.meuInicio);
+  const fase = janela ? faseDo(janela, hoje) : 'antes';
+  const { decorridos, total } = janela
+    ? progressoNoDesafio({ ...janela, goal: desafio.goal }, [], hoje)
+    : { decorridos: 0, total: desafio.duration_days ?? 0 };
   const ranking = posicoes(desafio.ranking);
+  const podeComecar = pessoal ? datasParaComecar(desafio, hoje) : null;
+  const meuDesafio = janela ? { ...desafio, ...janela } : null;
 
   return (
     <div className="flex flex-col gap-8 py-6">
       <header className="flex flex-col gap-2">
         <p className="text-primary text-[11px] font-semibold tracking-wider uppercase">
           {rotuloDoTipo(desafio.kind)} ·{' '}
-          {fase === 'antes'
-            ? 'Começa em breve'
-            : fase === 'depois'
-              ? 'Encerrado'
-              : `Dia ${decorridos} de ${total}`}
+          {pessoal && !janela
+            ? `${desafio.duration_days} dias, você escolhe quando`
+            : fase === 'antes'
+              ? 'Começa em breve'
+              : fase === 'depois'
+                ? 'Encerrado'
+                : `Dia ${decorridos} de ${total}`}
         </p>
         <h1 className="text-3xl font-extrabold tracking-tight text-balance">{desafio.title}</h1>
         {desafio.tagline ? (
@@ -58,16 +77,18 @@ export function ChallengeDetail({
             ? 'Ninguém entrou ainda'
             : `${desafio.participantes} ${desafio.participantes === 1 ? 'participando' : 'participando'}`}
           <span aria-hidden>·</span>
-          {formatDay(desafio.starts_on)} a {formatDay(desafio.ends_on)}
+          {janela
+            ? `${pessoal ? 'Seus dias: ' : ''}${formatDay(janela.starts_on)} a ${formatDay(janela.ends_on)}`
+            : 'Começa no dia que você escolher'}
         </p>
       </header>
 
-      {desafio.participando ? (
+      {desafio.participando && meuDesafio ? (
         <section aria-label="Seu progresso" className="border-border flex flex-col gap-4 rounded-2xl border p-5">
           {desafio.kind === 'alimentacao' ? (
-            <MarcacaoDetalhada desafio={desafio} meusDias={desafio.meusDias} hoje={hoje} />
+            <MarcacaoDetalhada desafio={meuDesafio} meusDias={desafio.meusDias} hoje={hoje} />
           ) : (
-            <ProgressoDetalhado desafio={desafio} meusDias={desafio.meusDias} hoje={hoje} />
+            <ProgressoDetalhado desafio={meuDesafio} meusDias={desafio.meusDias} hoje={hoje} />
           )}
         </section>
       ) : null}
@@ -86,9 +107,24 @@ export function ChallengeDetail({
         ))}
       </section>
 
-      <JoinButton slug={desafio.slug} participando={desafio.participando} />
+      {/* data pessoal sem dia livre para começar: o desafio fechou para novos começos */}
+      {desafio.participando || !pessoal || podeComecar ? (
+        <JoinButton
+          slug={desafio.slug}
+          participando={desafio.participando}
+          dataPessoal={
+            podeComecar && desafio.duration_days
+              ? { ...podeComecar, duracao: desafio.duration_days }
+              : null
+          }
+        />
+      ) : (
+        <p className="text-muted-foreground text-center text-sm">
+          Este desafio não está aceitando novos começos.
+        </p>
+      )}
 
-      <Ranking linhas={ranking} meuId={meuId} comecou={fase !== 'antes'} />
+      <Ranking linhas={ranking} meuId={meuId} comecou={pessoal || fase !== 'antes'} />
     </div>
   );
 }

@@ -42,7 +42,9 @@ export function ChallengeForm({
     goal: String(desafio?.goal ?? 25),
     badge_slug: desafio?.badge_slug ?? '',
     kind: desafio?.kind ?? 'treino',
+    duration_days: desafio?.duration_days ? String(desafio.duration_days) : '',
   });
+  const pessoal = campos.duration_days.trim() !== '';
 
   const mudar = (chave: keyof typeof campos) => (valor: string) =>
     setCampos((atual) => ({ ...atual, [chave]: valor }));
@@ -167,9 +169,34 @@ export function ChallengeForm({
         </p>
       </div>
 
+      {/*
+        Com duração, cada pessoa escolhe o próprio início — e as duas datas
+        abaixo mudam de sentido: passam a dizer quando dá para COMEÇAR.
+      */}
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`duration-${id}`}>Cada pessoa escolhe quando começa? Duração em dias</Label>
+        <Input
+          id={`duration-${id}`}
+          name="duration_days"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={366}
+          value={campos.duration_days}
+          onChange={(e) => mudar('duration_days')(e.target.value)}
+          placeholder="Vazio: a mesma data para todo mundo"
+          className="h-12"
+        />
+        <p className="text-muted-foreground text-xs">
+          {pessoal
+            ? `Cada pessoa escolhe o dia de início e tem ${campos.duration_days} dias a partir dele. As datas abaixo dizem entre quando dá para começar.`
+            : 'Deixe vazio para um desafio com data para todo mundo, como o do mês.'}
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`starts-${id}`}>Começa em</Label>
+          <Label htmlFor={`starts-${id}`}>{pessoal ? 'Dá para começar a partir de' : 'Começa em'}</Label>
           <Input
             id={`starts-${id}`}
             name="starts_on"
@@ -182,7 +209,7 @@ export function ChallengeForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`ends-${id}`}>Termina em</Label>
+          <Label htmlFor={`ends-${id}`}>{pessoal ? 'Último dia para começar' : 'Termina em'}</Label>
           <Input
             id={`ends-${id}`}
             name="ends_on"

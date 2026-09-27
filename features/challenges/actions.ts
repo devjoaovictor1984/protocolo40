@@ -65,14 +65,28 @@ export async function entrarNoDesafio(
    * Com `do nothing` só a policy de INSERT é consultada, e `joined_at` e
    * `completed_at` de quem já entrou ficam intactos.
    */
+  /*
+   * A data de início só existe no desafio de data pessoal, e quem confere é o
+   * trigger `conferir_inicio_no_desafio`: nos de janela única ele descarta o
+   * que vier, e nos pessoais recusa o que estiver fora de hoje-a-30-dias.
+   */
+  const inicio = String(formData.get('started_on') ?? '');
+  const started_on = /^\d{4}-\d{2}-\d{2}$/.test(inicio) ? inicio : null;
+
   const { error } = await supabase
     .from('challenge_participants')
     .upsert(
-      { challenge_id: desafio.id, user_id: user.id },
+      { challenge_id: desafio.id, user_id: user.id, started_on },
       { onConflict: 'challenge_id,user_id', ignoreDuplicates: true },
     );
 
   if (error) {
+    if (error.message.includes('inicio_fora_do_prazo')) {
+      return { erro: 'Escolha um dia entre hoje e os próximos 30 dias.' };
+    }
+    if (error.message.includes('inicio_fora_do_periodo')) {
+      return { erro: 'Este desafio não aceita começar nesse dia. Escolha outra data.' };
+    }
     return { erro: 'Não conseguimos te inscrever agora. Tente de novo em instantes.' };
   }
 

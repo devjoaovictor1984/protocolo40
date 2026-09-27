@@ -21,6 +21,8 @@ import type { ChallengeRankRow, ChallengeRow } from '@/types/database';
 export type DesafioResumo = ChallengeRow & {
   participantes: number;
   participando: boolean;
+  /** O dia em que eu comecei, nos desafios de data pessoal. Nulo nos outros. */
+  meuInicio: string | null;
 };
 
 export type DesafioCompleto = DesafioResumo & {
@@ -70,17 +72,21 @@ export async function desafiosAtivos(): Promise<DesafioResumo[]> {
       .order('starts_on', { ascending: false }),
     supabase.rpc('participantes_por_desafio'),
     user
-      ? supabase.from('challenge_participants').select('challenge_id').eq('user_id', user.id)
-      : Promise.resolve({ data: [] as { challenge_id: string }[] }),
+      ? supabase
+          .from('challenge_participants')
+          .select('challenge_id, started_on')
+          .eq('user_id', user.id)
+      : Promise.resolve({ data: [] as { challenge_id: string; started_on: string | null }[] }),
   ]);
 
   const totais = new Map((contagens ?? []).map((linha) => [linha.challenge_id, linha.total]));
-  const meus = new Set((minhas ?? []).map((linha) => linha.challenge_id));
+  const meus = new Map((minhas ?? []).map((linha) => [linha.challenge_id, linha.started_on]));
 
   return (desafios ?? []).map((desafio) => ({
     ...desafio,
     participantes: totais.get(desafio.id) ?? 0,
     participando: meus.has(desafio.id),
+    meuInicio: meus.get(desafio.id) ?? null,
   }));
 }
 
@@ -112,7 +118,7 @@ export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | nu
       // devolve a de qualquer participante e o botão nasce dizendo "Sair"
       supabase
         .from('challenge_participants')
-        .select('challenge_id')
+        .select('challenge_id, started_on')
         .eq('challenge_id', desafio.id)
         .eq('user_id', user.id),
     ]);
@@ -123,6 +129,7 @@ export async function desafioPorSlug(slug: string): Promise<DesafioCompleto | nu
     ...desafio,
     participantes: totais.get(desafio.id) ?? 0,
     participando: (minhas ?? []).length > 0,
+    meuInicio: minhas?.[0]?.started_on ?? null,
     meusDias: (dias ?? []) as unknown as string[],
     ranking: (ranking ?? []) as ChallengeRankRow[],
   };

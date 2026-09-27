@@ -29,7 +29,49 @@ export type Desafio = {
   goal: number;
   badge_slug: string | null;
   kind: TipoDeDesafio;
+  /**
+   * Nulo: janela única, a mesma para todo mundo. Preenchido: cada pessoa
+   * escolhe quando começa, e `starts_on`/`ends_on` passam a dizer quando dá
+   * para começar — não quando o desafio acontece.
+   */
+  duration_days: number | null;
 };
+
+type Janela = { starts_on: DayKey; ends_on: DayKey };
+
+/** Quanto à frente dá para marcar o início. Igual ao trigger do banco. */
+export const INICIO_MAXIMO_DIAS = 30;
+
+/**
+ * A janela que vale para mim.
+ *
+ * Janela única: a do desafio. Data pessoal: do meu início até o fim dos meus
+ * `duration_days`. Nula quando é pessoal e eu ainda não escolhi — não existe
+ * janela de quem não começou.
+ */
+export function janelaDoDesafio(
+  desafio: Pick<Desafio, 'starts_on' | 'ends_on' | 'duration_days'>,
+  meuInicio: DayKey | null,
+): Janela | null {
+  if (!desafio.duration_days) return { starts_on: desafio.starts_on, ends_on: desafio.ends_on };
+  if (!meuInicio || !isValidDay(meuInicio)) return null;
+  return { starts_on: meuInicio, ends_on: addDays(meuInicio, desafio.duration_days - 1) };
+}
+
+/**
+ * Entre que dias a pessoa pode escolher começar: de hoje até 30 dias à frente,
+ * sem sair do período em que o desafio aceita começos. Nulo quando não cabe
+ * nenhum dia — o desafio fechou para novos começos.
+ */
+export function datasParaComecar(
+  desafio: Pick<Desafio, 'starts_on' | 'ends_on'>,
+  hoje: DayKey,
+): { min: DayKey; max: DayKey } | null {
+  const limite = addDays(hoje, INICIO_MAXIMO_DIAS);
+  const min = desafio.starts_on > hoje ? desafio.starts_on : hoje;
+  const max = desafio.ends_on < limite ? desafio.ends_on : limite;
+  return min <= max ? { min, max } : null;
+}
 
 /** O nome do tipo, para o rótulo das telas. */
 export function rotuloDoTipo(kind: TipoDeDesafio): string {
@@ -392,28 +434,55 @@ export type DesafioNoHoje<T> = { desafio: T; papel: 'em_curso' | 'convite' };
  */
 export function desafiosDoHoje<
   T extends Pick<Desafio, 'starts_on' | 'ends_on' | 'kind'> & {
+    duration_days?: number | null;
+    meuInicio?: DayKey | null;
     sort_order?: number;
     participando?: boolean;
   },
 >(desafios: readonly T[], hoje: DayKey): DesafioNoHoje<T>[] {
-  const ordenar = (a: T, b: T) =>
-    Number(Boolean(b.participando)) - Number(Boolean(a.participando)) ||
-    (b.sort_order ?? 0) - (a.sort_order ?? 0) ||
-    b.starts_on.localeCompare(a.starts_on);
+  /*
+   * Cada desafio é lido pela janela que vale para esta pessoa. No de data
+   * pessoal, quem já escolheu o início tem janela; quem não escolheu não tem,
+   * e o desafio é um convite enquanto ainda aceitar começos.
+   */
+  const lidos = desafios.map((desafio) => ({
+    desafio,
+    janela: janelaDoDesafio(
+      { ...desafio, duration_days: desafio.duration_days ?? null },
+      desafio.participando ? (desafio.meuInicio ?? null) : null,
+    ),
+  }));
+
+  type Lido = (typeof lidos)[number];
+
+  const ordenar = (a: Lido, b: Lido) =>
+    Number(Boolean(b.desafio.participando)) - Number(Boolean(a.desafio.participando)) ||
+    (b.desafio.sort_order ?? 0) - (a.desafio.sort_order ?? 0) ||
+    (b.janela?.starts_on ?? '').localeCompare(a.janela?.starts_on ?? '');
 
   const emCurso: DesafioNoHoje<T>[] = [];
   const convites: DesafioNoHoje<T>[] = [];
 
   for (const kind of ['treino', 'alimentacao'] as const) {
-    const doTipo = desafios.filter((d) => d.kind === kind);
+    const doTipo = lidos.filter((item) => item.desafio.kind === kind);
 
-    const atual = doTipo.filter((d) => d.starts_on <= hoje && d.ends_on >= hoje).sort(ordenar)[0];
-    if (atual) emCurso.push({ desafio: atual, papel: 'em_curso' });
+    const atual = doTipo
+      .filter(({ janela }) => janela && janela.starts_on <= hoje && janela.ends_on >= hoje)
+      .sort(ordenar)[0];
+    if (atual) emCurso.push({ desafio: atual.desafio, papel: 'em_curso' });
 
-    const proximo = doTipo
-      .filter((d) => d.starts_on > hoje)
-      .sort((a, b) => a.starts_on.localeCompare(b.starts_on))[0];
-    if (proximo) convites.push({ desafio: proximo, papel: 'convite' });
+    const proximo =
+      doTipo
+        .filter(({ janela }) => janela && janela.starts_on > hoje)
+        .sort((a, b) => a.janela!.starts_on.localeCompare(b.janela!.starts_on))[0] ??
+      // data pessoal ainda não escolhida: convida enquanto der para começar,
+      // mas não para quem já está em curso num desafio do mesmo tipo
+      (atual
+        ? undefined
+        : doTipo
+            .filter(({ desafio, janela }) => !janela && datasParaComecar(desafio, hoje))
+            .sort(ordenar)[0]);
+    if (proximo) convites.push({ desafio: proximo.desafio, papel: 'convite' });
   }
 
   // o que está valendo agora vem antes do que ainda vai começar

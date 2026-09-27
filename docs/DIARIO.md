@@ -9,6 +9,36 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · No desafio de açúcar, cada um escolhe quando começa
+
+O desafio do mês é um evento, com a mesma data para todo mundo. O de açúcar é
+uma decisão, e quem decide parar numa quinta não deveria esperar o dia 3 do mês
+seguinte.
+
+Migration `20260927110000_desafio_de_data_pessoal.sql`:
+
+- **`challenges.duration_days`.** Nulo, o desafio tem janela única, como
+  sempre. Preenchido, cada participante tem a própria janela, de `started_on`
+  até `started_on + duration_days - 1`. Nesse caso as datas do desafio passam a
+  dizer **quando dá para começar** (o de açúcar vai de 27/09/2026 a 2099).
+- **`challenge_participants.started_on`** é conferido pelo trigger
+  `conferir_inicio_no_desafio`: hoje até 30 dias à frente, no fuso da pessoa, e
+  dentro do período do desafio. Nos desafios de janela única o trigger zera o
+  campo.
+- **`janela_no_desafio(desafio, usuário)`** é a fonte única da janela.
+  `dias_cumpridos` e `marcar_dia_no_desafio` perguntam a ela.
+- **Só conta marcação feita depois de entrar** (`created_at >= joined_at`). Sair
+  e voltar é recomeçar.
+
+No app, `janelaDoDesafio` e `datasParaComecar` (`services/challenges.ts`) são as
+mesmas regras em TypeScript. O botão vira "COMEÇAR MEUS 21 DIAS", com a data já
+em hoje. No Hoje, quem não começou vê o convite "Comece quando quiser"; quem
+começou vê o próprio "Dia X de 21".
+
+O ranking continua ordenado por dias vencidos, com pessoas em pontos diferentes
+dos seus 21 dias. É aceitável enquanto a lista for pequena; se crescer, vale
+mostrar o "dia X" de cada um.
+
 ## 27/09/2026 · Desafio de alimentação, e o próximo desafio aparece antes de começar
 
 ### Outubro estava criado e ninguém via

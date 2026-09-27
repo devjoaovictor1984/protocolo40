@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   desafioEmDestaque,
+  datasParaComecar,
   desafiosDoHoje,
+  janelaDoDesafio,
   diasMarcaveis,
   emSemanas,
   erroDaMarcacao,
@@ -521,5 +523,74 @@ describe('desafio de marcação', () => {
     expect(erroDaMarcacao('fora_do_prazo')).toMatch(/hoje e ontem/);
     expect(erroDaMarcacao('nao_participa')).toMatch(/Entre nele/);
     expect(erroDaMarcacao('qualquer-coisa')).toMatch(/tente de novo/);
+  });
+});
+
+/**
+ * No desafio de data pessoal, cada um começa os seus 21 dias quando quiser. A
+ * janela deixa de ser do desafio e passa a ser de cada pessoa.
+ */
+describe('desafio com data pessoal', () => {
+  const ACUCAR = {
+    slug: 'acucar',
+    starts_on: '2026-09-27',
+    ends_on: '2099-12-31',
+    duration_days: 21,
+    kind: 'alimentacao' as const,
+  };
+
+  it('a janela vai do meu início até o fim dos meus 21 dias', () => {
+    expect(janelaDoDesafio(ACUCAR, '2026-10-02')).toEqual({
+      starts_on: '2026-10-02',
+      ends_on: '2026-10-22',
+    });
+  });
+
+  it('sem início escolhido, não existe janela', () => {
+    expect(janelaDoDesafio(ACUCAR, null)).toBeNull();
+  });
+
+  it('no desafio de data única, a janela é a do desafio, escolha ou não', () => {
+    const setembro = { starts_on: '2026-09-01', ends_on: '2026-09-30', duration_days: null };
+    expect(janelaDoDesafio(setembro, '2026-09-10')).toEqual({
+      starts_on: '2026-09-01',
+      ends_on: '2026-09-30',
+    });
+  });
+
+  it('dá para começar de hoje até 30 dias à frente', () => {
+    expect(datasParaComecar(ACUCAR, '2026-10-01')).toEqual({ min: '2026-10-01', max: '2026-10-31' });
+  });
+
+  it('nunca antes do período nem depois do último dia para começar', () => {
+    expect(datasParaComecar({ starts_on: '2026-10-10', ends_on: '2026-10-15' }, '2026-10-01')).toEqual({
+      min: '2026-10-10',
+      max: '2026-10-15',
+    });
+  });
+
+  it('fechado para novos começos, não oferece data', () => {
+    expect(datasParaComecar({ starts_on: '2026-01-01', ends_on: '2026-09-01' }, '2026-10-01')).toBeNull();
+  });
+
+  it('no Hoje, quem não começou recebe o convite', () => {
+    const lista = desafiosDoHoje([{ ...ACUCAR, participando: false, meuInicio: null }], '2026-10-01');
+    expect(lista).toEqual([{ desafio: expect.objectContaining({ slug: 'acucar' }), papel: 'convite' }]);
+  });
+
+  it('no Hoje, quem está nos seus 21 dias vê o desafio em curso', () => {
+    const lista = desafiosDoHoje([{ ...ACUCAR, participando: true, meuInicio: '2026-09-28' }], '2026-10-01');
+    expect(lista.map((item) => item.papel)).toEqual(['em_curso']);
+  });
+
+  it('no Hoje, quem marcou para daqui a uns dias vê o convite com a própria data', () => {
+    const lista = desafiosDoHoje([{ ...ACUCAR, participando: true, meuInicio: '2026-10-05' }], '2026-10-01');
+    expect(lista.map((item) => item.papel)).toEqual(['convite']);
+  });
+
+  it('terminados os 21 dias, sai do Hoje', () => {
+    expect(
+      desafiosDoHoje([{ ...ACUCAR, participando: true, meuInicio: '2026-09-01' }], '2026-10-01'),
+    ).toEqual([]);
   });
 });

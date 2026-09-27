@@ -181,6 +181,8 @@ export type ChallengeRow = Timestamps & {
   is_active: boolean;
   sort_order: number;
   kind: ChallengeKind;
+  /** Nulo: janela única. Preenchido: cada pessoa escolhe o início, e as datas dizem quando dá para começar. */
+  duration_days: number | null;
 };
 
 export type ChallengeParticipantRow = {
@@ -188,6 +190,8 @@ export type ChallengeParticipantRow = {
   user_id: string;
   joined_at: string;
   completed_at: string | null;
+  /** Início escolhido pela pessoa, só em desafio com `duration_days`. Conferido por trigger. */
+  started_on: string | null;
 };
 
 /** Um dia vencido num desafio de alimentação. Só o dia vencido existe. */

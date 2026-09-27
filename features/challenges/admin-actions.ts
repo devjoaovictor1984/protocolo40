@@ -41,10 +41,19 @@ const desafioSchema = z
     image_path: z.string().trim().max(200).optional().or(z.literal('')),
     is_active: z.union([z.literal('on'), z.literal('')]).optional(),
     kind: z.enum(['treino', 'alimentacao'], { message: 'Escolha o tipo do desafio.' }).default('treino'),
+    // vazio é "janela única"; o número liga a data pessoal
+    duration_days: z
+      .union([z.literal(''), z.coerce.number().int().min(1, 'A duração precisa ser de pelo menos 1 dia.').max(366)])
+      .optional()
+      .transform((valor) => (valor === '' || valor === undefined ? null : valor)),
   })
   .refine((v) => v.ends_on >= v.starts_on, {
     message: 'O fim não pode ser antes do começo.',
     path: ['ends_on'],
+  })
+  .refine((v) => v.duration_days === null || v.goal <= v.duration_days, {
+    message: 'A meta não pode ser maior que a duração.',
+    path: ['goal'],
   });
 
 export type EstadoDoFormulario = { status: 'idle' | 'ok' | 'erro'; mensagem?: string };

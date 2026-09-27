@@ -7,7 +7,7 @@ import type { DesafioResumo } from '@/features/challenges/repository';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
 import { formatDayShort } from '@/services/calendar';
-import { faseDo } from '@/services/challenges';
+import { faseDo, janelaDoDesafio } from '@/services/challenges';
 
 /**
  * O desafio na tela de Hoje.
@@ -31,14 +31,24 @@ export function ChallengeCard({
 }) {
   // só a fase sai daqui: ela depende das datas, e não do que este aparelho
   // sabe. O número de dias é da ilha de cliente, que conta o que não subiu.
-  const fase = faseDo(desafio, hoje);
+  //
+  // No desafio de data pessoal a janela é a desta pessoa; sem início escolhido
+  // não há janela, e o cartão é um convite aberto.
+  const pessoal = Boolean(desafio.duration_days);
+  const janela = janelaDoDesafio(desafio, desafio.meuInicio);
+  const meuDesafio = janela ? { ...desafio, ...janela } : desafio;
+  const fase = janela ? faseDo(janela, hoje) : 'antes';
   const arte = arteDoDesafio(desafio.image_path);
   const href = `/desafios/${desafio.slug}`;
   const alimentacao = desafio.kind === 'alimentacao';
 
-  const chamada = `${fase === 'antes' ? `Começa ${formatDayShort(desafio.starts_on)}` : 'Em curso'} · ${
-    alimentacao ? 'Alimentação' : 'Treino'
-  }`;
+  const quando =
+    pessoal && !janela
+      ? 'Comece quando quiser'
+      : fase === 'antes'
+        ? `Começa ${formatDayShort(meuDesafio.starts_on)}`
+        : 'Em curso';
+  const chamada = `${quando} · ${alimentacao ? 'Alimentação' : 'Treino'}`;
 
   /*
    * O cartão inteiro leva à tela do desafio, mas não é mais um <Link> por
@@ -119,19 +129,20 @@ export function ChallengeCard({
         // o contrário do que aconteceu
         <p className="text-success flex items-center gap-1.5 text-sm font-semibold">
           <Check aria-hidden className="size-4" />
-          Você já está dentro. Começa {formatDayShort(desafio.starts_on)}.
+          Você já está dentro. Começa {formatDayShort(meuDesafio.starts_on)}.
         </p>
       ) : desafio.participando && alimentacao ? (
         <div className="relative z-10">
-          <MarcacaoResumida desafio={desafio} meusDias={meusDias} hoje={hoje} />
+          <MarcacaoResumida desafio={meuDesafio} meusDias={meusDias} hoje={hoje} />
         </div>
       ) : desafio.participando ? (
-        <ProgressoResumido desafio={desafio} meusDias={meusDias} hoje={hoje} />
+        <ProgressoResumido desafio={meuDesafio} meusDias={meusDias} hoje={hoje} />
       ) : (
         <div className="flex flex-col gap-1.5">
           <p className="text-muted-foreground text-xs leading-relaxed">
-            {formatDayShort(desafio.starts_on)} a {formatDayShort(desafio.ends_on)} ·{' '}
-            {desafio.goal} dias para concluir
+            {pessoal
+              ? `${desafio.duration_days} dias a partir do dia que você escolher · ${desafio.goal} para concluir`
+              : `${formatDayShort(desafio.starts_on)} a ${formatDayShort(desafio.ends_on)} · ${desafio.goal} dias para concluir`}
           </p>
           {/*
             "Ver", e não "Entrar": este cartão é um link para a tela do desafio,
@@ -140,7 +151,11 @@ export function ChallengeCard({
             entrado — sem estar.
           */}
           <p className="text-primary text-sm font-semibold">
-            {fase === 'antes' ? 'Ver o desafio e garantir a vaga →' : 'Ver o desafio →'}
+            {pessoal
+              ? 'Escolher quando começar →'
+              : fase === 'antes'
+                ? 'Ver o desafio e garantir a vaga →'
+                : 'Ver o desafio →'}
           </p>
         </div>
       )}
