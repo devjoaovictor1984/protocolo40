@@ -22,7 +22,7 @@ test.describe('desafios', () => {
   };
 
   /** Um desafio de teste, com janela em volta de hoje. */
-  async function criarDesafio(goal = 3) {
+  async function criarDesafio(goal = 3, kind: 'treino' | 'alimentacao' = 'treino') {
     const marca = crypto.randomUUID().slice(0, 8);
     const slug = `teste-${marca}`;
     // título único: os testes rodam em paralelo e o desafio de um worker
@@ -43,6 +43,7 @@ test.describe('desafios', () => {
         starts_on: inicio,
         ends_on: fim,
         goal,
+        kind,
         is_active: true,
       }),
     });
@@ -105,6 +106,7 @@ test.describe('desafios', () => {
       const progresso = page.getByRole('region', { name: 'Seu progresso' });
       await expect(progresso).toBeVisible({ timeout: 30_000 });
       await expect(progresso).toContainText(/2\s*de 3 dias/);
+      await expect(progresso.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
       await expect(page.getByRole('button', { name: 'Sair do desafio' })).toBeVisible();
     } finally {
       await apagarDesafio(slug);
@@ -149,7 +151,7 @@ test.describe('desafios', () => {
 
       // e na lista de desafios, o mesmo
       await page.goto('/desafios');
-      const cartao = page.getByRole('link', { name: new RegExp(title) }).first();
+      const cartao = page.getByRole('article', { name: title }).first();
       await expect(cartao).toBeVisible({ timeout: 30_000 });
       await expect(cartao, 'o cartão convida quem ainda não entrou').toContainText(/Ver o desafio/);
     } finally {
@@ -284,7 +286,7 @@ test.describe('desafios', () => {
    * existisse um desafio só — e no dia em que outro entrasse em destaque, a
    * barra mostraria os dias do desafio errado para todo mundo ao mesmo tempo.
    *
-   * A verificação é na lista, e não na tela de Hoje: lá cabe um desafio só, e
+   * A verificação é na lista, e não na tela de Hoje: lá cabem só os do dia, e
    * com os testes rodando em paralelo o destaque pode ser o de outro worker.
    * Qual desafio vira destaque é regra pura, testada em `tests/challenges`.
    */
@@ -311,7 +313,7 @@ test.describe('desafios', () => {
 
       // a lista mostra o progresso deste desafio, e não uma barra zerada
       await page.goto('/desafios');
-      const cartao = page.getByRole('link', { name: new RegExp(title) }).first();
+      const cartao = page.getByRole('article', { name: title }).first();
       await expect(cartao).toBeVisible({ timeout: 30_000 });
       await expect(cartao).toContainText(/3\s*de 5 dias/);
     } finally {
@@ -425,7 +427,7 @@ test.describe('desafios', () => {
 
       // e mesmo assim o desafio já conta o dia
       await page.goto('/desafios');
-      const doDesafio = page.getByRole('link', { name: new RegExp(title) }).first();
+      const doDesafio = page.getByRole('article', { name: title }).first();
       await expect(doDesafio).toBeVisible({ timeout: 30_000 });
       await expect(doDesafio).toContainText(/1\s*de 3 dias/);
       await expect(doDesafio).toContainText('Hoje está feito');
@@ -455,6 +457,58 @@ test.describe('desafios', () => {
         timeout: 30_000,
       });
       await expect(page.getByText(title)).toHaveCount(0);
+    } finally {
+      await apagarDesafio(slug);
+    }
+  });
+  /**
+   * O desafio de alimentação não tem treino para contar: quem diz que venceu o
+   * dia é a pessoa. O toque precisa aparecer na hora, ficar gravado e poder ser
+   * desfeito — um dia marcado por engano não pode virar dia vencido.
+   */
+  test('no desafio de alimentação, a pessoa marca o dia vencido', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const { session } = await novoUsuario();
+    const { slug, title } = await criarDesafio(3, 'alimentacao');
+
+    try {
+      await gravarSessao(context, baseURL!, session);
+      await page.goto(`/desafios/${slug}`);
+      await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/Desafio de alimentação/)).toBeVisible();
+
+      await page.getByRole('button', { name: 'ENTRAR NO DESAFIO' }).click();
+      const progresso = page.getByRole('region', { name: 'Seu progresso' });
+      await expect(progresso).toContainText(/0\s*de 3 dias/, { timeout: 30_000 });
+
+      await progresso.getByRole('button', { name: 'VENCI HOJE' }).click();
+      await expect(progresso.getByText('Hoje vencido')).toBeVisible();
+      // a tela muda na hora; o botão só volta a responder quando o banco
+      // confirmou — recarregar antes disso cortava a gravação no meio
+      await expect(progresso.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
+
+      // gravado de verdade, não só na tela
+      await page.reload();
+      await expect(progresso).toContainText(/1\s*de 3 dias/, { timeout: 30_000 });
+      await expect(progresso.getByText('Hoje vencido')).toBeVisible();
+
+      // ontem ainda dá para marcar, e conta
+      await progresso.getByRole('button', { name: /Venci ontem também/ }).click();
+      await expect(progresso).toContainText(/2\s*de 3 dias/);
+
+      // desfazer tira o dia
+      await progresso.getByRole('button', { name: 'Desfazer' }).click();
+      await expect(progresso.getByRole('button', { name: 'VENCI HOJE' })).toBeEnabled();
+      await page.reload();
+      await expect(progresso).toContainText(/1\s*de 3 dias/, { timeout: 30_000 });
+
+      // a linha do tempo diz o estado de cada dia sem depender de cor
+      await expect(
+        page.getByRole('region', { name: 'Linha do tempo do desafio' }).getByText(/: vencido/),
+      ).toHaveCount(1);
     } finally {
       await apagarDesafio(slug);
     }

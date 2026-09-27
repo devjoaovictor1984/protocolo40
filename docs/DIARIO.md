@@ -9,6 +9,60 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · Desafio de alimentação, e o próximo desafio aparece antes de começar
+
+### Outubro estava criado e ninguém via
+
+O `outubro-2026` já existia e estava ligado, mas a tela de Hoje mostrava **um**
+desafio: o em curso ganhava do que ia começar. Então outubro só aparecia no dia
+1º, justamente quando a pessoa já deveria estar dentro.
+
+Agora `desafiosDoHoje` (`services/challenges.ts`) devolve, **por tipo**, o desafio
+em curso e o próximo a começar, marcado como convite. O convite diz
+"Começa 01/10" e "Ver o desafio e garantir a vaga". Quem já entrou num desafio
+que ainda não começou lê "Você já está dentro". Antes, lia "Entre agora", que
+era o recado de quem não tinha entrado.
+
+### Desafio de alimentação: a pessoa marca o dia
+
+Migration `20260927100000_desafio_de_alimentacao.sql`:
+
+- `challenges.kind` (`treino` | `alimentacao`) diz de onde sai o dia cumprido.
+  Janela, meta, folga, ranking e insígnia são os mesmos.
+- `challenge_checkins` guarda só o dia **vencido**. Não existe "falhei": quem
+  escorrega não marca e segue, e nada zera.
+- `marcar_dia_no_desafio(slug, dia, feito)` é o único caminho de escrita (a
+  tabela só tem SELECT do dono). Aceita **só hoje ou ontem**, no fuso da pessoa,
+  e devolve um código; `erroDaMarcacao` transforma o código em frase.
+- `dias_cumpridos(desafio, usuário)` virou a fonte única da contagem. Ranking,
+  meus dias e conclusão perguntam a ela. Antes a mesma consulta de treino estava
+  copiada em quatro funções.
+- `meus_dias_no_desafio` e `meus_dias_nos_desafios` passaram a ser DEFINER
+  (chamam `dias_cumpridos`) e usam `auth.uid()` por dentro. Os `revoke ... from
+  public, anon, authenticated` foram refeitos no mesmo arquivo.
+- Seed: **21 dias sem açúcar**, 03 a 23/11, meta 18 de 21, insígnia `sem-acucar`
+  (ouro, `muralha`). O desafio nasce **desligado**, e quem publica é o admin.
+
+A marcação não entra na fila offline, pelo mesmo motivo do descanso: é uma linha
+por dia, e o "ontem" cobre quem ficou sem rede. Na tela, o toque aparece na hora
+(`useOptimistic`). Se o banco recusar, o estado volta e aparece a frase.
+
+O recado de comida nunca diz "hoje não pode faltar". Pressão sobre comida vira
+culpa, e culpa derruba desafio.
+
+### O cartão deixou de ser um link por fora
+
+Botão dentro de `<a>` é HTML inválido, e o toque em "Venci hoje" navegava junto.
+Agora o cartão é um `<article aria-label={título}>` e o link é o título, esticado
+sobre o cartão (`after:inset-0`). O botão fica por cima com `z-10`. Os e2e passaram
+a achar o cartão por `getByRole('article', { name })`.
+
+**Onde olhar:** `features/challenges/components/marcacao.tsx` (botões e linha do
+tempo), `tests/challenges.test.ts` (regras) e o e2e "no desafio de alimentação,
+a pessoa marca o dia vencido".
+
+---
+
 ## 07/09/2026 · O smoke conferia um app que não existe mais
 
 Rodado contra o deploy de produção depois da trilha: 19 de 22. Nenhuma das três

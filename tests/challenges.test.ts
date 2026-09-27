@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   desafioEmDestaque,
+  desafiosDoHoje,
+  diasMarcaveis,
+  emSemanas,
+  erroDaMarcacao,
+  linhaDoTempo,
   diasComOAparelho,
   diasDoDesafio,
   faseDo,
@@ -359,5 +364,162 @@ describe('os dias do desafio corrigidos pelo aparelho', () => {
     expect(progressoNoDesafio(SETEMBRO, doServidor, '2026-09-03').hoje).toBe(false);
     expect(progressoNoDesafio(SETEMBRO, comOAparelho, '2026-09-03').hoje).toBe(true);
     expect(progressoNoDesafio(SETEMBRO, comOAparelho, '2026-09-03').cumpridos).toBe(3);
+  });
+});
+
+/**
+ * A tela de Hoje passou a mostrar o próximo desafio assim que ele é criado. O
+ * de outubro ficava invisível até o dia 1º — justamente quando as pessoas já
+ * deveriam estar dentro.
+ */
+describe('os desafios da tela de Hoje', () => {
+  type D = {
+    slug: string;
+    starts_on: string;
+    ends_on: string;
+    kind: 'treino' | 'alimentacao';
+    sort_order?: number;
+    participando?: boolean;
+  };
+  const d = (slug: string, starts_on: string, ends_on: string, extra: Partial<D> = {}): D => ({
+    slug,
+    starts_on,
+    ends_on,
+    kind: 'treino',
+    ...extra,
+  });
+  const slugs = (lista: { desafio: D }[]) => lista.map((item) => item.desafio.slug);
+
+  it('com setembro em curso, outubro já aparece como convite', () => {
+    const lista = desafiosDoHoje(
+      [d('outubro', '2026-10-01', '2026-10-31'), d('setembro', '2026-09-01', '2026-09-30')],
+      '2026-09-27',
+    );
+
+    expect(lista).toEqual([
+      { desafio: expect.objectContaining({ slug: 'setembro' }), papel: 'em_curso' },
+      { desafio: expect.objectContaining({ slug: 'outubro' }), papel: 'convite' },
+    ]);
+  });
+
+  it('treino e alimentação não disputam o mesmo lugar', () => {
+    const lista = desafiosDoHoje(
+      [
+        d('novembro', '2026-11-01', '2026-11-30'),
+        d('acucar', '2026-11-03', '2026-11-23', { kind: 'alimentacao' }),
+      ],
+      '2026-11-10',
+    );
+
+    expect(slugs(lista).sort()).toEqual(['acucar', 'novembro']);
+  });
+
+  it('em curso vem antes de convite', () => {
+    const lista = desafiosDoHoje(
+      [
+        d('dezembro', '2026-12-01', '2026-12-31'),
+        d('acucar', '2026-11-03', '2026-11-23', { kind: 'alimentacao' }),
+      ],
+      '2026-11-10',
+    );
+
+    expect(lista.map((item) => item.papel)).toEqual(['em_curso', 'convite']);
+    expect(slugs(lista)).toEqual(['acucar', 'dezembro']);
+  });
+
+  it('só o próximo de cada tipo é convidado, não a fila inteira', () => {
+    const lista = desafiosDoHoje(
+      [d('novembro', '2026-11-01', '2026-11-30'), d('outubro', '2026-10-01', '2026-10-31')],
+      '2026-09-27',
+    );
+
+    expect(slugs(lista)).toEqual(['outubro']);
+  });
+
+  it('entre dois em curso do mesmo tipo, ganha aquele em que a pessoa está', () => {
+    const lista = desafiosDoHoje(
+      [
+        d('vitrine', '2026-09-01', '2026-09-30', { sort_order: 50 }),
+        d('meu', '2026-09-01', '2026-09-30', { participando: true }),
+      ],
+      '2026-09-15',
+    );
+
+    expect(slugs(lista)).toEqual(['meu']);
+  });
+
+  it('encerrado nunca aparece', () => {
+    expect(desafiosDoHoje([d('agosto', '2026-08-01', '2026-08-31')], '2026-09-15')).toEqual([]);
+  });
+});
+
+describe('desafio de marcação', () => {
+  const ACUCAR = { starts_on: '2026-11-03', ends_on: '2026-11-23', goal: 18 };
+
+  it('dá para marcar hoje e ontem, e nada além', () => {
+    expect(diasMarcaveis(ACUCAR, '2026-11-10')).toEqual(['2026-11-10', '2026-11-09']);
+  });
+
+  it('no primeiro dia, ontem é antes do desafio e não aparece', () => {
+    expect(diasMarcaveis(ACUCAR, '2026-11-03')).toEqual(['2026-11-03']);
+  });
+
+  it('no dia seguinte ao fim, ainda dá para marcar o último dia', () => {
+    // quem venceu o dia 21 e dormiu sem marcar não perde o fechamento
+    expect(diasMarcaveis(ACUCAR, '2026-11-24')).toEqual(['2026-11-23']);
+  });
+
+  it('antes de começar, não há o que marcar', () => {
+    expect(diasMarcaveis(ACUCAR, '2026-10-30')).toEqual([]);
+  });
+
+  it('a linha do tempo tem 21 pontos, contados do Dia 1', () => {
+    const linha = linhaDoTempo(ACUCAR, [], '2026-11-03');
+    expect(linha).toHaveLength(21);
+    expect(linha[0]).toMatchObject({ dia: '2026-11-03', numero: 1, hoje: true });
+    expect(linha[20]).toMatchObject({ dia: '2026-11-23', numero: 21, estado: 'futuro' });
+  });
+
+  it('cada dia sabe o próprio estado', () => {
+    const linha = linhaDoTempo(ACUCAR, ['2026-11-03', '2026-11-05'], '2026-11-07');
+    const estado = (dia: string) => linha.find((ponto) => ponto.dia === dia)?.estado;
+
+    expect(estado('2026-11-03')).toBe('vencido');
+    expect(estado('2026-11-04')).toBe('passou');
+    expect(estado('2026-11-05')).toBe('vencido');
+    expect(estado('2026-11-06')).toBe('em_aberto'); // ontem ainda dá
+    expect(estado('2026-11-07')).toBe('em_aberto'); // hoje
+    expect(estado('2026-11-08')).toBe('futuro');
+  });
+
+  it('um dia sem marca não zera os anteriores', () => {
+    const vencidos = ['2026-11-03', '2026-11-04', '2026-11-06'];
+    expect(progressoNoDesafio(ACUCAR, vencidos, '2026-11-07').cumpridos).toBe(3);
+  });
+
+  it('em semanas de sete, três fileiras', () => {
+    expect(emSemanas(linhaDoTempo(ACUCAR, [], '2026-11-03')).map((s) => s.length)).toEqual([7, 7, 7]);
+  });
+
+  it('o recado de comida nunca diz que hoje não pode faltar', () => {
+    // 21 dias, meta 18, dia 4 com só o primeiro vencido: folga zero
+    const progresso = progressoNoDesafio(ACUCAR, ['2026-11-03'], '2026-11-06');
+    expect(progresso.folga).toBe(0);
+    const frase = recadoDoDesafio(progresso, 18, 'alimentacao');
+
+    expect(frase).not.toMatch(/não pode faltar/);
+    expect(frase).toMatch(/em aberto/);
+  });
+
+  it('quem venceu o dia lê "Dia vencido"', () => {
+    const progresso = progressoNoDesafio(ACUCAR, ['2026-11-03'], '2026-11-03');
+    expect(recadoDoDesafio(progresso, 18, 'alimentacao')).toMatch(/^Dia vencido\./);
+  });
+
+  it('cada recusa do banco vira uma frase que explica', () => {
+    expect(erroDaMarcacao('ok')).toBeNull();
+    expect(erroDaMarcacao('fora_do_prazo')).toMatch(/hoje e ontem/);
+    expect(erroDaMarcacao('nao_participa')).toMatch(/Entre nele/);
+    expect(erroDaMarcacao('qualquer-coisa')).toMatch(/tente de novo/);
   });
 });

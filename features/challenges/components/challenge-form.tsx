@@ -41,6 +41,7 @@ export function ChallengeForm({
     ends_on: desafio?.ends_on ?? '',
     goal: String(desafio?.goal ?? 25),
     badge_slug: desafio?.badge_slug ?? '',
+    kind: desafio?.kind ?? 'treino',
   });
 
   const mudar = (chave: keyof typeof campos) => (valor: string) =>
@@ -140,6 +141,29 @@ export function ChallengeForm({
         <p className="text-muted-foreground text-xs">
           Linha em branco separa parágrafos. É o texto que convence alguém a entrar — vale escrever
           com calma.
+        </p>
+      </div>
+
+      {/*
+        O tipo decide de onde sai o dia cumprido. Trocar depois que o desafio
+        começou troca a contagem de todo mundo de uma vez — o aviso existe
+        porque o formulário não tem como saber se alguém já está dentro.
+      */}
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`kind-${id}`}>Tipo</Label>
+        <select
+          id={`kind-${id}`}
+          name="kind"
+          value={campos.kind}
+          onChange={(e) => mudar('kind')(e.target.value)}
+          className="border-input bg-background h-12 rounded-md border px-3 text-sm"
+        >
+          <option value="treino">Treino — conta sozinho, pelos treinos feitos</option>
+          <option value="alimentacao">Alimentação — a pessoa marca o dia vencido</option>
+        </select>
+        <p className="text-muted-foreground text-xs">
+          Em alimentação a pessoa toca em “Venci hoje” (ou marca ontem, se esqueceu). Não troque o
+          tipo com o desafio em andamento: a contagem de todo mundo muda junto.
         </p>
       </div>
 

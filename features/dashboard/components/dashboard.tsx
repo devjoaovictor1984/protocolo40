@@ -57,8 +57,7 @@ export function Dashboard({
   metaAgua,
   descansouHoje,
   ultimaInsignia,
-  desafio,
-  diasNoDesafio,
+  desafios,
   meta,
   trilha,
   trilhaOferecida,
@@ -68,8 +67,8 @@ export function Dashboard({
   metaAgua: number | null;
   descansouHoje: boolean;
   ultimaInsignia: { emblem: string; tier: BadgeTier; name: string } | null;
-  desafio: DesafioResumo | null;
-  diasNoDesafio: readonly string[];
+  /** Os em curso e os convites, já escolhidos por `desafiosDoHoje`, com os meus dias. */
+  desafios: { desafio: DesafioResumo; dias: string[] }[];
   meta: MetaDePeso | null;
   /** A trilha em que a pessoa está. Nula quando ela não entrou em nenhuma. */
   trilha: TrilhaCompleta | null;
@@ -116,9 +115,13 @@ export function Dashboard({
 
       <DailyCards aguaInicial={agua} metaAgua={metaAgua} />
 
-      {/* o desafio entra depois dos cartões do dia e antes do treino: é convite,
-          não tarefa — quem abriu o app para treinar não precisa passar por ele */}
-      {desafio ? <ChallengeCard desafio={desafio} meusDias={diasNoDesafio} hoje={today} /> : null}
+      {/* os desafios entram depois dos cartões do dia e antes do treino: são
+          convite, não tarefa — quem abriu o app para treinar não precisa passar
+          por eles. O próximo a começar aparece já no dia em que é criado, para
+          dar tempo de entrar antes do primeiro dia. */}
+      {desafios.map(({ desafio, dias }) => (
+        <ChallengeCard key={desafio.id} desafio={desafio} meusDias={dias} hoje={today} />
+      ))}
 
       {/*
         Quem está numa trilha tem a resposta pronta para "o que eu faço hoje?", e

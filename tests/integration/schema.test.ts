@@ -78,6 +78,7 @@ const TABLE_TO_TYPE: Record<string, string> = {
   admin_audit_log: 'AdminAuditRow',
   challenges: 'ChallengeRow',
   challenge_participants: 'ChallengeParticipantRow',
+  challenge_checkins: 'ChallengeCheckinRow',
   push_subscriptions: 'PushSubscriptionRow',
   notification_campaigns: 'NotificationCampaignRow',
   weight_goals: 'WeightGoalRow',

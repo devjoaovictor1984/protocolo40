@@ -40,6 +40,7 @@ const desafioSchema = z
     badge_slug: z.string().trim().optional().or(z.literal('')),
     image_path: z.string().trim().max(200).optional().or(z.literal('')),
     is_active: z.union([z.literal('on'), z.literal('')]).optional(),
+    kind: z.enum(['treino', 'alimentacao'], { message: 'Escolha o tipo do desafio.' }).default('treino'),
   })
   .refine((v) => v.ends_on >= v.starts_on, {
     message: 'O fim não pode ser antes do começo.',

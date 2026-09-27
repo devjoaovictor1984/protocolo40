@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getUser, requireUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
-import { desafioEmDestaque as escolherDestaque } from '@/services/challenges';
+import { desafiosDoHoje as escolherDoHoje, type DesafioNoHoje } from '@/services/challenges';
 import type { ChallengeRankRow, ChallengeRow } from '@/types/database';
 
 /**
@@ -84,9 +84,9 @@ export async function desafiosAtivos(): Promise<DesafioResumo[]> {
   }));
 }
 
-/** O desafio em destaque na tela de Hoje. A regra mora em `services/challenges`. */
-export async function desafioEmDestaque(hoje: string): Promise<DesafioResumo | null> {
-  return escolherDestaque(await desafiosAtivos(), hoje);
+/** Os desafios da tela de Hoje: os em curso e os convites. A regra mora em `services/challenges`. */
+export async function desafiosDoHoje(hoje: string): Promise<DesafioNoHoje<DesafioResumo>[]> {
+  return escolherDoHoje(await desafiosAtivos(), hoje);
 }
 
 /** Um desafio com o meu progresso e o ranking. */

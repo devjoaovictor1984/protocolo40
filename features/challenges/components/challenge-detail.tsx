@@ -3,13 +3,14 @@ import { Check, Flame, Trophy, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { JoinButton } from '@/features/challenges/components/join-button';
+import { MarcacaoDetalhada } from '@/features/challenges/components/marcacao';
 import { ProgressoDetalhado } from '@/features/challenges/components/meu-progresso';
 import type { DesafioCompleto } from '@/features/challenges/repository';
 import { env } from '@/lib/env';
 import { avatarUrl, initialsOf } from '@/lib/storage/avatar';
 import { cn } from '@/lib/utils';
 import { formatDay } from '@/services/calendar';
-import { faseDo, posicoes, progressoNoDesafio } from '@/services/challenges';
+import { faseDo, posicoes, progressoNoDesafio, rotuloDoTipo } from '@/services/challenges';
 
 /**
  * A tela do desafio.
@@ -40,6 +41,7 @@ export function ChallengeDetail({
     <div className="flex flex-col gap-8 py-6">
       <header className="flex flex-col gap-2">
         <p className="text-primary text-[11px] font-semibold tracking-wider uppercase">
+          {rotuloDoTipo(desafio.kind)} ·{' '}
           {fase === 'antes'
             ? 'Começa em breve'
             : fase === 'depois'
@@ -62,7 +64,11 @@ export function ChallengeDetail({
 
       {desafio.participando ? (
         <section aria-label="Seu progresso" className="border-border flex flex-col gap-4 rounded-2xl border p-5">
-          <ProgressoDetalhado desafio={desafio} meusDias={desafio.meusDias} hoje={hoje} />
+          {desafio.kind === 'alimentacao' ? (
+            <MarcacaoDetalhada desafio={desafio} meusDias={desafio.meusDias} hoje={hoje} />
+          ) : (
+            <ProgressoDetalhado desafio={desafio} meusDias={desafio.meusDias} hoje={hoje} />
+          )}
         </section>
       ) : null}
 

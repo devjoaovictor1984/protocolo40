@@ -162,6 +162,9 @@ export type NotificationCampaignRow = {
 /** Regra de um desafio: como se conta o que foi cumprido. */
 export type ChallengeRule = 'dias_no_periodo' | 'dias_seguidos' | 'minutos_no_periodo';
 
+/** De onde sai o dia cumprido: treinos terminados ou dias marcados pela pessoa. */
+export type ChallengeKind = 'treino' | 'alimentacao';
+
 export type ChallengeRow = Timestamps & {
   id: string;
   slug: string;
@@ -177,6 +180,7 @@ export type ChallengeRow = Timestamps & {
   image_path: string | null;
   is_active: boolean;
   sort_order: number;
+  kind: ChallengeKind;
 };
 
 export type ChallengeParticipantRow = {
@@ -184,6 +188,14 @@ export type ChallengeParticipantRow = {
   user_id: string;
   joined_at: string;
   completed_at: string | null;
+};
+
+/** Um dia vencido num desafio de alimentação. Só o dia vencido existe. */
+export type ChallengeCheckinRow = {
+  challenge_id: string;
+  user_id: string;
+  day: string;
+  created_at: string;
 };
 
 /** Uma linha do ranking. Só constância e identidade pública — nunca corpo. */
@@ -751,6 +763,17 @@ export interface Database {
           FK<'challenge_participants_user_id_fkey', 'user_id', 'profiles'>,
         ]
       >;
+      // Só leitura: quem grava é `marcar_dia_no_desafio`, que confere janela,
+      // inscrição e o prazo de hoje-ou-ontem no fuso da pessoa.
+      challenge_checkins: TableDef<
+        ChallengeCheckinRow,
+        InsertOf<ChallengeCheckinRow, 'challenge_id' | 'user_id' | 'day'>,
+        Partial<ChallengeCheckinRow>,
+        [
+          FK<'challenge_checkins_challenge_id_fkey', 'challenge_id', 'challenges'>,
+          FK<'challenge_checkins_user_id_fkey', 'user_id', 'profiles'>,
+        ]
+      >;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -806,6 +829,10 @@ export interface Database {
       concluir_desafio: {
         Args: { p_slug: string };
         Returns: boolean;
+      };
+      marcar_dia_no_desafio: {
+        Args: { p_slug: string; p_day: string; p_feito?: boolean };
+        Returns: string;
       };
       meus_dias_na_trilha: {
         Args: { p_slug: string };
@@ -907,6 +934,7 @@ export interface Database {
       biological_sex: BiologicalSex;
       subscription_status: SubscriptionStatus;
       billing_interval: BillingInterval;
+      challenge_kind: ChallengeKind;
     };
     CompositeTypes: { [_ in never]: never };
   };

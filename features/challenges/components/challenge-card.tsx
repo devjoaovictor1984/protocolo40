@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ChevronRight, Trophy, Users } from 'lucide-react';
+import { Check, ChevronRight, Salad, Trophy, Users } from 'lucide-react';
 
+import { MarcacaoResumida } from '@/features/challenges/components/marcacao';
 import { ProgressoResumido } from '@/features/challenges/components/meu-progresso';
 import type { DesafioResumo } from '@/features/challenges/repository';
 import { env } from '@/lib/env';
@@ -32,11 +33,24 @@ export function ChallengeCard({
   // sabe. O número de dias é da ilha de cliente, que conta o que não subiu.
   const fase = faseDo(desafio, hoje);
   const arte = arteDoDesafio(desafio.image_path);
+  const href = `/desafios/${desafio.slug}`;
+  const alimentacao = desafio.kind === 'alimentacao';
 
+  const chamada = `${fase === 'antes' ? `Começa ${formatDayShort(desafio.starts_on)}` : 'Em curso'} · ${
+    alimentacao ? 'Alimentação' : 'Treino'
+  }`;
+
+  /*
+   * O cartão inteiro leva à tela do desafio, mas não é mais um <Link> por
+   * fora: o desafio de alimentação tem o botão "Venci hoje" dentro dele, e
+   * botão dentro de link é HTML inválido — o toque no botão também navegava.
+   * O link é o título, esticado sobre o cartão por `after:inset-0`; o que
+   * precisa de clique próprio fica por cima com `z-10`.
+   */
   return (
-    <Link
-      href={`/desafios/${desafio.slug}`}
-      className="border-border hover:border-primary/50 focus-visible:ring-ring group flex flex-col gap-3 overflow-hidden rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:outline-none"
+    <article
+      aria-label={desafio.title}
+      className="border-border hover:border-primary/50 has-[a:focus-visible]:ring-ring group relative flex flex-col gap-3 overflow-hidden rounded-2xl border transition-colors has-[a:focus-visible]:ring-2"
     >
       {/*
         A arte é fundo, e o texto vem por cima em elemento de verdade: num
@@ -56,12 +70,13 @@ export function ChallengeCard({
           />
 
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-4">
-            <p className="text-[11px] font-semibold tracking-wider text-white/80 uppercase">
-              {fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
-            </p>
-            <p className="text-lg leading-tight font-extrabold tracking-tight text-white">
+            <p className="text-[11px] font-semibold tracking-wider text-white/80 uppercase">{chamada}</p>
+            <Link
+              href={href}
+              className="text-lg leading-tight font-extrabold tracking-tight text-white outline-none after:absolute after:inset-0 after:content-['']"
+            >
               {desafio.title}
-            </p>
+            </Link>
             {desafio.tagline ? (
               <p className="truncate text-sm text-white/85">{desafio.tagline}</p>
             ) : null}
@@ -76,14 +91,17 @@ export function ChallengeCard({
           aria-hidden
           className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl"
         >
-          <Trophy className="size-5" />
+          {alimentacao ? <Salad className="size-5" /> : <Trophy className="size-5" />}
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold tracking-wider uppercase opacity-70">
-            {fase === 'antes' ? 'Começa em breve' : 'Desafio em curso'}
-          </p>
-          <p className="truncate text-base font-extrabold tracking-tight">{desafio.title}</p>
+          <p className="text-[11px] font-semibold tracking-wider uppercase opacity-70">{chamada}</p>
+          <Link
+            href={href}
+            className="block truncate text-base font-extrabold tracking-tight outline-none after:absolute after:inset-0 after:content-['']"
+          >
+            {desafio.title}
+          </Link>
           {desafio.tagline ? (
             <p className="text-muted-foreground truncate text-sm">{desafio.tagline}</p>
           ) : null}
@@ -96,7 +114,18 @@ export function ChallengeCard({
       </div>
       )}
 
-      {desafio.participando ? (
+      {desafio.participando && fase === 'antes' ? (
+        // já entrou num que não começou: a barra zerada e "entre agora" diriam
+        // o contrário do que aconteceu
+        <p className="text-success flex items-center gap-1.5 text-sm font-semibold">
+          <Check aria-hidden className="size-4" />
+          Você já está dentro. Começa {formatDayShort(desafio.starts_on)}.
+        </p>
+      ) : desafio.participando && alimentacao ? (
+        <div className="relative z-10">
+          <MarcacaoResumida desafio={desafio} meusDias={meusDias} hoje={hoje} />
+        </div>
+      ) : desafio.participando ? (
         <ProgressoResumido desafio={desafio} meusDias={meusDias} hoje={hoje} />
       ) : (
         <div className="flex flex-col gap-1.5">
@@ -110,7 +139,9 @@ export function ChallengeCard({
             gente clicar, ser levada para a tela e sair achando que tinha
             entrado — sem estar.
           */}
-          <p className="text-primary text-sm font-semibold">Ver o desafio →</p>
+          <p className="text-primary text-sm font-semibold">
+            {fase === 'antes' ? 'Ver o desafio e garantir a vaga →' : 'Ver o desafio →'}
+          </p>
         </div>
       )}
 
@@ -121,7 +152,7 @@ export function ChallengeCard({
           : `${desafio.participantes} ${desafio.participantes === 1 ? 'pessoa' : 'pessoas'} participando`}
       </p>
       </div>
-    </Link>
+    </article>
   );
 }
 

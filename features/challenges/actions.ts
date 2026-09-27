@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { requireUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
+import { erroDaMarcacao } from '@/services/challenges';
 
 /**
  * Entrar e sair de um desafio.
@@ -113,6 +114,38 @@ export async function sairDoDesafio(
   revalidatePath('/hoje');
 
   return semErro;
+}
+
+/**
+ * Marcar (ou desmarcar) um dia num desafio de alimentação.
+ *
+ * Toda regra — janela, inscrição, hoje-ou-ontem no fuso da pessoa — está em
+ * `marcar_dia_no_desafio`. Aqui só se traduz o código de volta em frase.
+ *
+ * Depois de marcar, confere a conclusão: o dia que bate a meta é o momento
+ * certo da insígnia cair, e não a próxima vez que a pessoa abrir a tela.
+ */
+export async function marcarDia(slug: string, dia: string, feito: boolean): Promise<string | null> {
+  await requireUser();
+  if (!slug || !/^\d{4}-\d{2}-\d{2}$/.test(dia)) return 'Dia inválido.';
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('marcar_dia_no_desafio', {
+    p_slug: slug,
+    p_day: dia,
+    p_feito: feito,
+  });
+
+  const mensagem = erroDaMarcacao(error ? 'erro' : (data ?? 'erro'));
+  if (mensagem) return mensagem;
+
+  if (feito) await supabase.rpc('concluir_desafio', { p_slug: slug });
+
+  revalidatePath('/desafios');
+  revalidatePath(`/desafios/${slug}`);
+  revalidatePath('/hoje');
+
+  return null;
 }
 
 /**

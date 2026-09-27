@@ -11,6 +11,14 @@ import { addDays, daysBetween, isValidDay, type DayKey } from '@/services/calend
  * sempre: quem treina 23h50 treinou hoje.
  */
 
+/**
+ * De onde sai o dia cumprido.
+ *
+ * `treino` conta os treinos terminados; `alimentacao` conta os dias que a
+ * própria pessoa marcou como vencidos. Janela, meta e folga são as mesmas.
+ */
+export type TipoDeDesafio = 'treino' | 'alimentacao';
+
 export type Desafio = {
   slug: string;
   title: string;
@@ -20,7 +28,13 @@ export type Desafio = {
   ends_on: DayKey;
   goal: number;
   badge_slug: string | null;
+  kind: TipoDeDesafio;
 };
+
+/** O nome do tipo, para o rótulo das telas. */
+export function rotuloDoTipo(kind: TipoDeDesafio): string {
+  return kind === 'alimentacao' ? 'Desafio de alimentação' : 'Desafio de treino';
+}
 
 /** Onde o desafio está na linha do tempo. */
 export type Fase = 'antes' | 'durante' | 'depois';
@@ -117,11 +131,18 @@ export function progressoNoDesafio(
  * estado é decisão do produto, e decisão de produto se testa. O tom segue o do
  * app — informa, não cobra, e nunca finge que está tudo bem quando não está.
  */
-export function recadoDoDesafio(progresso: Progresso, meta: number): string {
+export function recadoDoDesafio(
+  progresso: Progresso,
+  meta: number,
+  kind: TipoDeDesafio = 'treino',
+): string {
   const { fase, cumpridos, faltam, folga, concluido, hoje, alcancavel } = progresso;
+  const alimentacao = kind === 'alimentacao';
 
+  // o recado só aparece para quem já está dentro: "entre agora" dizia a quem
+  // tinha acabado de entrar que ainda faltava entrar
   if (fase === 'antes') {
-    return 'Começa em breve. Entre agora para não deixar o primeiro dia passar.';
+    return 'Começa em breve. Você já está dentro — o primeiro dia conta.';
   }
 
   if (concluido) {
@@ -131,22 +152,132 @@ export function recadoDoDesafio(progresso: Progresso, meta: number): string {
   }
 
   if (fase === 'depois') {
-    return `O desafio terminou com ${cumpridos} de ${meta} dias. Ficou o que você treinou — isso não some.`;
+    return alimentacao
+      ? `O desafio terminou com ${cumpridos} de ${meta} dias vencidos. Cada um deles aconteceu — isso não some.`
+      : `O desafio terminou com ${cumpridos} de ${meta} dias. Ficou o que você treinou — isso não some.`;
   }
 
   if (!alcancavel) {
-    return `A meta deste mês não sai mais, e tudo bem. Continue treinando: a sequência e as insígnias seguem valendo.`;
+    // em comida, "não sai mais" não pode soar como "desista": cada dia vencido
+    // continua sendo um dia bom, com ou sem insígnia
+    return alimentacao
+      ? 'A meta não sai mais, e tudo bem. Cada dia que você vencer daqui para a frente continua valendo.'
+      : `A meta deste mês não sai mais, e tudo bem. Continue treinando: a sequência e as insígnias seguem valendo.`;
   }
 
   if (!hoje) {
+    if (alimentacao) {
+      // nunca "hoje não pode faltar": pressão sobre comida é o caminho para a
+      // culpa, e culpa derruba desafio mais rápido do que doce
+      return folga <= 0
+        ? `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'} e a folga acabou. Hoje ainda está em aberto.`
+        : `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}. Hoje ainda está em aberto.`;
+    }
+
     return folga <= 0
       ? `Hoje não pode faltar: ${faltam} ${faltam === 1 ? 'dia' : 'dias'} para a meta e nenhum de folga.`
       : `Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}. Hoje ainda está em aberto.`;
   }
 
+  const garantido = alimentacao ? 'Dia vencido.' : 'Dia garantido.';
+
   return folga <= 2
-    ? `Dia garantido. Faltam ${faltam} e a folga está curta — ${folga} ${folga === 1 ? 'dia' : 'dias'}.`
-    : `Dia garantido. Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}.`;
+    ? `${garantido} Faltam ${faltam} e a folga está curta — ${folga} ${folga === 1 ? 'dia' : 'dias'}.`
+    : `${garantido} Faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}.`;
+}
+
+// -----------------------------------------------------------------------------
+// Desafio de marcação (alimentação)
+// -----------------------------------------------------------------------------
+
+/**
+ * Os dias que ainda dá para marcar: hoje e ontem, dentro da janela.
+ *
+ * É a mesma regra de `marcar_dia_no_desafio`, no banco. Aqui ela decide quais
+ * botões aparecem; lá ela decide o que é gravado. Se as duas discordarem, a
+ * tela oferece um toque que o banco recusa — e a mensagem de erro explica.
+ */
+export function diasMarcaveis(desafio: Pick<Desafio, 'starts_on' | 'ends_on'>, hoje: DayKey): DayKey[] {
+  if (!isValidDay(hoje)) return [];
+
+  return [hoje, addDays(hoje, -1)].filter(
+    (dia) => dia >= desafio.starts_on && dia <= desafio.ends_on,
+  );
+}
+
+export type EstadoDoDia = 'vencido' | 'em_aberto' | 'passou' | 'futuro';
+
+export type PontoDaLinha = {
+  dia: DayKey;
+  /** "Dia 1", "Dia 2"… — a contagem do desafio, não a do calendário. */
+  numero: number;
+  estado: EstadoDoDia;
+  /** Ainda dá para marcar ou desmarcar este dia. */
+  marcavel: boolean;
+  hoje: boolean;
+};
+
+/**
+ * A linha do tempo do desafio: um ponto por dia, com o estado de cada um.
+ *
+ * `passou` é o dia que ficou para trás sem marca. Não se chama "falhou" de
+ * propósito: o app não sabe se a pessoa escorregou ou só esqueceu de marcar,
+ * e não vai tratar como fracasso o que ele não sabe.
+ */
+export function linhaDoTempo(
+  desafio: Pick<Desafio, 'starts_on' | 'ends_on'>,
+  dias: readonly string[],
+  hoje: DayKey,
+): PontoDaLinha[] {
+  const vencidos = new Set(dias);
+  const marcaveis = new Set(diasMarcaveis(desafio, hoje));
+
+  return diasDoDesafio(desafio).map((dia, i) => {
+    const marcavel = marcaveis.has(dia);
+    const estado: EstadoDoDia = vencidos.has(dia)
+      ? 'vencido'
+      : dia > hoje
+        ? 'futuro'
+        : marcavel
+          ? 'em_aberto'
+          : 'passou';
+
+    return { dia, numero: i + 1, estado, marcavel, hoje: dia === hoje };
+  });
+}
+
+/** Linha do tempo em semanas de sete, para desenhar uma fileira por semana. */
+export function emSemanas<T>(pontos: readonly T[]): T[][] {
+  const semanas: T[][] = [];
+  for (let i = 0; i < pontos.length; i += 7) semanas.push(pontos.slice(i, i + 7));
+  return semanas;
+}
+
+/**
+ * A frase que volta depois de marcar, a partir do código do banco.
+ *
+ * Mora aqui porque cada código é um caso de produto: "fora do prazo" precisa
+ * explicar a regra de hoje-ou-ontem, e não só dizer que não deu.
+ */
+export function erroDaMarcacao(codigo: string): string | null {
+  switch (codigo) {
+    case 'ok':
+      return null;
+    case 'sem_sessao':
+      return 'Sua sessão expirou. Entre de novo para marcar o dia.';
+    case 'nao_participa':
+      return 'Você ainda não está neste desafio. Entre nele para marcar os dias.';
+    case 'fora_da_janela':
+      return 'Esse dia está fora do período do desafio.';
+    case 'fora_do_prazo':
+      return 'Dá para marcar só hoje e ontem. Os dias anteriores ficam como estão.';
+    case 'nao_encontrado':
+      return 'Este desafio não está mais aberto.';
+    case 'nao_e_de_marcar':
+      return 'Neste desafio os dias contam sozinhos, pelos treinos.';
+    default:
+      return 'Não conseguimos marcar agora. Confira a conexão e tente de novo.';
+  }
 }
 
 /**
@@ -240,6 +371,53 @@ export function desafioEmDestaque<T extends Pick<Desafio, 'starts_on' | 'ends_on
     .sort((a, b) => a.starts_on.localeCompare(b.starts_on));
 
   return porVir[0] ?? null;
+}
+
+export type DesafioNoHoje<T> = { desafio: T; papel: 'em_curso' | 'convite' };
+
+/**
+ * Os desafios que aparecem na tela de Hoje.
+ *
+ * Antes era um só, e o próximo esperava o atual acabar: o Desafio de Outubro
+ * ficava invisível até o dia 1º — justamente quando as pessoas já deveriam ter
+ * entrado. Agora a tela mostra, por tipo:
+ *
+ * - o desafio em curso (se houver dois, o mesmo critério do destaque, mas o
+ *   que a pessoa já está dentro ganha — é o número dela que importa);
+ * - o próximo a começar, como convite, assim que for criado.
+ *
+ * Por tipo porque treino e alimentação não competem: quem está no desafio do
+ * mês e no de açúcar precisa ver os dois. No máximo quatro cartões, e só
+ * quando existe tudo isso ao mesmo tempo.
+ */
+export function desafiosDoHoje<
+  T extends Pick<Desafio, 'starts_on' | 'ends_on' | 'kind'> & {
+    sort_order?: number;
+    participando?: boolean;
+  },
+>(desafios: readonly T[], hoje: DayKey): DesafioNoHoje<T>[] {
+  const ordenar = (a: T, b: T) =>
+    Number(Boolean(b.participando)) - Number(Boolean(a.participando)) ||
+    (b.sort_order ?? 0) - (a.sort_order ?? 0) ||
+    b.starts_on.localeCompare(a.starts_on);
+
+  const emCurso: DesafioNoHoje<T>[] = [];
+  const convites: DesafioNoHoje<T>[] = [];
+
+  for (const kind of ['treino', 'alimentacao'] as const) {
+    const doTipo = desafios.filter((d) => d.kind === kind);
+
+    const atual = doTipo.filter((d) => d.starts_on <= hoje && d.ends_on >= hoje).sort(ordenar)[0];
+    if (atual) emCurso.push({ desafio: atual, papel: 'em_curso' });
+
+    const proximo = doTipo
+      .filter((d) => d.starts_on > hoje)
+      .sort((a, b) => a.starts_on.localeCompare(b.starts_on))[0];
+    if (proximo) convites.push({ desafio: proximo, papel: 'convite' });
+  }
+
+  // o que está valendo agora vem antes do que ainda vai começar
+  return [...emCurso, ...convites];
 }
 
 // -----------------------------------------------------------------------------
