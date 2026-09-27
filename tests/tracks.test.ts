@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   estadoDaSessao,
   progressoNaTrilha,
+  ehDescanso,
   recadoDaTrilha,
   semanasDaTrilha,
   type Sessao,
@@ -170,15 +171,15 @@ describe('agrupamento por semana', () => {
 describe('o recado da tela', () => {
   it('no começo, convida sem cobrar', () => {
     const p = progressoNaTrilha(SESSOES, [], INICIO, INICIO);
-    expect(recadoDaTrilha(p)).toContain('Sessão 1 de 28');
+    expect(recadoDaTrilha(p)).toContain('Dia 1 de 28');
   });
 
   it('quem treinou hoje ouve que o dia está fechado e qual é a próxima', () => {
     const p = progressoNaTrilha(SESSOES, dias(1, 2), INICIO, '2026-09-02');
     const recado = recadoDaTrilha(p);
 
-    expect(recado).toContain('Sessão 2 está feita');
-    expect(recado).toContain('Sessão 3');
+    expect(recado).toContain('Dia 2 está feito');
+    expect(recado).toContain('dia 3');
   });
 
   it('depois de uma pausa, reconhece a ausência sem cobrar', () => {
@@ -186,19 +187,19 @@ describe('o recado da tela', () => {
     const recado = recadoDaTrilha(p);
 
     expect(recado).toContain('6 dias sem treinar');
-    expect(recado).toContain('sessão 3');
+    expect(recado).toContain('dia 3');
     // nunca cobra: sem "você deveria", sem "atrasado", sem "perdeu"
     expect(recado).not.toMatch(/atras|perde|deveria/i);
   });
 
   it('dois dias parados ainda não viram assunto', () => {
     const p = progressoNaTrilha(SESSOES, dias(1, 2), INICIO, '2026-09-04');
-    expect(recadoDaTrilha(p)).toContain('Sessão 3 de 28');
+    expect(recadoDaTrilha(p)).toContain('Dia 3 de 28');
   });
 
   it('a última sessão é anunciada como última', () => {
     const p = progressoNaTrilha(SESSOES, dias(...Array.from({ length: 27 }, (_, i) => i + 1)), INICIO, '2026-09-28');
-    expect(recadoDaTrilha(p)).toContain('É a última');
+    expect(recadoDaTrilha(p)).toContain('É o último');
   });
 
   it('no fim, fecha o arco e devolve a biblioteca', () => {
@@ -218,5 +219,40 @@ describe('o recado da tela', () => {
     for (const cenario of cenarios) {
       expect(recadoDaTrilha(cenario)).not.toMatch(/peso|kg|gordura|magr|barriga|dieta/i);
     }
+  });
+});
+
+describe('o dia de descanso da trilha', () => {
+  // a trilha do novato: seis de treino, um de descanso
+  const COM_DESCANSO: Sessao[] = Array.from({ length: 14 }, (_, indice) => {
+    const position = indice + 1;
+    const descanso = position % 7 === 0;
+    return {
+      position,
+      week: Math.ceil(position / 7),
+      title: descanso ? 'Descanso' : `Treino ${position}`,
+      focus: descanso ? 'descanso' : 'forca',
+      note: 'nota da sessão',
+      templateId: descanso ? null : `template-${position}`,
+    };
+  });
+
+  it('depois de seis dias, o sétimo é descanso — e a tela diz como cumpri-lo', () => {
+    const p = progressoNaTrilha(COM_DESCANSO, dias(1, 2, 3, 4, 5, 6), INICIO, '2026-09-07');
+    expect(p.atual && ehDescanso(p.atual)).toBe(true);
+    expect(recadoDaTrilha(p)).toMatch(/Dia 7 de 14 é descanso/);
+    expect(recadoDaTrilha(p)).toMatch(/treine, se preferir: também conta/);
+  });
+
+  it('o descanso registrado conta como dia cumprido', () => {
+    // a lista de dias vem do banco com treinos e descansos juntos
+    const p = progressoNaTrilha(COM_DESCANSO, dias(1, 2, 3, 4, 5, 6, 7), INICIO, '2026-09-07');
+    expect(p.feitas).toBe(7);
+    expect(p.atual?.position).toBe(8);
+  });
+
+  it('com o sexto dia feito, avisa que o próximo é descanso', () => {
+    const p = progressoNaTrilha(COM_DESCANSO, dias(1, 2, 3, 4, 5, 6), INICIO, '2026-09-06');
+    expect(recadoDaTrilha(p)).toMatch(/próximo é descanso/);
   });
 });

@@ -206,6 +206,31 @@ function CuboDeAcucar({ cor, brilho, fundo }: { cor: string; brilho: string; fun
   );
 }
 
+/**
+ * Calendário cumprido: a Disciplina, da Trilha do Iniciante.
+ *
+ * Seis dias marcados numa folha de calendário — a semana da trilha, seis
+ * treinos e o descanso que não se marca. Disciplina não tem pico para desenhar:
+ * é dia atrás de dia, e é isso que o emblema mostra.
+ */
+function CalendarioCumprido({ cor, brilho }: { cor: string; brilho: string }) {
+  const marcas = [17.5, 24, 30.5].flatMap((x) => [28, 34].map((y) => [x, y] as const));
+
+  return (
+    <g strokeLinejoin="round" strokeLinecap="round">
+      <rect x="11.5" y="17" width="25" height="22" rx="3" fill="none" stroke={cor} strokeWidth="2" />
+      <rect x="12.5" y="18" width="23" height="4.5" rx="1.5" fill={brilho} fillOpacity="0.35" />
+      <path d="M11.5 23 H36.5" stroke={cor} strokeWidth="2" />
+      <path d="M18.5 14.5 V19.5 M29.5 14.5 V19.5" stroke={cor} strokeWidth="2.2" />
+      <g fill="none" stroke={brilho} strokeWidth="1.9">
+        {marcas.map(([x, y]) => (
+          <path key={`${x}-${y}`} d={`M${x - 1.7} ${y + 0.1} L${x - 0.5} ${y + 1.3} L${x + 1.8} ${y - 1.4}`} />
+        ))}
+      </g>
+    </g>
+  );
+}
+
 /** Falange: escudos encostados, que é o ponto da formação. */
 function Falange({ cor, brilho }: { cor: string; brilho: string }) {
   return (
@@ -508,6 +533,7 @@ const DESENHOS: Record<string, (p: Paleta) => React.ReactNode> = {
   gancho: (p) => <Barra cor={p.traco} />,
   muralha: (p) => <Muralha cor={p.traco} />,
   'sem-acucar': (p) => <CuboDeAcucar cor={p.traco} brilho={p.brilho} fundo={p.fundo} />,
+  disciplina: (p) => <CalendarioCumprido cor={p.traco} brilho={p.brilho} />,
   falange: (p) => <Falange cor={p.traco} brilho={p.brilho} />,
   fundador: (p) => <Louro cor={p.traco} dentro={<Estrela cor={p.brilho} r={8} />} />,
 

@@ -9,6 +9,70 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · A Trilha do Iniciante vira o programa de 30 dias do novato
+
+O pedido: um programa para quem entra no app pela primeira vez. 30 dias, seis
+treinos e um descanso por semana, em casa, leve ("10 polichinelos, descanso, 5
+agachamentos, descanso, 3 flexões"), subindo aos poucos, oferecido a todo
+novato e recusável, com uma medalha de Disciplina no fim.
+
+Isso já existia pela metade: a Trilha do Iniciante (28 sessões de AMRAP de 20
+minutos, sem descanso). Não fiz um segundo programa ao lado, porque dois
+programas de iniciante recriariam o problema que a trilha resolveu. A trilha
+virou o que foi pedido.
+
+### O treino guiado (`method = 'guiado'`)
+
+- `workout_templates` ganhou `rounds`, `rest_seconds` e `round_rest_seconds`.
+- `services/guided.ts`: a sequência (exercício → descanso → próximo, pelas
+  voltas) e o tempo, **calculado a partir dos segundos decorridos do treino**. A
+  pausa congela o descanso sem código a mais, e o telefone no bolso volta no
+  ponto certo.
+- `GuidedPlayer`: um passo por tela, número grande, botão grande. O descanso
+  acaba sozinho e chama o próximo com o som do sino (liberado no toque de
+  "Começar"). Prancha e corrida parada contam sozinhas depois de "Começar";
+  repetição espera "Feito". Também tem "+15 s", "Pular descanso" e "Voltar um
+  passo". O passo mora em `ActiveSession.guia`, no IndexedDB, e sobrevive a
+  fechar o app.
+- Guiado concluído até o fim salva sem a pergunta "rodou só X segundos?": ali o
+  treino curto é o treino, não o engano.
+- Guiado sem exercícios cai no cronômetro comum. Um e2e mostrou o player
+  declarando "Treino completo" no segundo zero com um template vazio.
+
+### O programa (migrations `20260927140000` a `…140200`)
+
+- 30 dias, com descanso nos dias 7, 14, 21 e 28. Três padrões se alternam:
+  Força (polichinelo, agachamento, flexão, prancha), Abdômen (corrida parada,
+  supra, infra, elevação de pernas) e Corpo todo (os cinco misturados).
+- Começa em 10 · 5 · 3 · 15 s com 3 voltas (~10 min) e sobe por semana e na
+  segunda metade de cada semana. Nunca passa de ~19 min: o Corpo todo fica em
+  3 voltas porque, com 4, passava de 20. A flexão fica com joelho apoiado;
+  a prancha sai do joelho na semana 3.
+- **Formatura (dia 30) é o treino do dia 1 com cinco voltas.** A diferença de
+  fôlego é a medida honesta do mês.
+- A progressão foi gerada por script e está escrita por extenso na migration.
+- **O descanso registrado conta como dia da trilha** (`meus_dias_na_trilha`,
+  `concluir_trilha`). O `AGENTS.md` foi atualizado.
+- Medalha **Disciplina** (prata; emblema `disciplina`, um calendário com seis
+  dias marcados). A antiga "Via Ápia", que ninguém tinha, foi removida.
+- **Ordem de publicação:** a estrutura (`…140100`) vai antes do deploy, porque é
+  compatível com o código velho. O programa (`…140200`) vai depois, porque o
+  código velho não sabe o que é sessão de descanso nem treino guiado.
+
+### O convite do novato
+
+- `ConviteDoNovato`, no topo do Hoje, para quem não está em trilha, não recusou
+  e tem menos de 3 treinos. "Agora não" grava `profiles.track_offer_declined_at`
+  e vale em qualquer aparelho. Quem recusou volta a ver a faixa discreta de
+  sempre, e a trilha segue em /trilha.
+- A última tela do cadastro oferece a trilha primeiro, o treino livre em
+  segundo e "conhecer o app" em terceiro.
+- No Hoje, o dia de descanso da trilha tem cartão próprio, com "REGISTRAR MEU
+  DESCANSO" como botão principal e "prefiro treinar — também conta".
+
+**Onde olhar:** `services/guided.ts`, `features/timer/components/guided-player.tsx`,
+`features/tracks/components/novato-offer.tsx`, `e2e/trilha-novato.spec.ts`.
+
 ## 27/09/2026 · Outubro sumiu do Hoje: o açúcar tinha virado treino
 
 Relato: "o de açúcar apareceu no Hoje, o de outubro não". No banco, o

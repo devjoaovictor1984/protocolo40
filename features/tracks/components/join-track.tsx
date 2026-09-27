@@ -43,8 +43,8 @@ export function JoinTrack({ slug, matriculado }: { slug: string; matriculado: bo
         {matriculado
           ? // dito antes do clique: sair apaga o ponto de partida, e é isso que
             // faz a contagem recomeçar. Os treinos ficam no histórico.
-            'Sair apaga o seu ponto de partida: voltar depois recomeça da sessão 1. Seus treinos continuam no histórico.'
-          : 'A trilha é sua e só sua — ninguém vê em que sessão você está. Você pode sair quando quiser.'}
+            'Sair apaga o seu ponto de partida: voltar depois recomeça do dia 1. Seus treinos continuam no histórico.'
+          : 'A trilha é sua e só sua — ninguém vê em que dia você está. Você pode sair quando quiser.'}
       </p>
     </form>
   );

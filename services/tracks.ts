@@ -25,7 +25,8 @@ export type Sessao = {
   title: string;
   focus: TrackFocus;
   note: string;
-  templateId: string;
+  /** O circuito. Nulo na sessão de descanso. */
+  templateId: string | null;
 };
 
 export type Trilha = {
@@ -77,7 +78,11 @@ export const FOCO_LABELS: Record<TrackFocus, string> = {
   mobilidade: 'Mobilidade',
   recuperacao: 'Recuperação',
   referencia: 'Referência',
+  descanso: 'Descanso',
 };
+
+/** Sessão de descanso: não tem treino, e se cumpre registrando o descanso. */
+export const ehDescanso = (sessao: Pick<Sessao, 'focus'>) => sessao.focus === 'descanso';
 
 /**
  * Os dias que contam.
@@ -176,28 +181,33 @@ export function recadoDaTrilha(progresso: Progresso): string {
   const { feitas, total, atual, concluida, treinouHoje, diasParado } = progresso;
 
   if (concluida) {
-    return `Trilha completa: ${total} sessões. Você não é mais iniciante — a biblioteca inteira é sua.`;
+    return `Trilha completa: ${total} dias. Você não é mais iniciante — a biblioteca inteira é sua.`;
   }
 
   if (feitas === 0) {
     return diasParado === null && progresso.diasDesdeInicio > 1
-      ? 'A trilha está esperando a primeira sessão. Ela começa quando você começar.'
-      : `Sessão 1 de ${total}. Vinte minutos, e o resto se resolve depois.`;
+      ? 'A trilha está esperando o primeiro dia. Ela começa quando você começar.'
+      : `Dia 1 de ${total}. Comece leve: o resto se resolve depois.`;
   }
 
   const faltam = total - feitas;
 
   if (treinouHoje) {
-    return atual
-      ? `Sessão ${feitas} está feita. A próxima é a ${atual.position}: ${atual.title}.`
-      : `Sessão ${feitas} está feita.`;
+    if (!atual) return `Dia ${feitas} está feito.`;
+    return ehDescanso(atual)
+      ? `Dia ${feitas} está feito. O próximo é descanso — você merece.`
+      : `Dia ${feitas} está feito. O próximo é o dia ${atual.position}: ${atual.title}.`;
   }
 
   if (diasParado !== null && diasParado >= 3) {
-    return `${diasParado} dias sem treinar, e a trilha não andou sem você: ela continua na sessão ${feitas + 1}.`;
+    return `${diasParado} dias sem treinar, e a trilha não andou sem você: ela continua no dia ${feitas + 1}.`;
   }
 
-  return `Sessão ${feitas + 1} de ${total}. ${
-    faltam === 1 ? 'É a última.' : `Faltam ${faltam} depois desta.`
-  }`;
+  // o descanso é parte do programa, não folga dele: a tela diz como cumpri-lo,
+  // e deixa claro que treinar também vale — a ordem é sugestão, não portaria
+  if (atual && ehDescanso(atual)) {
+    return `Dia ${feitas + 1} de ${total} é descanso. Registre o descanso para seguir — ou treine, se preferir: também conta.`;
+  }
+
+  return `Dia ${feitas + 1} de ${total}. ${faltam === 1 ? 'É o último.' : `Faltam ${faltam} depois deste.`}`;
 }

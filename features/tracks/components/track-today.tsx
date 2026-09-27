@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Map, Play } from 'lucide-react';
+import { BedDouble, ChevronRight, Map, Play } from 'lucide-react';
 
 import { ProgressRing } from '@/components/progress-ring';
 import { ButtonLink } from '@/components/ui/button-link';
+import { RestDayButton } from '@/features/rest/components/rest-day-button';
 import { useToday } from '@/features/session/session-context';
 import { useMeusDias } from '@/features/tracks/use-meus-dias';
 import type { TrilhaCompleta } from '@/features/tracks/repository';
 import { formatClock } from '@/services/duration';
-import { FOCO_LABELS, progressoNaTrilha } from '@/services/tracks';
+import { ehDescanso, FOCO_LABELS, progressoNaTrilha } from '@/services/tracks';
 import type { TrackRow } from '@/types/database';
 
 /**
@@ -53,14 +54,55 @@ export function TrilhaDeHoje({
         <Map aria-hidden className="text-primary size-5 shrink-0" />
         <span className="flex-1">
           <span className="block text-sm font-semibold">
-            A seguir na trilha: sessão {proxima.position}, {proxima.title}
+            {ehDescanso(proxima)
+              ? `A seguir na trilha: dia ${proxima.position}, descanso`
+              : `A seguir na trilha: dia ${proxima.position}, ${proxima.title}`}
           </span>
           <span className="text-muted-foreground text-sm">
-            {progresso.feitas} de {progresso.total} sessões · semana {proxima.week}
+            {progresso.feitas} de {progresso.total} dias · semana {proxima.week}
           </span>
         </span>
         <ChevronRight aria-hidden className="text-muted-foreground size-4" />
       </Link>
+    );
+  }
+
+  /*
+   * O dia de descanso da trilha.
+   *
+   * Descansar é o que o programa pede hoje, então o botão principal é o de
+   * registrar o descanso — é ele que faz a trilha andar. Treinar continua
+   * valendo, e a tela diz isso: a ordem é sugestão, não portaria.
+   */
+  if (ehDescanso(proxima)) {
+    return (
+      <section
+        aria-label="Seu dia de hoje na trilha"
+        className="border-border bg-card flex flex-col items-center gap-5 rounded-2xl border p-6 text-center shadow-sm"
+      >
+        <p className="text-muted-foreground text-xs font-bold tracking-[0.18em] uppercase">
+          Trilha · Dia {proxima.position} de {progresso.total}
+        </p>
+
+        <span className="bg-primary/10 text-primary flex size-20 items-center justify-center rounded-full">
+          <BedDouble aria-hidden className="size-10" />
+        </span>
+
+        <div>
+          <h2 className="text-2xl font-extrabold tracking-tight">Hoje é descanso</h2>
+          <p className="text-muted-foreground mt-2 text-sm leading-relaxed text-balance">{proxima.note}</p>
+        </div>
+
+        <div className="flex w-full flex-col items-center gap-3">
+          <RestDayButton jaDescansou={false} principal />
+          <Link
+            href="/treinos"
+            className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
+          >
+            Prefiro treinar hoje — também conta
+          </Link>
+        </div>
+      </section>
     );
   }
 
@@ -75,7 +117,7 @@ export function TrilhaDeHoje({
 
       <ProgressRing value={progresso.fracao * 100} size={216} strokeWidth={10}>
         <span className="text-muted-foreground text-xs font-bold tracking-[0.18em] uppercase">
-          Sessão {proxima.position} de {progresso.total}
+          Dia {proxima.position} de {progresso.total}
         </span>
         <span className="tnum mt-1 text-5xl font-extrabold tracking-tight">
           {formatClock(proxima.estimatedSeconds || goalSeconds)}
@@ -95,7 +137,7 @@ export function TrilhaDeHoje({
           className="h-16 w-full text-base font-bold"
         >
           <Play aria-hidden className="size-5" />
-          INICIAR SESSÃO {proxima.position}
+          COMEÇAR O DIA {proxima.position}
         </ButtonLink>
 
         {/* a trilha é sugestão, não portaria: sair dela hoje custa um toque */}

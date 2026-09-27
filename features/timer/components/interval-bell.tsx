@@ -70,7 +70,9 @@ export function IntervalBell() {
         setSessao(minha);
 
         const prefs = prefsRef.current;
-        if (!minha || !prefs.ligado || !prefs.ultimo || isPaused(minha)) {
+        // no guiado quem dá o compasso é o próprio guiado: dois sinais
+        // desencontrados no mesmo treino não conduzem ninguém
+        if (!minha || minha.guiado || !prefs.ligado || !prefs.ultimo || isPaused(minha)) {
           ultimoSegundo.current = -1;
           return;
         }

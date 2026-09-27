@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { BedDouble, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,8 +28,19 @@ const MOTIVOS: Record<string, string> = {
   sem_sessao: 'Sua sessão expirou. Entre de novo.',
 };
 
-export function RestDayButton({ jaDescansou }: { jaDescansou: boolean }) {
+export function RestDayButton({
+  jaDescansou,
+  principal = false,
+}: {
+  jaDescansou: boolean;
+  /**
+   * No dia de descanso da trilha, descansar É o que o programa pede — aí o
+   * botão deixa de ser a segunda opção discreta e vira o botão do dia.
+   */
+  principal?: boolean;
+}) {
   const hoje = useToday();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [salvando, setSalvando] = useState(false);
 
@@ -58,6 +70,9 @@ export function RestDayButton({ jaDescansou }: { jaDescansou: boolean }) {
       }
 
       await recarregar(queryClient, ['dashboard'], ['workouts']);
+      // a trilha e o "já descansou" vêm do servidor: sem isto o dia de
+      // descanso ficava pedindo o descanso que acabou de ser registrado
+      router.refresh();
       toast.success('Descanso registrado.', {
         description: 'Recuperar faz parte. Sua sequência continua.',
       });
@@ -70,17 +85,17 @@ export function RestDayButton({ jaDescansou }: { jaDescansou: boolean }) {
 
   return (
     <Button
-      variant="ghost"
-      className="text-muted-foreground h-11"
+      variant={principal ? 'default' : 'ghost'}
+      className={principal ? 'h-16 w-full text-base font-bold' : 'text-muted-foreground h-11'}
       disabled={salvando}
       onClick={() => void registrar()}
     >
       {salvando ? (
         <Loader2 aria-hidden className="size-4 animate-spin" />
       ) : (
-        <BedDouble aria-hidden className="size-4" />
+        <BedDouble aria-hidden className={principal ? 'size-5' : 'size-4'} />
       )}
-      Hoje é dia de descanso
+      {principal ? 'REGISTRAR MEU DESCANSO' : 'Hoje é dia de descanso'}
     </Button>
   );
 }

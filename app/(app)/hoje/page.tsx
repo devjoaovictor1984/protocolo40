@@ -42,6 +42,23 @@ export default async function DashboardPage() {
   // menos em toda abertura de quem já entrou
   const trilhaOferecida = trilha ? null : await trilhaEmDestaque();
 
+  // o convite grande do novato só existe para quem não recusou; a medalha é
+  // buscada só nesse caso, que é o único em que ela aparece aqui
+  const conviteDoNovato =
+    trilhaOferecida && !profile.track_offer_declined_at
+      ? {
+          medalha: trilhaOferecida.badge_slug
+            ? ((
+                await supabase
+                  .from('badges')
+                  .select('name, tier, emblem')
+                  .eq('slug', trilhaOferecida.badge_slug)
+                  .maybeSingle()
+              ).data ?? null)
+            : null,
+        }
+      : null;
+
   // as conquistadas já vêm da mais recente para a mais antiga
   const ultima = conquistas.conquistadas[0] ?? null;
 
@@ -61,6 +78,7 @@ export default async function DashboardPage() {
       meta={meta}
       trilha={trilha}
       trilhaOferecida={trilhaOferecida}
+      conviteDoNovato={conviteDoNovato}
     />
   );
 }

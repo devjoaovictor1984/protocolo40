@@ -18,6 +18,7 @@ import {
   toggleMode as toggleSessionMode,
   type TimerSession,
 } from '@/services/duration';
+import type { EstadoDoGuia } from '@/services/guided';
 import type { ActiveSession } from '@/types/offline';
 
 /**
@@ -34,6 +35,8 @@ export type StartOptions = {
   templateTitle?: string | null;
   title?: string | null;
   targetSeconds?: number;
+  /** Treino guiado: marca a sessão para o sino de intervalo não tocar por cima. */
+  guiado?: boolean;
 };
 
 export function useTimer() {
@@ -167,6 +170,7 @@ export function useTimer() {
         title: options.title ?? options.templateTitle ?? null,
         rounds: 0,
         checked: [],
+        guiado: options.guiado ?? false,
         updatedAt: Date.now(),
       };
 
@@ -189,6 +193,22 @@ export function useTimer() {
     setSession((current) => {
       if (!current) return current;
       const updated = { ...current, rounds: Math.max(0, rounds) };
+      void writeSession({ ...updated, updatedAt: Date.now() });
+      return updated;
+    });
+  }, []);
+
+  /**
+   * Treino guiado: avança (ou volta) de passo e grava junto as voltas feitas.
+   *
+   * Um lugar só para os dois porque são o mesmo fato: quem chega ao descanso
+   * entre voltas fechou uma volta, e o treino gravado precisa dizer isso mesmo
+   * que a pessoa encerre ali.
+   */
+  const setGuia = useCallback((guia: EstadoDoGuia, rounds: number) => {
+    setSession((current) => {
+      if (!current) return current;
+      const updated = { ...current, guia, rounds: Math.max(0, rounds) };
       void writeSession({ ...updated, updatedAt: Date.now() });
       return updated;
     });
@@ -257,6 +277,7 @@ export function useTimer() {
     toggleMode,
     addMinutes,
     setRounds,
+    setGuia,
     toggleChecked,
     restart,
     finish,

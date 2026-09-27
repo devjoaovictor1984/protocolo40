@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 
 import { PageHeader } from '@/components/page-header';
+import { MedalhaEmJogo } from '@/features/badges/components/medalha-em-jogo';
 import { conferirConclusaoDaTrilha } from '@/features/tracks/actions';
 import { JoinTrack } from '@/features/tracks/components/join-track';
 import { TrackMap } from '@/features/tracks/components/track-map';
 import { TrackProgress } from '@/features/tracks/components/track-progress';
 import { minhaTrilha, trilhaEmDestaque, trilhaPorSlug } from '@/features/tracks/repository';
 import { requireSession } from '@/lib/auth/session';
+import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Trilha',
@@ -48,16 +50,35 @@ export default async function TrilhaPage() {
    * para receber o que já conquistou. A função do banco confere os dias e é
    * idempotente: chamar de novo depois de concluída não faz nada.
    */
-  if (matricula && !matricula.completedAt) {
-    await conferirConclusaoDaTrilha(trilha.slug);
-  }
+  const concluiuAgora = matricula && !matricula.completedAt ? await conferirConclusaoDaTrilha(trilha.slug) : false;
+  const conquistada = Boolean(matricula?.completedAt) || concluiuAgora;
+
+  const supabase = await createClient();
+  const { data: medalha } = trilha.badge_slug
+    ? await supabase
+        .from('badges')
+        .select('name, description, tier, emblem')
+        .eq('slug', trilha.badge_slug)
+        .maybeSingle()
+    : { data: null };
+
+  const blocoDaMedalha = medalha ? (
+    <MedalhaEmJogo
+      medalha={medalha}
+      conquistada={conquistada}
+      exigencia={`Sai com os ${dados.sessoes.length} dias da trilha feitos — treinos e descansos, na ordem que a vida deixar.`}
+    />
+  ) : null;
 
   return (
     <div className="flex flex-col gap-6 py-6">
       <PageHeader titulo={trilha.title} descricao={trilha.tagline ?? undefined} />
 
       {matricula ? (
-        <TrackProgress dados={dados} />
+        <>
+          <TrackProgress dados={dados} />
+          {blocoDaMedalha}
+        </>
       ) : (
         <>
           {/* a promessa vem antes do mapa: quem ainda não entrou precisa saber
@@ -67,6 +88,8 @@ export default async function TrilhaPage() {
               <p key={indice}>{paragrafo}</p>
             ))}
           </div>
+
+          {blocoDaMedalha}
 
           <JoinTrack slug={trilha.slug} matriculado={false} />
 

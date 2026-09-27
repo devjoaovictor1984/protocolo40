@@ -58,6 +58,10 @@ export type CatalogTemplate = {
   /** Circuito que só existe dentro de uma trilha: fica fora da lista de /treinos. */
   programOnly: boolean;
   isFavorite: boolean;
+  /** Treino guiado: voltas e descansos. Nulos nos outros métodos. */
+  rounds: number | null;
+  restSeconds: number | null;
+  roundRestSeconds: number | null;
   exercises: CatalogTemplateExercise[];
 };
 
@@ -99,7 +103,7 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
   const { data, error } = await supabase
     .from('workout_templates')
     .select(
-      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, sort_order, is_favorite, program_only, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(slug, name, modality))',
+      'id, title, subtitle, description, method, level, place, tags, estimated_seconds, sort_order, is_favorite, program_only, rounds, rest_seconds, round_rest_seconds, owner_id, workout_template_exercises(exercise_id, sets, repetitions, duration_seconds, distance_meters, weight_kg, order_index, exercises(slug, name, modality))',
     )
     .is('deleted_at', null)
     .eq('is_active', true)
@@ -125,6 +129,9 @@ async function fetchTemplates(): Promise<CatalogTemplate[]> {
     isSystem: row.owner_id === null,
     programOnly: row.program_only,
     isFavorite: row.is_favorite,
+    rounds: row.rounds ?? null,
+    restSeconds: row.rest_seconds ?? null,
+    roundRestSeconds: row.round_rest_seconds ?? null,
     exercises: (row.workout_template_exercises ?? [])
       .map((item) => ({
         exerciseId: item.exercise_id,

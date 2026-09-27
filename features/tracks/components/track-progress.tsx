@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { Check, Play, Trophy } from 'lucide-react';
 
 import { ButtonLink } from '@/components/ui/button-link';
+import { RestDayButton } from '@/features/rest/components/rest-day-button';
 import { useToday } from '@/features/session/session-context';
 import { useMeusDias } from '@/features/tracks/use-meus-dias';
 import { TrackMap } from '@/features/tracks/components/track-map';
 import type { TrilhaCompleta } from '@/features/tracks/repository';
 import { cn } from '@/lib/utils';
 import { formatDurationShort } from '@/services/duration';
-import { FOCO_LABELS, progressoNaTrilha, recadoDaTrilha } from '@/services/tracks';
+import { ehDescanso, FOCO_LABELS, progressoNaTrilha, recadoDaTrilha } from '@/services/tracks';
 
 /**
  * A trilha em curso.
@@ -40,7 +41,7 @@ export function TrackProgress({ dados }: { dados: TrilhaCompleta }) {
             {progresso.feitas}
             <span className="text-muted-foreground text-lg font-normal">
               {' '}
-              de {progresso.total} sessões
+              de {progresso.total} dias
             </span>
           </p>
 
@@ -64,11 +65,11 @@ export function TrackProgress({ dados }: { dados: TrilhaCompleta }) {
         <Formatura />
       ) : atual ? (
         <section
-          aria-label="Sua próxima sessão"
+          aria-label="Seu próximo dia"
           className="border-primary/40 bg-primary/8 flex flex-col gap-4 rounded-2xl border p-5"
         >
           <p className="text-primary text-[11px] font-bold tracking-[0.18em] uppercase">
-            Sessão {atual.position} · Semana {atual.week} · {FOCO_LABELS[atual.focus]}
+            Dia {atual.position} · Semana {atual.week} · {FOCO_LABELS[atual.focus]}
           </p>
 
           <div>
@@ -80,13 +81,18 @@ export function TrackProgress({ dados }: { dados: TrilhaCompleta }) {
 
           <p className="text-sm leading-relaxed">{atual.note}</p>
 
-          <ButtonLink
-            href={`/treinar?template=${atual.templateId}`}
-            className="h-14 text-base font-bold"
-          >
-            <Play aria-hidden className="size-4" />
-            INICIAR {formatDurationShort(atual.estimatedSeconds).replace(' min', ':00')}
-          </ButtonLink>
+          {/* o descanso se cumpre registrando o descanso, não abrindo o cronômetro */}
+          {ehDescanso(atual) || !atual.templateId ? (
+            <RestDayButton jaDescansou={false} principal />
+          ) : (
+            <ButtonLink
+              href={`/treinar?template=${atual.templateId}`}
+              className="h-14 text-base font-bold"
+            >
+              <Play aria-hidden className="size-4" />
+              COMEÇAR O DIA {atual.position} · {formatDurationShort(atual.estimatedSeconds)}
+            </ButtonLink>
+          )}
         </section>
       ) : null}
 

@@ -24,6 +24,7 @@ import { useTimer } from "@/features/timer/use-timer";
 import { saveWorkout } from "@/features/workouts/repository";
 import { useOnlineStatus } from "@/lib/offline/network";
 import { cn } from "@/lib/utils";
+import { GuidedPlayer } from "@/features/timer/components/guided-player";
 import { IntervalControl } from "@/features/timer/components/interval-control";
 import {
   useIntervalPrefs,
@@ -97,6 +98,7 @@ export function TimerScreen({
       templateId: template?.id ?? templateId ?? null,
       templateTitle: template?.title ?? null,
       targetSeconds: template?.estimatedSeconds,
+      guiado: template?.method === "guiado",
     });
   }, [autoStart, template, templateId, timer]);
 
@@ -125,11 +127,16 @@ export function TimerScreen({
   }
 
   const session = timer.session!;
+  // o treino guiado conduz sozinho: anel, sino e contagem manual de voltas
+  // dariam três respostas diferentes para "o que eu faço agora?"
+  const guiado = template?.method === "guiado" && (template.rounds ?? 0) > 0 && template.exercises.length > 0;
 
-  async function handleFinish() {
+  async function handleFinish({ concluido = false }: { concluido?: boolean } = {}) {
     // Um treino de poucos segundos quase sempre é toque errado. Perguntar aqui
-    // evita um registro sem sentido no histórico e na sequência.
-    if (timer.elapsed < MIN_MEANINGFUL_SECONDS) {
+    // evita um registro sem sentido no histórico e na sequência — menos quando
+    // o guiado foi feito até o último exercício: aí o curto é o treino, não o
+    // engano.
+    if (!concluido && timer.elapsed < MIN_MEANINGFUL_SECONDS) {
       const confirmado = window.confirm(
         `O cronômetro rodou ${timer.elapsed} ${timer.elapsed === 1 ? "segundo" : "segundos"}. ` +
           "Registrar assim mesmo?",
@@ -231,6 +238,17 @@ export function TimerScreen({
         </Button>
       </header>
 
+      {guiado && template ? (
+        <div className="flex flex-1 flex-col items-center px-6 pb-2">
+          <GuidedPlayer
+            template={template}
+            timer={timer}
+            preferencias={preferencias}
+            onFinalizar={() => void handleFinish({ concluido: true })}
+            salvando={saving}
+          />
+        </div>
+      ) : (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
         <ProgressRing
           value={timer.ratio}
@@ -349,6 +367,7 @@ export function TimerScreen({
           </div>
         </div>
       </div>
+      )}
 
       <footer className="pb-safe flex flex-col items-center gap-3 px-6 pt-4">
         <div className="flex w-full max-w-sm gap-4">
@@ -457,6 +476,7 @@ function ReadyScreen({
   onAntesDeComecar: () => Promise<boolean>;
 }) {
   const router = useRouter();
+  const guiado = template?.method === "guiado" && (template.rounds ?? 0) > 0 && template.exercises.length > 0;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -481,9 +501,16 @@ function ReadyScreen({
             {formatClock(template?.estimatedSeconds ?? 1200)}
           </span>
           <span className="text-muted-foreground mt-2 text-xs font-medium tracking-wide uppercase">
-            Sua meta de hoje
+            {guiado ? "Tempo aproximado" : "Sua meta de hoje"}
           </span>
         </ProgressRing>
+
+        {guiado && template ? (
+          <p className="text-sm font-semibold">
+            {template.rounds} {template.rounds === 1 ? "volta" : "voltas"}
+            {template.restSeconds ? ` · descanso de ${template.restSeconds} s entre exercícios` : ""}
+          </p>
+        ) : null}
 
         {template?.description ? (
           <p className="text-muted-foreground max-w-xs text-sm text-balance">
@@ -527,36 +554,43 @@ function ReadyScreen({
           O sino se escolhe aqui, com o relógio parado. Escolher depois entrava
           no meio de um ciclo já em curso, e o primeiro sinal soava fora de hora.
         */}
-        <IntervalControl
-          config={intervalo}
-          momento={null}
-          preferencias={preferencias}
-          preparo
-          onEscolher={onEscolher}
-          onPreferencias={onPreferencias}
-        />
+        {/* o guiado tem o próprio compasso — o sino de intervalo brigaria com ele */}
+        {guiado ? null : (
+          <IntervalControl
+            config={intervalo}
+            momento={null}
+            preferencias={preferencias}
+            preparo
+            onEscolher={onEscolher}
+            onPreferencias={onPreferencias}
+          />
+        )}
 
         <Button
           className="h-16 w-full max-w-sm text-base font-bold"
           onClick={async () => {
             // o mesmo toque que começa o treino libera o áudio: é a única
             // janela em que o navegador aceita, e agora ela coincide com o
-            // instante em que o cronômetro zera
-            if (intervalo) await onAntesDeComecar();
+            // instante em que o cronômetro zera. O guiado sempre precisa: é
+            // o som que chama o próximo exercício no fim do descanso.
+            if (intervalo || guiado) await onAntesDeComecar();
 
             await timer.start({
               templateId: template?.id ?? templateId ?? null,
               templateTitle: template?.title ?? null,
               targetSeconds: template?.estimatedSeconds,
+              guiado,
             });
           }}
         >
           <Play aria-hidden className="size-5" />
-          INICIAR MEUS 20 MINUTOS
+          {guiado ? "COMEÇAR TREINO GUIADO" : "INICIAR MEUS 20 MINUTOS"}
         </Button>
 
         <p className="text-muted-foreground text-xs">
-          Pode parar antes ou passar do tempo. O que conta é ter feito.
+          {guiado
+            ? "O app mostra um exercício por vez e conta o descanso para você."
+            : "Pode parar antes ou passar do tempo. O que conta é ter feito."}
         </p>
       </footer>
     </div>

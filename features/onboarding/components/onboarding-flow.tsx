@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Map, Play } from 'lucide-react';
 
 import { Wordmark } from '@/components/brand/wordmark';
 import { Button } from '@/components/ui/button';
@@ -300,7 +300,14 @@ function ChoiceGroup({
   );
 }
 
-/** A tela que fecha o cadastro: um número, uma frase e um botão. */
+/**
+ * A tela que fecha o cadastro.
+ *
+ * Quem acabou de chegar recebe primeiro a trilha: trinta dias guiados, leves, em
+ * casa — a resposta pronta para "o que eu faço?". O treino livre continua ali,
+ * a um toque, para quem já sabe o que quer; e conhecer o app antes também vale.
+ * Três saídas, uma em destaque: oferecer, não impor.
+ */
 function DayOne() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
@@ -310,16 +317,22 @@ function DayOne() {
           Seu protocolo começa hoje.
         </h1>
         <p className="text-muted-foreground mt-3 max-w-xs text-balance">
-          Vinte minutos é a referência. Menos também conta. O que não conta é o dia passar em branco.
+          Se você está começando agora, a Trilha do Iniciante te guia nos primeiros 30 dias: treinos
+          leves em casa, um exercício por vez.
         </p>
       </div>
 
-      <ButtonLink href="/treinar"
-        className="h-16 w-full max-w-sm text-base font-bold"
-      >
-        <Play aria-hidden className="size-5" />
-        INICIAR MEUS 20 MINUTOS
-      </ButtonLink>
+      <div className="flex w-full max-w-sm flex-col items-center gap-3">
+        <ButtonLink href="/trilha" className="h-16 w-full text-base font-bold">
+          <Map aria-hidden className="size-5" />
+          COMEÇAR A TRILHA DE 30 DIAS
+        </ButtonLink>
+
+        <ButtonLink href="/treinar" variant="outline" className="h-14 w-full text-base font-semibold">
+          <Play aria-hidden className="size-4" />
+          Treino livre de 20 minutos
+        </ButtonLink>
+      </div>
 
       <Link href="/hoje" className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4">
         Prefiro conhecer o app primeiro

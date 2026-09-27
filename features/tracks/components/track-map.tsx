@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { Check, Play } from 'lucide-react';
+import { BedDouble, Check, Play } from 'lucide-react';
 
 import type { SessaoDaTela } from '@/features/tracks/repository';
 import { cn } from '@/lib/utils';
 import { formatDurationShort } from '@/services/duration';
-import { FOCO_LABELS, semanasDaTrilha, type EstadoDaSessao } from '@/services/tracks';
+import { ehDescanso, FOCO_LABELS, semanasDaTrilha, type EstadoDaSessao } from '@/services/tracks';
 
 /**
  * O mapa da trilha.
@@ -86,15 +86,20 @@ export function TrackMap({
 function LinhaDaSessao({ sessao, estado }: { sessao: SessaoDaTela; estado: EstadoDaSessao }) {
   const feita = estado === 'feita';
   const atual = estado === 'atual';
+  const descanso = ehDescanso(sessao);
+  const rotulo = `Dia ${sessao.position} — ${sessao.title}${feita ? ', já feito' : ''}`;
 
   return (
-    <Link
-      href={`/treinar?template=${sessao.templateId}`}
-      aria-label={`Sessão ${sessao.position} — ${sessao.title}${feita ? ', já feita' : ''}`}
+    <Caixa
+      // descanso não tem treino para abrir: é uma linha, não um link. Cumpre-se
+      // registrando o descanso na tela de Hoje.
+      href={descanso || !sessao.templateId ? null : `/treinar?template=${sessao.templateId}`}
+      rotulo={rotulo}
       className={cn(
         'flex gap-3 rounded-xl border p-3 transition-colors',
         atual ? 'border-primary bg-primary/8' : 'border-border hover:bg-muted',
         feita && 'opacity-70',
+        descanso && !atual && 'border-dashed',
       )}
     >
       {/*
@@ -111,14 +116,16 @@ function LinhaDaSessao({ sessao, estado }: { sessao: SessaoDaTela; estado: Estad
           !feita && !atual && 'bg-muted text-muted-foreground',
         )}
       >
-        {feita ? <Check className="size-4" /> : sessao.position}
+        {feita ? <Check className="size-4" /> : descanso ? <BedDouble className="size-4" /> : sessao.position}
       </span>
 
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-2">
           <span className="font-semibold">{sessao.title}</span>
           <span className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
-            {FOCO_LABELS[sessao.focus]} · {formatDurationShort(sessao.estimatedSeconds)}
+            {descanso
+              ? `Dia ${sessao.position} · dia livre`
+              : `Dia ${sessao.position} · ${FOCO_LABELS[sessao.focus]} · ${formatDurationShort(sessao.estimatedSeconds)}`}
           </span>
           {atual ? (
             <span className="text-primary text-[11px] font-bold tracking-wider uppercase">
@@ -130,7 +137,34 @@ function LinhaDaSessao({ sessao, estado }: { sessao: SessaoDaTela; estado: Estad
         <span className="text-muted-foreground text-sm leading-relaxed">{sessao.note}</span>
       </span>
 
-      {atual ? <Play aria-hidden className="text-primary mt-1 size-4 shrink-0" /> : null}
+      {atual && !descanso ? <Play aria-hidden className="text-primary mt-1 size-4 shrink-0" /> : null}
+    </Caixa>
+  );
+}
+
+/** Link quando há treino para abrir; linha simples quando não há. */
+function Caixa({
+  href,
+  rotulo,
+  className,
+  children,
+}: {
+  href: string | null;
+  rotulo: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (!href) {
+    return (
+      <div aria-label={rotulo} className={className}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <Link href={href} aria-label={rotulo} className={className}>
+      {children}
     </Link>
   );
 }

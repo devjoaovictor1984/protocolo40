@@ -44,7 +44,7 @@ type LinhaDeSessao = {
   title: string;
   focus: Sessao['focus'];
   note: string;
-  template_id: string;
+  template_id: string | null;
   workout_templates: { title: string; subtitle: string | null; estimated_seconds: number } | null;
 };
 
@@ -59,7 +59,8 @@ function paraTela(linhas: LinhaDeSessao[]): SessaoDaTela[] {
       templateId: linha.template_id,
       templateTitle: linha.workout_templates?.title ?? linha.title,
       templateSubtitle: linha.workout_templates?.subtitle ?? null,
-      estimatedSeconds: linha.workout_templates?.estimated_seconds ?? 1200,
+      // descanso não tem circuito, e portanto não tem tempo
+      estimatedSeconds: linha.workout_templates?.estimated_seconds ?? (linha.template_id ? 1200 : 0),
     }))
     .sort((a, b) => a.position - b.position);
 }

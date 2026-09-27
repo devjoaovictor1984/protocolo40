@@ -1,4 +1,5 @@
 import type { PhotoPose, WorkoutPlace } from '@/types/database';
+import type { EstadoDoGuia } from '@/services/guided';
 
 /**
  * Formas locais, guardadas no IndexedDB.
@@ -127,5 +128,12 @@ export type ActiveSession = {
   title: string | null;
   rounds: number;
   checked: string[];
+  /**
+   * Treino guiado: em que passo a pessoa está. Ausente nos outros métodos e em
+   * sessões gravadas antes de o guiado existir.
+   */
+  guia?: EstadoDoGuia;
+  /** Treino guiado: o sino de intervalo fica em silêncio, o guiado tem o próprio compasso. */
+  guiado?: boolean;
   updatedAt: number;
 };

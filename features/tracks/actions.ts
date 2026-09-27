@@ -113,6 +113,25 @@ export async function sairDaTrilha(
 }
 
 /**
+ * "Agora não" no convite da trilha.
+ *
+ * Grava a recusa no perfil para ela valer em qualquer aparelho, e o convite
+ * grande some da tela de Hoje. A trilha continua a um toque, em /trilha — recusar
+ * o convite não é recusar a trilha para sempre.
+ */
+export async function recusarConviteDaTrilha(): Promise<void> {
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  await supabase
+    .from('profiles')
+    .update({ track_offer_declined_at: new Date().toISOString() })
+    .eq('id', user.id);
+
+  revalidatePath('/hoje');
+}
+
+/**
  * Fecha a trilha quando as sessões acabaram.
  *
  * Chamada ao abrir a tela, e não por um botão: ninguém deveria precisar pedir a

@@ -7,7 +7,7 @@ import { admin, apagarUsuario, criarSessao, gravarSessao, temCredenciais } from 
  *
  * O que precisa ser verdade: entrar é deliberado, a trilha anda com dias
  * treinados e não com o calendário, o mapa aparece antes do compromisso, e a
- * tela de Hoje passa a responder "sessão N" no lugar de "começar treino".
+ * tela de Hoje passa a responder "dia N" no lugar de "começar treino".
  */
 test.describe('trilha', () => {
   test.skip(!temCredenciais, 'precisa das credenciais do Supabase');
@@ -60,24 +60,27 @@ test.describe('trilha', () => {
       timeout: 30_000,
     });
 
-    // quem ainda não entrou vê as 28 sessões e a razão de cada uma: a decisão
+    // quem ainda não entrou vê os 30 dias e a razão de cada um: a decisão
     // de começar não pode depender de confiar no que não se viu
-    await expect(page.getByRole('heading', { name: /Semana 1 · Fundação/ })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Semana 4 · Graduação/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Sessão 1 — Fundação A/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Sessão 28 — Referência/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Semana 1 · Primeiros passos/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Semana 5 · Formatura/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Dia 1 — Força/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Dia 30 — Formatura/ })).toBeVisible();
+    // o descanso é linha, não link: não há treino para abrir
+    await expect(page.getByLabel(/Dia 7 — Descanso/)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Dia 7 — Descanso/ })).toHaveCount(0);
 
     // e a trilha diz que é privada antes do clique, não depois
-    await expect(page.getByText(/ninguém vê em que sessão você está/i)).toBeVisible();
+    await expect(page.getByText(/ninguém vê em que dia você está/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'COMEÇAR A TRILHA' }).click();
 
     const progresso = page.getByRole('region', { name: 'Seu progresso na trilha' });
     await expect(progresso).toBeVisible({ timeout: 30_000 });
-    await expect(progresso).toContainText(/0\s*de 28 sessões/);
+    await expect(progresso).toContainText(/0\s*de 30 dias/);
 
-    const proxima = page.getByRole('region', { name: 'Sua próxima sessão' });
-    await expect(proxima).toContainText('Fundação A');
+    const proxima = page.getByRole('region', { name: 'Seu próximo dia' });
+    await expect(proxima).toContainText('Força');
     await expect(page.getByRole('button', { name: 'Sair da trilha' })).toBeVisible();
   });
 
@@ -98,14 +101,14 @@ test.describe('trilha', () => {
     await page.getByRole('button', { name: 'COMEÇAR A TRILHA' }).click();
 
     const progresso = page.getByRole('region', { name: 'Seu progresso na trilha' });
-    await expect(progresso).toContainText(/0\s*de 28 sessões/, { timeout: 30_000 });
+    await expect(progresso).toContainText(/0\s*de 30 dias/, { timeout: 30_000 });
 
     // agora um treino de hoje: uma sessão fecha, e nenhuma coluna foi escrita
     await registrarTreinos(id, [hoje()]);
     await page.reload();
 
-    await expect(progresso).toContainText(/1\s*de 28 sessões/, { timeout: 30_000 });
-    await expect(page.getByRole('region', { name: 'Sua próxima sessão' })).toContainText('Ritmo 1');
+    await expect(progresso).toContainText(/1\s*de 30 dias/, { timeout: 30_000 });
+    await expect(page.getByRole('region', { name: 'Seu próximo dia' })).toContainText('Abdômen');
   });
 
   test('a tela de Hoje passa a responder com a sessão da trilha', async ({
@@ -117,9 +120,9 @@ test.describe('trilha', () => {
 
     await gravarSessao(context, baseURL!, session);
 
-    // antes de entrar, o convite; o cartão genérico continua sendo o do dia
+    // antes de entrar, o convite do novato no topo do Hoje
     await page.goto('/hoje');
-    await expect(page.getByRole('link', { name: /Trilha do Iniciante em Casa/ })).toBeVisible({
+    await expect(page.getByRole('region', { name: 'Trilha do Iniciante' })).toBeVisible({
       timeout: 30_000,
     });
 
@@ -132,9 +135,9 @@ test.describe('trilha', () => {
     await page.goto('/hoje');
     const hojeCard = page.getByRole('region', { name: 'Sua sessão de hoje' });
     await expect(hojeCard).toBeVisible({ timeout: 30_000 });
-    await expect(hojeCard).toContainText('Fundação A');
-    await expect(hojeCard).toContainText(/Sessão 1 de 28/);
-    await expect(hojeCard.getByRole('link', { name: /INICIAR SESSÃO 1/ })).toBeVisible();
+    await expect(hojeCard).toContainText('Força');
+    await expect(hojeCard).toContainText(/Dia 1 de 30/);
+    await expect(hojeCard.getByRole('link', { name: /COMEÇAR O DIA 1/ })).toBeVisible();
 
     // e a trilha nunca é portaria: sair dela hoje custa um toque
     await expect(hojeCard.getByRole('link', { name: 'Prefiro outro treino hoje' })).toBeVisible();

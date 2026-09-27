@@ -11,7 +11,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Visibility = 'private' | 'followers' | 'public';
 export type WorkoutLevel = 'iniciante' | 'intermediario' | 'avancado';
 /** Como o treino é executado. AMRAP repete o circuito até o tempo acabar. */
-export type WorkoutMethod = 'amrap' | 'livre';
+/** `guiado`: conduz passo a passo — exercício, descanso, próximo — pelas voltas do template. */
+export type WorkoutMethod = 'amrap' | 'livre' | 'guiado';
 export type WorkoutPlace = 'casa' | 'academia' | 'externa' | 'misto';
 export type WorkoutGoal =
   | 'perder_gordura'
@@ -89,6 +90,8 @@ export type ProfileRow = Timestamps & {
   locale: string;
   protocol_started_on: string;
   onboarding_completed_at: string | null;
+  /** Quando recusou o convite da trilha na tela de Hoje. A trilha continua em /trilha. */
+  track_offer_declined_at: string | null;
   is_admin: boolean;
   biological_sex: BiologicalSex;
   showcase_before_id: string | null;
@@ -219,7 +222,8 @@ export type TrackFocus =
   | 'core'
   | 'mobilidade'
   | 'recuperacao'
-  | 'referencia';
+  | 'referencia'
+  | 'descanso';
 
 export type TrackRow = Timestamps & {
   id: string;
@@ -247,7 +251,8 @@ export type TrackSessionRow = {
   focus: TrackFocus;
   /** A frase do treinador: por que esta sessão existe e o que observar nela. */
   note: string;
-  template_id: string;
+  /** O circuito. Nulo só na sessão de descanso, que não tem treino. */
+  template_id: string | null;
 };
 
 export type TrackEnrollmentRow = {
@@ -275,6 +280,12 @@ export type WorkoutTemplateRow = Timestamps & {
   use_count: number;
   /** Treino que só existe dentro de uma trilha: fica fora da lista de /treinos. */
   program_only: boolean;
+  /** Treino guiado: voltas do circuito. Nulo nos outros métodos. */
+  rounds: number | null;
+  /** Treino guiado: descanso entre um exercício e o próximo, em segundos. */
+  rest_seconds: number | null;
+  /** Treino guiado: descanso entre uma volta e a seguinte, em segundos. */
+  round_rest_seconds: number | null;
   is_active: boolean;
   deleted_at: string | null;
 };

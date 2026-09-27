@@ -25,6 +25,7 @@ import { ChallengeCard } from '@/features/challenges/components/challenge-card';
 import type { DesafioResumo } from '@/features/challenges/repository';
 import { GoalStrip } from '@/features/goals/components/goal-strip';
 import type { TrilhaCompleta } from '@/features/tracks/repository';
+import { ConviteDoNovato } from '@/features/tracks/components/novato-offer';
 import { ConviteDaTrilha, TrilhaDeHoje } from '@/features/tracks/components/track-today';
 import { DailyCards } from '@/features/dashboard/components/daily-cards';
 import { RestDayButton } from '@/features/rest/components/rest-day-button';
@@ -61,6 +62,7 @@ export function Dashboard({
   meta,
   trilha,
   trilhaOferecida,
+  conviteDoNovato,
 }: {
   mensagem: MensagemDoDia | null;
   agua: number;
@@ -74,6 +76,8 @@ export function Dashboard({
   trilha: TrilhaCompleta | null;
   /** A trilha que o app oferece a quem não está em nenhuma. */
   trilhaOferecida: TrackRow | null;
+  /** O convite grande do novato. Nulo para quem recusou ou já está numa trilha. */
+  conviteDoNovato: { medalha: { name: string; tier: BadgeTier; emblem: string } | null } | null;
 }) {
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
@@ -81,6 +85,10 @@ export function Dashboard({
 
   const firstName = (fullName ?? username).split(' ')[0];
   const doneToday = (data?.todayWorkouts.length ?? 0) > 0;
+  // o convite grande é para quem está chegando: com três treinos, a pessoa já
+  // achou o próprio caminho e o convite vira a faixa discreta de sempre
+  const mostrarConviteDoNovato =
+    !isLoading && !trilha && trilhaOferecida !== null && conviteDoNovato !== null && data!.workouts.length < 3;
 
   return (
     <div className="flex flex-col gap-8 py-6">
@@ -99,6 +107,16 @@ export function Dashboard({
           <SyncStatus />
         </div>
       </header>
+
+      {/* o convite do novato vem antes de tudo: no primeiro dia, a pergunta
+          "o que eu faço?" é a única que importa */}
+      {mostrarConviteDoNovato ? (
+        <ConviteDoNovato
+          trilha={trilhaOferecida!}
+          primeiroNome={firstName}
+          medalha={conviteDoNovato!.medalha}
+        />
+      ) : null}
 
       {/* a insígnia mais recente abre o dia: é o que lembra do caminho já
           andado, logo acima da frase que empurra para o de hoje */}
@@ -132,7 +150,7 @@ export function Dashboard({
         <Skeleton className="h-80 w-full rounded-2xl" />
       ) : doneToday ? (
         <DoneCard workouts={data!.todayWorkouts} day={data!.protocolDay} />
-      ) : trilha ? (
+      ) : trilha && !descansouHoje ? (
         <TrilhaDeHoje dados={trilha} jaTreinou={false} goalSeconds={dailyGoalSeconds} />
       ) : (
         <TodayCard
@@ -143,7 +161,7 @@ export function Dashboard({
       )}
 
       {/* com o dia já resolvido, a trilha vira uma linha: o que vem depois */}
-      {!isLoading && doneToday && trilha ? (
+      {!isLoading && (doneToday || descansouHoje) && trilha ? (
         <TrilhaDeHoje dados={trilha} jaTreinou goalSeconds={dailyGoalSeconds} />
       ) : null}
 
@@ -182,7 +200,7 @@ export function Dashboard({
 
       {/* o convite só enquanto "o que eu faço hoje?" ainda não tem resposta
           automática: quem já criou rotina não precisa dele toda manhã */}
-      {!isLoading && !trilha && trilhaOferecida && data!.workouts.length < 10 ? (
+      {!isLoading && !trilha && trilhaOferecida && !mostrarConviteDoNovato && data!.workouts.length < 10 ? (
         <ConviteDaTrilha trilha={trilhaOferecida} />
       ) : null}
 
