@@ -24,6 +24,11 @@ describe('demonstrações dos exercícios', () => {
     });
   });
 
+  it('exercício que é o mesmo movimento usa os arquivos do outro', () => {
+    expect(getExerciseDemo('escalador')).toEqual(getExerciseDemo('mountain-climber'));
+    expect(getExerciseDemo('escalador')?.demo).toBe('/exercises/mountain-climber/demo.webp');
+  });
+
   it.each(EXERCISE_DEMO_SLUGS)('%s tem os três arquivos em public/', (slug) => {
     const demo = getExerciseDemo(slug)!;
     for (const caminho of [demo.thumb, demo.demo, demo.still]) {

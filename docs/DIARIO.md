@@ -51,6 +51,10 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   frente os pés continuam melhores (testado: a cabeça fazia o pé do
   agachamento escorregar). A primeira folha levantava a mesma perna nas cinco
   poses e foi recusada: ensinaria elevação de joelho, não marcha.
+- Mountain climber: `--ponto maos`. O pé de trás muda de lugar entre as
+  poses, e medir pés–mãos inflava o mascote 10%; as mãos são o que não se
+  mexe. `escalador` (o mesmo movimento, por tempo) aponta para os mesmos
+  arquivos por `MESMA_ARTE`, sem duplicar.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 

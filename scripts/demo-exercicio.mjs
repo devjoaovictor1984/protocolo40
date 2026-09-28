@@ -38,6 +38,9 @@
  *   lado    (padrão; flexão, prancha) — a régua é a distância entre os apoios
  *           no chão, pés e mãos, e o ponto fixo é o pé. Eles não saem do lugar
  *           durante o movimento; a escala se corrige em no máximo 10%.
+ *           Com `--ponto maos`, o ponto fixo são as mãos e a escala da folha
+ *           fica como veio: é para quando o pé de trás se mexe de verdade
+ *           (mountain climber), e medir pés–mãos inflaria o mascote.
  *   frente  (agachamento, polichinelo, marcha) — a régua é a largura do boné,
  *           a única parte do corpo que não muda de tamanho de frente (os pés
  *           abrem no agachamento fundo). O ponto fixo é o meio entre os pés
@@ -148,8 +151,8 @@ if (vista !== 'lado' && vista !== 'frente') {
   console.error(`--vista é "lado" ou "frente", não "${vista}".`);
   process.exit(1);
 }
-if (ponto !== 'pes' && ponto !== 'cabeca') {
-  console.error(`--ponto é "pes" ou "cabeca", não "${ponto}".`);
+if (!['pes', 'cabeca', 'maos'].includes(ponto)) {
+  console.error(`--ponto é "pes", "cabeca" ou "maos", não "${ponto}".`);
   process.exit(1);
 }
 if (ms && ms.length !== quadros.length) {
@@ -217,6 +220,7 @@ async function recortar(arquivo) {
     cabecaLargura: c1 - c0 + 1,
     cabecaMeio: (c0 + c1) / 2,
     apoioMeio: (a0 + a1) / 2,
+    apoioFim: a1,
   };
 }
 
@@ -230,7 +234,7 @@ const ajustados = await Promise.all(
     // errar (no polichinelo, o topo do desenho são as mãos, não o boné). De
     // lado a régua são os apoios, que não enganam — e corrigem o pouco que a
     // geração varia: na flexão inclinada, a distância do pé à caixa
-    const escala = folha && vista === 'frente'
+    const escala = folha && (vista === 'frente' || ponto === 'maos')
       ? 1
       : vista === 'lado'
         ? Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura))
@@ -242,7 +246,9 @@ const ajustados = await Promise.all(
       width,
       height,
       ancora: Math.round(
-        (vista === 'lado' ? r.apoioInicio : ponto === 'cabeca' ? r.cabecaMeio : r.apoioMeio) * escala,
+        (vista === 'lado'
+          ? ponto === 'maos' ? r.apoioFim : r.apoioInicio
+          : ponto === 'cabeca' ? r.cabecaMeio : r.apoioMeio) * escala,
       ),
     };
   }),

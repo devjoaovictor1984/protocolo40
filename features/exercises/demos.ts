@@ -17,6 +17,10 @@
  *
  * Para acrescentar uma: gere os arquivos com `scripts/demo-exercicio.mjs` e
  * registre aqui o slug com a largura e a altura que ele imprime.
+ *
+ * Dois exercícios que são o mesmo movimento (um por repetição, outro por
+ * tempo) dividem a arte por `MESMA_ARTE`, em vez de duplicar os arquivos: o
+ * aparelho baixa e guarda uma vez só.
  */
 
 type DemoRegistrada = {
@@ -31,6 +35,13 @@ const DEMOS: Record<string, DemoRegistrada> = {
   agachamento: { width: 455, height: 720 },
   polichinelo: { width: 698, height: 720 },
   'marcha-estacionaria': { width: 359, height: 720 },
+  'mountain-climber': { width: 720, height: 417 },
+};
+
+/** Slug → slug de quem tem os arquivos. */
+const MESMA_ARTE: Record<string, string> = {
+  // o mesmo movimento: um contado em repetições, o outro em tempo
+  escalador: 'mountain-climber',
 };
 
 export type ExerciseDemoMedia = {
@@ -47,10 +58,11 @@ export type ExerciseDemoMedia = {
 export function getExerciseDemo(slug: string | null | undefined): ExerciseDemoMedia | null {
   if (!slug) return null;
 
-  const registrada = DEMOS[slug];
+  const dono = MESMA_ARTE[slug] ?? slug;
+  const registrada = DEMOS[dono];
   if (!registrada) return null;
 
-  const pasta = `/exercises/${slug}`;
+  const pasta = `/exercises/${dono}`;
   return {
     thumb: `${pasta}/thumb.webp`,
     demo: `${pasta}/demo.webp`,
