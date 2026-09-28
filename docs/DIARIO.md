@@ -9,6 +9,47 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 27/09/2026 · O mascote mostra como se faz o exercício
+
+O pedido: no cartão do treino, ao lado de cada exercício, uma miniatura do
+mascote fazendo o movimento em loop; tocando, uma janela maior. A arte chega aos
+poucos, exercício por exercício, e o lugar dela já fica reservado.
+
+- **Um WebP animado, não JavaScript trocando quadros.** O navegador toca sozinho
+  e para de decodificar fora da tela. `sharp` (que já vem com o Next) monta o
+  arquivo: nenhuma dependência nova.
+- **Três arquivos por exercício**, em `public/exercises/<slug>/`: `thumb.webp`
+  (224px, ~15 KB, a lista), `demo.webp` (720px, ~85 KB, só baixa ao abrir a
+  janela) e `still.webp` (quadro parado, para quem ligou "reduzir movimento" —
+  trocado por `<picture>`, sem JS). Um arquivo só obrigaria cada cartão a baixar
+  os 85 KB da versão grande.
+- **A chave é o slug**, registrado em `features/exercises/demos.ts`, e não uma
+  coluna: o catálogo vive em cache no IndexedDB, e um caminho gravado ali
+  envelheceria com ele. `exercises.illustration_path` (bucket, pelo admin)
+  continua existindo e sem uso na tela.
+- **Fora do precache.** O Serwist precacheia `public/**` inteiro; sem o
+  `globIgnores`, instalar o app baixaria a arte de todos os exercícios. Assim,
+  cada arquivo entra no `p20x-assets` quando aparece e funciona offline depois.
+- **Lugar reservado** para todo exercício com slug (os do sistema), com ou sem
+  arte: o cartão não muda de altura quando a arte chega. Exercício próprio não
+  tem slug e fica compacto.
+- `scripts/demo-exercicio.mjs` alinha os quadros pelos apoios no chão (pés e
+  mãos) e reescala até 10%: a arte gerada por IA põe o mascote em lugar e
+  tamanho diferentes a cada quadro, e sem isso ele "pula" e as mãos escorregam.
+- `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
+  o fundo; as outras seguem iguais).
+
+Onde aparece: cartão do treino (`template-list.tsx`) e a lista "o que vai ser
+feito" antes de iniciar o cronômetro (`timer-screen.tsx`). A lista de marcar
+durante o treino ficou de fora: cada linha é um botão, e botão dentro de botão
+não é HTML válido.
+
+Testes: `tests/exercise-demos.test.ts` (registro sem arquivo, precache) e
+`e2e/demonstracao.spec.ts` (a grande só baixa ao tocar; fecha no X, fora e ESC;
+foco volta à miniatura; reduzir movimento mostra o quadro parado).
+
+---
+
 ## 27/09/2026 · A Trilha do Iniciante vira o programa de 30 dias do novato
 
 O pedido: um programa para quem entra no app pela primeira vez. 30 dias, seis

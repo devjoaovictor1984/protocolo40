@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/stats';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExercises, useTemplates, type CatalogTemplate } from '@/features/exercises/catalog';
+import { ExerciseDemo } from '@/features/exercises/components/exercise-demo';
 import { useToday } from '@/features/session/session-context';
 import { useLocalWorkouts } from '@/features/workouts/use-workout';
 import { cn } from '@/lib/utils';
@@ -296,17 +297,30 @@ function TemplateCard({
             {template.exercises.map((item) => (
               <li
                 key={`${template.id}-${item.exerciseId}-${item.orderIndex}`}
-                className="flex items-center gap-2"
+                className="flex items-center gap-3"
               >
-                <span className="tnum text-primary min-w-12 self-baseline font-bold">
-                  {item.repetitions !== null
-                    ? `${item.repetitions} ×`
-                    : item.durationSeconds !== null
-                      ? `${item.durationSeconds}s`
-                      : ''}
+                <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                  <span className="tnum text-primary min-w-12 font-bold">
+                    {item.repetitions !== null
+                      ? `${item.repetitions} ×`
+                      : item.durationSeconds !== null
+                        ? `${item.durationSeconds}s`
+                        : ''}
+                  </span>
+                  <span className="flex-1">{item.name}</span>
                 </span>
-                <span className="flex-1">{item.name}</span>
 
+                {/*
+                 * O lugar da demonstração fica reservado em todo exercício do
+                 * sistema, mesmo antes de a arte existir: o cartão não muda de
+                 * altura no dia em que ela chega. Exercício próprio não tem
+                 * slug, nunca terá arte, e fica compacto.
+                 */}
+                {item.slug ? (
+                  <span className="h-16 w-24 shrink-0 sm:h-[4.5rem] sm:w-28">
+                    <ExerciseDemo slug={item.slug} name={item.name} />
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>

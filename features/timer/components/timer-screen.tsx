@@ -19,6 +19,7 @@ import { ProgressRing } from "@/components/progress-ring";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { describeMetrics, useTemplate } from "@/features/exercises/catalog";
+import { ExerciseDemo } from "@/features/exercises/components/exercise-demo";
 import { useSession } from "@/features/session/session-context";
 import { useTimer } from "@/features/timer/use-timer";
 import { saveWorkout } from "@/features/workouts/repository";
@@ -532,12 +533,18 @@ function ReadyScreen({
                 key={`${item.exerciseId}-${index}`}
                 className="flex items-center justify-between gap-3 px-4 py-3"
               >
-                <span className="truncate text-sm font-medium">
+                <span className="flex-1 truncate text-sm font-medium">
                   {item.name}
                 </span>
                 <span className="text-muted-foreground tnum shrink-0 text-sm">
                   {describeMetrics(item)}
                 </span>
+                {/* mesmo lugar reservado do cartão do treino: só exercício do sistema */}
+                {item.slug ? (
+                  <span className="-my-1.5 h-12 w-20 shrink-0">
+                    <ExerciseDemo slug={item.slug} name={item.name} />
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
