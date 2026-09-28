@@ -27,6 +27,7 @@ type DemoRegistrada = {
 
 const DEMOS: Record<string, DemoRegistrada> = {
   flexao: { width: 720, height: 418 },
+  'flexao-inclinada': { width: 720, height: 549 },
   agachamento: { width: 455, height: 720 },
   polichinelo: { width: 698, height: 720 },
 };

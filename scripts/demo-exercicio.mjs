@@ -16,8 +16,8 @@
  *   node scripts/demo-exercicio.mjs agachamento --vista frente --folha poses.png
  *
  * As poses são separadas pelas colunas vazias entre elas e tocadas em ida e
- * volta: com três, 1 → 2 → 3 → 2 → 1. Da folha não se corrige escala — ela já
- * vem numa só —, apenas o chão e o ponto fixo de `--vista`.
+ * volta: com três, 1 → 2 → 3 → 2 → 1. De frente, a escala da folha fica como
+ * veio — ela já sai numa só; de lado, os apoios ainda acertam o que variar.
  *
  * `--ms` é quanto cada quadro fica na tela; sem ele, as pontas do movimento
  * (primeiro quadro e o do meio da lista) seguram um pouco mais que a passagem.
@@ -78,7 +78,7 @@ const folha = iFolha >= 0 ? args.splice(iFolha, 2)[1] : null;
 const [slug, ...soltos] = args;
 
 /** Colunas vazias seguidas, em fração da largura da folha, que separam uma pose da outra. */
-const VAO_ENTRE_POSES = 0.015;
+const VAO_ENTRE_POSES = 0.01;
 
 /** Parte a folha nas poses, pelas colunas sem nada entre elas. */
 async function separarFolha(arquivo) {
@@ -204,9 +204,11 @@ const recortes = await Promise.all(quadros.map(recortar));
 const regua = recortes[0];
 const ajustados = await Promise.all(
   recortes.map(async (r) => {
-    // a folha já sai numa escala só; medir de novo só arriscaria errar (no
-    // polichinelo, o topo do desenho são as mãos, não o boné)
-    const escala = folha
+    // de frente, a folha já sai numa escala só, e medir de novo só arriscaria
+    // errar (no polichinelo, o topo do desenho são as mãos, não o boné). De
+    // lado a régua são os apoios, que não enganam — e corrigem o pouco que a
+    // geração varia: na flexão inclinada, a distância do pé à caixa
+    const escala = folha && vista === 'frente'
       ? 1
       : vista === 'lado'
         ? Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura))
