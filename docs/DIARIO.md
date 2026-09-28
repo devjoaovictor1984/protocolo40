@@ -73,6 +73,11 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
 - Prancha: exercício parado, um quadro só. O script aceita uma imagem e sai
   tudo como WebP estático (miniatura de 3,4 KB). O "brilho" laranja que o
   visualizador mostrava é cor residual em pixels de alfa zero: não aparece.
+- Barra fixa: a estrutura aparece em cada pose e não pode se mexer. Pendurado,
+  os pés passam da base dos postes, e apoiar a base do desenho no chão fazia
+  a barra pular 30 px. `--altura-da-folha` mantém a altura como veio (a folha
+  já tem postes e barra na mesma linha). A pose 3 repetia a 1: `--ordem 1,2`.
+- Superman: imagem parada, como a prancha.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 

@@ -47,6 +47,12 @@
  *           fica como veio: é para quando o pé de trás se mexe de verdade
  *           (mountain climber), e medir pés–mãos inflaria o mascote.
  *
+ * `--altura-da-folha` mantém a altura de cada pose como veio na folha, em vez
+ * de apoiar todas no mesmo chão pela base do desenho. É para quando há um
+ * aparelho que não se mexe (a barra fixa): pendurado, os pés passam da base
+ * dos postes, e "apoiar no chão" faria a barra subir e descer. Implica
+ * `--sem-escala`.
+ *
  * `--sem-escala` deixa a escala da folha como veio em qualquer vista. É para
  * exercício deitado (abdominal): perto do chão estão pés, quadril, costas e,
  * em parte das poses, a cabeça — a "distância entre apoios" muda com o
@@ -96,6 +102,8 @@ const iPonto = args.indexOf('--ponto');
 const ponto = iPonto >= 0 ? args.splice(iPonto, 2)[1] : 'pes';
 const iSemEscala = args.indexOf('--sem-escala');
 const semEscala = iSemEscala >= 0 && Boolean(args.splice(iSemEscala, 1));
+const iAlturaDaFolha = args.indexOf('--altura-da-folha');
+const alturaDaFolha = iAlturaDaFolha >= 0 && Boolean(args.splice(iAlturaDaFolha, 1));
 const iOrdem = args.indexOf('--ordem');
 const ordem = iOrdem >= 0 ? args.splice(iOrdem, 2)[1].split(',').map(Number) : null;
 const [slug, ...soltos] = args;
@@ -227,6 +235,8 @@ async function recortar(arquivo) {
     buffer,
     width,
     height,
+    /** onde o desenho começa na imagem original, para `--altura-da-folha` */
+    topo: y0,
     apoioInicio: a0,
     apoioLargura: a1 - a0 + 1,
     cabecaLargura: c1 - c0 + 1,
@@ -246,7 +256,7 @@ const ajustados = await Promise.all(
     // errar (no polichinelo, o topo do desenho são as mãos, não o boné). De
     // lado a régua são os apoios, que não enganam — e corrigem o pouco que a
     // geração varia: na flexão inclinada, a distância do pé à caixa
-    const escala = semEscala || (folha && (vista === 'frente' || ponto === 'maos'))
+    const escala = semEscala || alturaDaFolha || (folha && (vista === 'frente' || ponto === 'maos'))
       ? 1
       : vista === 'lado'
         ? Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura))
@@ -257,6 +267,7 @@ const ajustados = await Promise.all(
       buffer: await sharp(r.buffer).resize(width, height).png().toBuffer(),
       width,
       height,
+      topo: r.topo,
       ancora: Math.round(
         (vista === 'lado'
           ? ponto === 'maos' ? r.apoioFim : r.apoioInicio
@@ -269,7 +280,12 @@ const ajustados = await Promise.all(
 // uma tela só para todos, com o chão e o ponto fixo de cada quadro no mesmo lugar
 const antes = Math.max(...ajustados.map((r) => r.ancora));
 const depois = Math.max(...ajustados.map((r) => r.width - r.ancora));
-const conteudoA = Math.max(...ajustados.map((r) => r.height));
+// no chão comum, o conteúdo é o quadro mais alto; na altura da folha, vai do
+// topo mais alto à base mais baixa entre todos
+const topoMin = Math.min(...ajustados.map((r) => r.topo));
+const conteudoA = alturaDaFolha
+  ? Math.max(...ajustados.map((r) => r.topo + r.height)) - topoMin
+  : Math.max(...ajustados.map((r) => r.height));
 const margem = Math.round(Math.max(antes + depois, conteudoA) * MARGEM);
 const telaL = antes + depois + margem * 2;
 const telaA = conteudoA + margem * 2;
@@ -283,7 +299,7 @@ const alinhados = await Promise.all(
         {
           input: r.buffer,
           left: margem + antes - r.ancora,
-          top: telaA - margem - r.height,
+          top: alturaDaFolha ? margem + r.topo - topoMin : telaA - margem - r.height,
         },
       ])
       .png()
