@@ -55,6 +55,9 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   poses, e medir pés–mãos inflava o mascote 10%; as mãos são o que não se
   mexe. `escalador` (o mesmo movimento, por tempo) aponta para os mesmos
   arquivos por `MESMA_ARTE`, sem duplicar.
+- Abdominal supra: `--sem-escala`. Deitado, a faixa perto do chão pega pés,
+  quadril, costas e — só na primeira pose — a cabeça; como régua, ela
+  encolheria o mascote. Preso pelos pés, com a escala da folha.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 

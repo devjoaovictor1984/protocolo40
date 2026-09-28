@@ -41,6 +41,11 @@
  *           Com `--ponto maos`, o ponto fixo são as mãos e a escala da folha
  *           fica como veio: é para quando o pé de trás se mexe de verdade
  *           (mountain climber), e medir pés–mãos inflaria o mascote.
+ *
+ * `--sem-escala` deixa a escala da folha como veio em qualquer vista. É para
+ * exercício deitado (abdominal): perto do chão estão pés, quadril, costas e,
+ * em parte das poses, a cabeça — a "distância entre apoios" muda com o
+ * movimento e não serve de régua.
  *   frente  (agachamento, polichinelo, marcha) — a régua é a largura do boné,
  *           a única parte do corpo que não muda de tamanho de frente (os pés
  *           abrem no agachamento fundo). O ponto fixo é o meio entre os pés
@@ -84,6 +89,8 @@ const iFolha = args.indexOf('--folha');
 const folha = iFolha >= 0 ? args.splice(iFolha, 2)[1] : null;
 const iPonto = args.indexOf('--ponto');
 const ponto = iPonto >= 0 ? args.splice(iPonto, 2)[1] : 'pes';
+const iSemEscala = args.indexOf('--sem-escala');
+const semEscala = iSemEscala >= 0 && Boolean(args.splice(iSemEscala, 1));
 const iOrdem = args.indexOf('--ordem');
 const ordem = iOrdem >= 0 ? args.splice(iOrdem, 2)[1].split(',').map(Number) : null;
 const [slug, ...soltos] = args;
@@ -234,7 +241,7 @@ const ajustados = await Promise.all(
     // errar (no polichinelo, o topo do desenho são as mãos, não o boné). De
     // lado a régua são os apoios, que não enganam — e corrigem o pouco que a
     // geração varia: na flexão inclinada, a distância do pé à caixa
-    const escala = folha && (vista === 'frente' || ponto === 'maos')
+    const escala = semEscala || (folha && (vista === 'frente' || ponto === 'maos'))
       ? 1
       : vista === 'lado'
         ? Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura))

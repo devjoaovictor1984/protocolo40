@@ -36,6 +36,7 @@ const DEMOS: Record<string, DemoRegistrada> = {
   polichinelo: { width: 698, height: 720 },
   'marcha-estacionaria': { width: 359, height: 720 },
   'mountain-climber': { width: 720, height: 417 },
+  'abdominal-supra': { width: 720, height: 322 },
 };
 
 /** Slug → slug de quem tem os arquivos. */
