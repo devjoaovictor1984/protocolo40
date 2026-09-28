@@ -27,6 +27,7 @@ type DemoRegistrada = {
 
 const DEMOS: Record<string, DemoRegistrada> = {
   flexao: { width: 720, height: 418 },
+  agachamento: { width: 429, height: 720 },
 };
 
 export type ExerciseDemoMedia = {

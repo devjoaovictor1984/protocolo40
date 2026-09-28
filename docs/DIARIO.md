@@ -36,6 +36,10 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
 - `scripts/demo-exercicio.mjs` alinha os quadros pelos apoios no chão (pés e
   mãos) e reescala até 10%: a arte gerada por IA põe o mascote em lugar e
   tamanho diferentes a cada quadro, e sem isso ele "pula" e as mãos escorregam.
+- Agachamento (vista de frente): a geração enche a altura da imagem em todo
+  quadro, e o agachado saía 40% maior que o em pé. O script ganhou `--vista
+  frente`, que usa a largura do boné como régua e o meio entre os pés como
+  ponto fixo. A flexão continua em `--vista lado` (o padrão).
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 

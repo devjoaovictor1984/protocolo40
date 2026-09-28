@@ -2,7 +2,7 @@
 /**
  * Monta a demonstração animada de um exercício a partir dos quadros em PNG.
  *
- *   node scripts/demo-exercicio.mjs <slug> <quadro.png> <quadro.png> ... [--ms 500,250,450,250]
+ *   node scripts/demo-exercicio.mjs <slug> <quadro.png> ... [--vista lado|frente] [--ms 500,250,450,250]
  *
  * Os quadros entram na ordem em que devem tocar, e o laço volta ao primeiro.
  * Para "alto → meio → baixo → meio → alto", passe o quadro do meio duas vezes:
@@ -19,11 +19,19 @@
  *   still.webp  o primeiro quadro parado, para quem pediu menos movimento
  *
  * Por que alinhar: a arte vem de geração de imagem, e cada quadro põe o mascote
- * num lugar e num tamanho um pouco diferentes. Tocados em sequência, ele "pula"
- * e as mãos escorregam. Aqui cada quadro é ancorado no que toca o chão — a
- * faixa de baixo do desenho, onde ficam pés e mãos — e reescalado (no máximo
- * 10%) para que esses apoios caiam sempre no mesmo lugar. O que se mexe passa a
- * ser só o movimento.
+ * num lugar e num tamanho diferentes. Tocados em sequência, ele "pula", cresce
+ * e encolhe. Aqui todo quadro vai para o mesmo chão, na mesma escala, preso no
+ * mesmo ponto — o que se mexe passa a ser só o movimento. Como achar a escala e
+ * o ponto depende de onde a câmera está (`--vista`):
+ *
+ *   lado    (padrão; flexão, prancha) — a régua é a distância entre os apoios
+ *           no chão, pés e mãos, e o ponto fixo é o pé. Eles não saem do lugar
+ *           durante o movimento; a escala se corrige em no máximo 10%.
+ *   frente  (agachamento, polichinelo) — a régua é a largura do boné, a única
+ *           parte do corpo que não muda de tamanho de frente (os pés abrem no
+ *           agachamento fundo), e o ponto fixo é o meio entre os pés. A geração
+ *           costuma encher a altura da imagem em todo quadro, então aqui a
+ *           correção pode ser grande: o agachado sai do mesmo tamanho do em pé.
  *
  * Depois de gerar, registre o slug em `features/exercises/demos.ts` com a
  * largura e a altura que este script imprime.
@@ -47,15 +55,23 @@ const MARGEM = 0.04;
 const ALFA_MINIMO = 24;
 /** Altura da faixa de baixo, em fração do maior lado do desenho, onde se procuram os apoios. */
 const FAIXA_DE_APOIO = 0.12;
+/** Altura da faixa de cima, em fração da altura do desenho, onde se mede o boné (vista de frente). */
+const FAIXA_DA_CABECA = 0.05;
 
 const args = process.argv.slice(2);
 const iMs = args.indexOf('--ms');
 const ms = iMs >= 0 ? args.splice(iMs, 2)[1].split(',').map(Number) : null;
+const iVista = args.indexOf('--vista');
+const vista = iVista >= 0 ? args.splice(iVista, 2)[1] : 'lado';
 const [slug, ...quadros] = args;
 
 if (!slug || !/^[a-z0-9-]+$/.test(slug) || quadros.length < 2) {
   console.error('Uso: node scripts/demo-exercicio.mjs <slug> <quadro.png> <quadro.png> ... [--ms 500,250]');
   console.error('O slug é o mesmo do exercício no seed (ex.: flexao) e são pelo menos dois quadros.');
+  process.exit(1);
+}
+if (vista !== 'lado' && vista !== 'frente') {
+  console.error(`--vista é "lado" ou "frente", não "${vista}".`);
   process.exit(1);
 }
 if (ms && ms.length !== quadros.length) {
@@ -98,35 +114,57 @@ async function recortar(arquivo) {
     }
   }
 
+  // a cabeça: a largura do que há de opaco no topo do desenho, o boné
+  let c0 = width, c1 = -1;
+  for (let y = y0; y <= y0 + Math.round(height * FAIXA_DA_CABECA); y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (data[(y * info.width + x) * 4 + 3] >= ALFA_MINIMO) {
+        if (x - x0 < c0) c0 = x - x0;
+        if (x - x0 > c1) c1 = x - x0;
+      }
+    }
+  }
+
   const buffer = await sharp(arquivo)
     .ensureAlpha()
     .extract({ left: x0, top: y0, width, height })
     .png()
     .toBuffer();
-  return { buffer, width, height, apoioInicio: a0, apoioLargura: a1 - a0 + 1 };
+  return {
+    buffer,
+    width,
+    height,
+    apoioInicio: a0,
+    apoioLargura: a1 - a0 + 1,
+    apoioMeio: (a0 + a1) / 2,
+    cabecaLargura: c1 - c0 + 1,
+  };
 }
 
 const recortes = await Promise.all(quadros.map(recortar));
 
-// o primeiro quadro é a régua: os outros são levados à mesma distância entre apoios
+// o primeiro quadro é a régua: os outros são levados à mesma medida que ele
 const regua = recortes[0];
 const ajustados = await Promise.all(
   recortes.map(async (r) => {
-    const escala = Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura));
+    const escala =
+      vista === 'lado'
+        ? Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura))
+        : Math.min(2, Math.max(0.5, regua.cabecaLargura / r.cabecaLargura));
     const width = Math.round(r.width * escala);
     const height = Math.round(r.height * escala);
     return {
       buffer: await sharp(r.buffer).resize(width, height).png().toBuffer(),
       width,
       height,
-      apoioInicio: Math.round(r.apoioInicio * escala),
+      ancora: Math.round((vista === 'lado' ? r.apoioInicio : r.apoioMeio) * escala),
     };
   }),
 );
 
-// uma tela só para todos, com o chão e o primeiro apoio de cada quadro no mesmo lugar
-const antes = Math.max(...ajustados.map((r) => r.apoioInicio));
-const depois = Math.max(...ajustados.map((r) => r.width - r.apoioInicio));
+// uma tela só para todos, com o chão e o ponto fixo de cada quadro no mesmo lugar
+const antes = Math.max(...ajustados.map((r) => r.ancora));
+const depois = Math.max(...ajustados.map((r) => r.width - r.ancora));
 const conteudoA = Math.max(...ajustados.map((r) => r.height));
 const margem = Math.round(Math.max(antes + depois, conteudoA) * MARGEM);
 const telaL = antes + depois + margem * 2;
@@ -140,7 +178,7 @@ const alinhados = await Promise.all(
       .composite([
         {
           input: r.buffer,
-          left: margem + antes - r.apoioInicio,
+          left: margem + antes - r.ancora,
           top: telaA - margem - r.height,
         },
       ])
