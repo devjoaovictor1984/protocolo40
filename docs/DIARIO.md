@@ -62,6 +62,10 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   lado), 8 quadros em 1 s, `--ponto cabeca`. É a mais pesada (miniatura
   20,6 KB, grande 204 KB): a fluidez é o que a separa da marcha, e a grande
   só baixa ao tocar.
+- Abdominal infra: a arte é a variação sentada (apoiado nas mãos, joelhos ao
+  peito), não a deitada — o seed não descreve qual, e a sentada não se
+  confunde com a elevação de pernas. `--ponto maos`: na primeira pose os pés
+  ficam perto do chão e "prender pelos pés" pegaria o pé no ar.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 
