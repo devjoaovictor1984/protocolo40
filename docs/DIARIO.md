@@ -66,6 +66,10 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   peito), não a deitada — o seed não descreve qual, e a sentada não se
   confunde com a elevação de pernas. `--ponto maos`: na primeira pose os pés
   ficam perto do chão e "prender pelos pés" pegaria o pé no ar.
+- Corda: é ciclo, não ida e volta — `--ordem 2,1,3` (corda em cima → descendo
+  na frente → pulo com a corda sob os pés). Em ida e volta a corda giraria
+  para trás. No pulo, a base do desenho é a corda no chão, e os pés ficam
+  no ar sozinhos.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 
