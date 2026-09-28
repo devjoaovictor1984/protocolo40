@@ -16,7 +16,8 @@
  *   node scripts/demo-exercicio.mjs agachamento --vista frente --folha poses.png
  *
  * As poses são separadas pelas colunas vazias entre elas e tocadas em ida e
- * volta: com três, 1 → 2 → 3 → 2 → 1.
+ * volta: com três, 1 → 2 → 3 → 2 → 1. Da folha não se corrige escala — ela já
+ * vem numa só —, apenas o chão e o ponto fixo de `--vista`.
  *
  * `--ms` é quanto cada quadro fica na tela; sem ele, as pontas do movimento
  * (primeiro quadro e o do meio da lista) seguram um pouco mais que a passagem.
@@ -203,8 +204,11 @@ const recortes = await Promise.all(quadros.map(recortar));
 const regua = recortes[0];
 const ajustados = await Promise.all(
   recortes.map(async (r) => {
-    const escala =
-      vista === 'lado'
+    // a folha já sai numa escala só; medir de novo só arriscaria errar (no
+    // polichinelo, o topo do desenho são as mãos, não o boné)
+    const escala = folha
+      ? 1
+      : vista === 'lado'
         ? Math.min(1.1, Math.max(0.9, regua.apoioLargura / r.apoioLargura))
         : Math.min(2, Math.max(0.5, regua.cabecaLargura / r.cabecaLargura));
     const width = Math.round(r.width * escala);
