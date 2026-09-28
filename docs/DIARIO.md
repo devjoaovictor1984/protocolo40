@@ -58,6 +58,10 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
 - Abdominal supra: `--sem-escala`. Deitado, a faixa perto do chão pega pés,
   quadril, costas e — só na primeira pose — a cabeça; como régua, ela
   encolheria o mascote. Preso pelos pés, com a escala da folha.
+- Corrida estacionária: 5 poses (transição + dois níveis de joelho de cada
+  lado), 8 quadros em 1 s, `--ponto cabeca`. É a mais pesada (miniatura
+  20,6 KB, grande 204 KB): a fluidez é o que a separa da marcha, e a grande
+  só baixa ao tocar.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 

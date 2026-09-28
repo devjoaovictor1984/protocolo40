@@ -37,6 +37,7 @@ const DEMOS: Record<string, DemoRegistrada> = {
   'marcha-estacionaria': { width: 359, height: 720 },
   'mountain-climber': { width: 720, height: 417 },
   'abdominal-supra': { width: 720, height: 322 },
+  'corrida-estacionaria': { width: 359, height: 720 },
 };
 
 /** Slug → slug de quem tem os arquivos. */
