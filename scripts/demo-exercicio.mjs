@@ -9,6 +9,15 @@
  *
  *   node scripts/demo-exercicio.mjs flexao alto.png meio.png baixo.png meio.png
  *
+ * Ou uma folha só, com as poses lado a lado sobre fundo transparente — é o
+ * formato que sai melhor da geração de imagem, porque o desenho mantém a mesma
+ * escala e o mesmo chão sozinho:
+ *
+ *   node scripts/demo-exercicio.mjs agachamento --vista frente --folha poses.png
+ *
+ * As poses são separadas pelas colunas vazias entre elas e tocadas em ida e
+ * volta: com três, 1 → 2 → 3 → 2 → 1.
+ *
  * `--ms` é quanto cada quadro fica na tela; sem ele, as pontas do movimento
  * (primeiro quadro e o do meio da lista) seguram um pouco mais que a passagem.
  *
@@ -63,10 +72,57 @@ const iMs = args.indexOf('--ms');
 const ms = iMs >= 0 ? args.splice(iMs, 2)[1].split(',').map(Number) : null;
 const iVista = args.indexOf('--vista');
 const vista = iVista >= 0 ? args.splice(iVista, 2)[1] : 'lado';
-const [slug, ...quadros] = args;
+const iFolha = args.indexOf('--folha');
+const folha = iFolha >= 0 ? args.splice(iFolha, 2)[1] : null;
+const [slug, ...soltos] = args;
+
+/** Colunas vazias seguidas, em fração da largura da folha, que separam uma pose da outra. */
+const VAO_ENTRE_POSES = 0.015;
+
+/** Parte a folha nas poses, pelas colunas sem nada entre elas. */
+async function separarFolha(arquivo) {
+  const { data, info } = await sharp(arquivo).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const cheia = (x) => {
+    for (let y = 0; y < info.height; y++) if (data[(y * info.width + x) * 4 + 3] >= ALFA_MINIMO) return true;
+    return false;
+  };
+
+  const vaoMinimo = Math.round(info.width * VAO_ENTRE_POSES);
+  const trechos = [];
+  let inicio = -1, vazias = 0;
+  for (let x = 0; x < info.width; x++) {
+    if (cheia(x)) {
+      if (inicio < 0) inicio = x;
+      vazias = 0;
+    } else if (inicio >= 0 && ++vazias >= vaoMinimo) {
+      trechos.push([inicio, x - vazias]);
+      inicio = -1;
+    }
+  }
+  if (inicio >= 0) trechos.push([inicio, info.width - 1]);
+
+  // a altura inteira da folha em cada pose: é ela que guarda o chão comum
+  return Promise.all(
+    trechos.map(([a, b]) =>
+      sharp(arquivo).extract({ left: a, top: 0, width: b - a + 1, height: info.height }).png().toBuffer(),
+    ),
+  );
+}
+
+let quadros = soltos;
+if (folha) {
+  const poses = await separarFolha(folha);
+  if (poses.length < 2) {
+    console.error(`Achei ${poses.length} pose na folha: as poses precisam de espaço vazio entre elas.`);
+    process.exit(1);
+  }
+  // ida e volta: 1 2 3 → 1 2 3 2
+  quadros = [...poses, ...poses.slice(1, -1).reverse()];
+  console.log(`${poses.length} poses na folha → ${quadros.length} quadros em ida e volta`);
+}
 
 if (!slug || !/^[a-z0-9-]+$/.test(slug) || quadros.length < 2) {
-  console.error('Uso: node scripts/demo-exercicio.mjs <slug> <quadro.png> <quadro.png> ... [--ms 500,250]');
+  console.error('Uso: node scripts/demo-exercicio.mjs <slug> (<quadro.png> ... | --folha poses.png) [--vista lado|frente] [--ms 500,250]');
   console.error('O slug é o mesmo do exercício no seed (ex.: flexao) e são pelo menos dois quadros.');
   process.exit(1);
 }
@@ -79,7 +135,7 @@ if (ms && ms.length !== quadros.length) {
   process.exit(1);
 }
 
-/** Recorta o quadro no que não é transparente. */
+/** Recorta o quadro (arquivo ou buffer) no que não é transparente. */
 async function recortar(arquivo) {
   const { data, info } = await sharp(arquivo)
     .ensureAlpha()
@@ -97,7 +153,7 @@ async function recortar(arquivo) {
       }
     }
   }
-  if (x1 < 0) throw new Error(`${arquivo} é todo transparente.`);
+  if (x1 < 0) throw new Error('Um dos quadros é todo transparente.');
 
   const width = x1 - x0 + 1;
   const height = y1 - y0 + 1;

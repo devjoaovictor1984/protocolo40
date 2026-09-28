@@ -40,6 +40,9 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   quadro, e o agachado saía 40% maior que o em pé. O script ganhou `--vista
   frente`, que usa a largura do boné como régua e o meio entre os pés como
   ponto fixo. A flexão continua em `--vista lado` (o padrão).
+- O que resolveu de vez foi pedir as poses **numa folha só**, lado a lado: a
+  geração mantém escala, chão e abertura dos pés sozinha. `--folha poses.png`
+  separa as poses pelas colunas vazias e monta a ida e volta (1 2 3 2).
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 
