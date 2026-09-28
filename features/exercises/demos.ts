@@ -40,6 +40,7 @@ const DEMOS: Record<string, DemoRegistrada> = {
   'abdominal-infra': { width: 720, height: 393 },
   'corrida-estacionaria': { width: 359, height: 720 },
   corda: { width: 460, height: 720 },
+  prancha: { width: 720, height: 299 },
 };
 
 /** Slug → slug de quem tem os arquivos. */

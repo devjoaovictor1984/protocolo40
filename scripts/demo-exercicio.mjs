@@ -20,6 +20,11 @@
  * volta; `--ordem` escolhe a sequência (a marcha é `--ordem 1,2,1,3 --ponto cabeca`). De frente, a escala da folha fica como
  * veio — ela já sai numa só; de lado, os apoios ainda acertam o que variar.
  *
+ * Exercício parado (prancha, cadeira na parede) é um quadro só: sai tudo
+ * como imagem parada, e a lista mostra o mascote na posição, sem animar.
+ *
+ *   node scripts/demo-exercicio.mjs prancha prancha.png
+ *
  * `--ms` é quanto cada quadro fica na tela; sem ele, as pontas do movimento
  * (primeiro quadro e o do meio da lista) seguram um pouco mais que a passagem.
  *
@@ -149,9 +154,9 @@ if (folha) {
   console.log(`${poses.length} poses na folha → ${quadros.length} quadros${ordem ? '' : ' em ida e volta'}`);
 }
 
-if (!slug || !/^[a-z0-9-]+$/.test(slug) || quadros.length < 2) {
+if (!slug || !/^[a-z0-9-]+$/.test(slug) || quadros.length < 1) {
   console.error('Uso: node scripts/demo-exercicio.mjs <slug> (<quadro.png> ... | --folha poses.png) [--vista lado|frente] [--ms 500,250]');
-  console.error('O slug é o mesmo do exercício no seed (ex.: flexao) e são pelo menos dois quadros.');
+  console.error('O slug é o mesmo do exercício no seed (ex.: flexao).');
   process.exit(1);
 }
 if (vista !== 'lado' && vista !== 'frente') {
@@ -290,6 +295,13 @@ const meio = Math.floor(quadros.length / 2);
 const tempos = ms ?? quadros.map((_, i) => (i === 0 || i === meio ? 450 : 220));
 
 async function animado({ width, height, quality, alphaQuality }, destino) {
+  // exercício parado (prancha): uma imagem só, sem o envelope de animação
+  if (alinhados.length === 1) {
+    return sharp(alinhados[0])
+      .resize({ width, height, fit: 'inside' })
+      .webp({ quality, alphaQuality, effort: 6 })
+      .toFile(destino);
+  }
   // redimensiona cada quadro antes de juntar: o `join` exige quadros do mesmo tamanho
   const menores = await Promise.all(
     alinhados.map((b) => sharp(b).resize({ width, height, fit: 'inside' }).png().toBuffer()),
@@ -317,6 +329,10 @@ console.log(`\n${pasta}`);
 console.log(`  thumb.webp  ${thumb.width}px  ${kb('thumb.webp')}`);
 console.log(`  demo.webp   ${demo.width}×${altura}  ${kb('demo.webp')}`);
 console.log(`  still.webp  ${kb('still.webp')}`);
-console.log(`  quadros: ${quadros.length} · laço de ${tempos.reduce((a, b) => a + b, 0)} ms\n`);
+console.log(
+  quadros.length === 1
+    ? '  imagem parada (um quadro só)\n'
+    : `  quadros: ${quadros.length} · laço de ${tempos.reduce((a, b) => a + b, 0)} ms\n`,
+);
 console.log('Registre em features/exercises/demos.ts:');
 console.log(`  '${slug}': { width: ${demo.width}, height: ${altura} },\n`);

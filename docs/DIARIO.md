@@ -70,6 +70,9 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   na frente → pulo com a corda sob os pés). Em ida e volta a corda giraria
   para trás. No pulo, a base do desenho é a corda no chão, e os pés ficam
   no ar sozinhos.
+- Prancha: exercício parado, um quadro só. O script aceita uma imagem e sai
+  tudo como WebP estático (miniatura de 3,4 KB). O "brilho" laranja que o
+  visualizador mostrava é cor residual em pixels de alfa zero: não aparece.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 
