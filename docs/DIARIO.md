@@ -45,6 +45,12 @@ poucos, exercício por exercício, e o lugar dela já fica reservado.
   separa as poses pelas colunas vazias e monta a ida e volta (1 2 3 2).
   Da folha não se corrige escala: ela já vem numa só, e no polichinelo o topo
   do desenho são as mãos — medir o "boné" ali mediria os dedos.
+- Marcha estacionária: alterna lados, então não toca em ida e volta —
+  `--ordem 1,2,1,3`. Com um pé só no chão, prender pelo meio dos pés fazia o
+  corpo pular de lado; `--ponto cabeca` prende pela cabeça. Nos outros de
+  frente os pés continuam melhores (testado: a cabeça fazia o pé do
+  agachamento escorregar). A primeira folha levantava a mesma perna nas cinco
+  poses e foi recusada: ensinaria elevação de joelho, não marcha.
 - `DialogContent` ganhou `overlayClassName` (a janela da demonstração escurece
   o fundo; as outras seguem iguais).
 

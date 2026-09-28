@@ -16,7 +16,8 @@
  *   node scripts/demo-exercicio.mjs agachamento --vista frente --folha poses.png
  *
  * As poses são separadas pelas colunas vazias entre elas e tocadas em ida e
- * volta: com três, 1 → 2 → 3 → 2 → 1. De frente, a escala da folha fica como
+ * volta: com três, 1 → 2 → 3 → 2 → 1. Movimento que alterna lados não é ida e
+ * volta; `--ordem` escolhe a sequência (a marcha é `--ordem 1,2,1,3 --ponto cabeca`). De frente, a escala da folha fica como
  * veio — ela já sai numa só; de lado, os apoios ainda acertam o que variar.
  *
  * `--ms` é quanto cada quadro fica na tela; sem ele, as pontas do movimento
@@ -37,9 +38,12 @@
  *   lado    (padrão; flexão, prancha) — a régua é a distância entre os apoios
  *           no chão, pés e mãos, e o ponto fixo é o pé. Eles não saem do lugar
  *           durante o movimento; a escala se corrige em no máximo 10%.
- *   frente  (agachamento, polichinelo) — a régua é a largura do boné, a única
- *           parte do corpo que não muda de tamanho de frente (os pés abrem no
- *           agachamento fundo), e o ponto fixo é o meio entre os pés. A geração
+ *   frente  (agachamento, polichinelo, marcha) — a régua é a largura do boné,
+ *           a única parte do corpo que não muda de tamanho de frente (os pés
+ *           abrem no agachamento fundo). O ponto fixo é o meio entre os pés
+ *           no chão — ou, com `--ponto cabeca`, o meio da cabeça. A cabeça é
+ *           para quando só um pé toca o chão (marcha): preso nele, o corpo
+ *           pularia de lado a cada passo. Nos outros, os pés são mais firmes. A geração
  *           costuma encher a altura da imagem em todo quadro, então aqui a
  *           correção pode ser grande: o agachado sai do mesmo tamanho do em pé.
  *
@@ -75,6 +79,10 @@ const iVista = args.indexOf('--vista');
 const vista = iVista >= 0 ? args.splice(iVista, 2)[1] : 'lado';
 const iFolha = args.indexOf('--folha');
 const folha = iFolha >= 0 ? args.splice(iFolha, 2)[1] : null;
+const iPonto = args.indexOf('--ponto');
+const ponto = iPonto >= 0 ? args.splice(iPonto, 2)[1] : 'pes';
+const iOrdem = args.indexOf('--ordem');
+const ordem = iOrdem >= 0 ? args.splice(iOrdem, 2)[1].split(',').map(Number) : null;
 const [slug, ...soltos] = args;
 
 /** Colunas vazias seguidas, em fração da largura da folha, que separam uma pose da outra. */
@@ -117,9 +125,18 @@ if (folha) {
     console.error(`Achei ${poses.length} pose na folha: as poses precisam de espaço vazio entre elas.`);
     process.exit(1);
   }
-  // ida e volta: 1 2 3 → 1 2 3 2
-  quadros = [...poses, ...poses.slice(1, -1).reverse()];
-  console.log(`${poses.length} poses na folha → ${quadros.length} quadros em ida e volta`);
+  if (ordem) {
+    const fora = ordem.filter((n) => !poses[n - 1]);
+    if (fora.length) {
+      console.error(`--ordem cita a pose ${fora.join(', ')}, e a folha tem ${poses.length}.`);
+      process.exit(1);
+    }
+    quadros = ordem.map((n) => poses[n - 1]);
+  } else {
+    // ida e volta: 1 2 3 → 1 2 3 2
+    quadros = [...poses, ...poses.slice(1, -1).reverse()];
+  }
+  console.log(`${poses.length} poses na folha → ${quadros.length} quadros${ordem ? '' : ' em ida e volta'}`);
 }
 
 if (!slug || !/^[a-z0-9-]+$/.test(slug) || quadros.length < 2) {
@@ -129,6 +146,10 @@ if (!slug || !/^[a-z0-9-]+$/.test(slug) || quadros.length < 2) {
 }
 if (vista !== 'lado' && vista !== 'frente') {
   console.error(`--vista é "lado" ou "frente", não "${vista}".`);
+  process.exit(1);
+}
+if (ponto !== 'pes' && ponto !== 'cabeca') {
+  console.error(`--ponto é "pes" ou "cabeca", não "${ponto}".`);
   process.exit(1);
 }
 if (ms && ms.length !== quadros.length) {
@@ -193,8 +214,9 @@ async function recortar(arquivo) {
     height,
     apoioInicio: a0,
     apoioLargura: a1 - a0 + 1,
-    apoioMeio: (a0 + a1) / 2,
     cabecaLargura: c1 - c0 + 1,
+    cabecaMeio: (c0 + c1) / 2,
+    apoioMeio: (a0 + a1) / 2,
   };
 }
 
@@ -219,7 +241,9 @@ const ajustados = await Promise.all(
       buffer: await sharp(r.buffer).resize(width, height).png().toBuffer(),
       width,
       height,
-      ancora: Math.round((vista === 'lado' ? r.apoioInicio : r.apoioMeio) * escala),
+      ancora: Math.round(
+        (vista === 'lado' ? r.apoioInicio : ponto === 'cabeca' ? r.cabecaMeio : r.apoioMeio) * escala,
+      ),
     };
   }),
 );
