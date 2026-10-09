@@ -29,6 +29,8 @@ import { ConviteDoNovato } from '@/features/tracks/components/novato-offer';
 import { ConviteDaTrilha, TrilhaDeHoje } from '@/features/tracks/components/track-today';
 import { DailyCards } from '@/features/dashboard/components/daily-cards';
 import { RestDayButton } from '@/features/rest/components/rest-day-button';
+import { YesterdayRest } from '@/features/rest/components/yesterday-rest';
+import { useRestDays } from '@/features/rest/use-rest-days';
 import { DailyMessage } from '@/features/messages/components/daily-message';
 import { InstallCard } from '@/features/pwa/components/install-card';
 import type { MensagemDoDia } from '@/features/messages/repository';
@@ -82,6 +84,7 @@ export function Dashboard({
   const { fullName, username, dailyGoalSeconds, timezone } = useSession();
   const today = useToday();
   const { data, isLoading } = useDashboard();
+  const { data: descansos } = useRestDays();
 
   const firstName = (fullName ?? username).split(' ')[0];
   const doneToday = (data?.todayWorkouts.length ?? 0) > 0;
@@ -159,6 +162,12 @@ export function Dashboard({
           descansouHoje={descansouHoje}
         />
       )}
+
+      {/* logo abaixo do dia de hoje: é ele que a pessoa veio ver, e ontem só
+          importa enquanto ainda dá para salvar a sequência */}
+      {!isLoading && descansos ? (
+        <YesterdayRest hoje={today} diasTreinados={data!.days} descansos={descansos} />
+      ) : null}
 
       {/* com o dia já resolvido, a trilha vira uma linha: o que vem depois */}
       {!isLoading && (doneToday || descansouHoje) && trilha ? (

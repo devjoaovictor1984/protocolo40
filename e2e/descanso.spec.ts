@@ -128,6 +128,54 @@ test.describe('descanso e navegação', () => {
     expect(depois.total_days, 'descanso não é dia treinado').toBe(3);
   });
 
+  test('o descanso de ontem pode ser registrado hoje e salva a sequência', async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    test.setTimeout(120_000);
+    userId = await signIn(context, baseURL!);
+
+    // treinou anteontem e o dia antes; ontem descansou e não marcou
+    for (const atras of [2, 3]) {
+      const dia = new Date(Date.now() - atras * 86_400_000);
+      await admin('/rest/v1/workouts', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          client_id: crypto.randomUUID(),
+          started_at: dia.toISOString(),
+          duration_seconds: 1200,
+          workout_date: dia.toISOString().slice(0, 10),
+        }),
+      });
+    }
+
+    await page.goto('/hoje');
+    const botao = page.getByRole('button', { name: 'Foi descanso' });
+    await expect(botao).toBeEnabled({ timeout: 30_000 });
+    await page.waitForLoadState('networkidle');
+    await botao.click();
+    await expect(page.getByText('Descanso registrado.').first()).toBeVisible({ timeout: 30_000 });
+
+    // o convite some: ontem está resolvido
+    await expect(page.getByRole('button', { name: 'Foi descanso' })).toHaveCount(0);
+
+    const ontem = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const linhas = await (
+      await admin(`/rest/v1/rest_days?user_id=eq.${userId}&select=day`)
+    ).json();
+    expect((linhas as { day: string }[]).map((linha) => linha.day)).toEqual([ontem]);
+
+    const [stats] = await (
+      await admin('/rest/v1/rpc/get_user_stats', {
+        method: 'POST',
+        body: JSON.stringify({ p_user: userId }),
+      })
+    ).json();
+    expect(stats.current_streak, 'ontem descansado mantém a sequência viva').toBe(3);
+  });
+
   test('um descanso por semana, e nunca num dia já treinado', async ({
     context,
     page,

@@ -1,15 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { BedDouble, Check, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { useToday } from '@/features/session/session-context';
-import { recarregar } from '@/lib/query/refresh';
-import { createClient } from '@/lib/supabase/client';
+import { useRegistrarDescanso } from '@/features/rest/use-registrar-descanso';
 
 /**
  * Registrar descanso.
@@ -17,17 +12,7 @@ import { createClient } from '@/lib/supabase/client';
  * Fica discreto de propósito, abaixo do botão de treinar: é a segunda opção
  * do dia, não a primeira. Um botão de descanso do mesmo tamanho do de treinar
  * convida a escolher o mais fácil.
- *
- * As regras vivem no banco e voltam como código — um por semana, e nunca num
- * dia já treinado. A tela traduz o motivo em vez de dizer "erro".
  */
-
-const MOTIVOS: Record<string, string> = {
-  limite: 'Você já tem um descanso nesta semana. Um por semana é o limite.',
-  ja_treinou: 'Você já treinou hoje — este dia já está garantido.',
-  sem_sessao: 'Sua sessão expirou. Entre de novo.',
-};
-
 export function RestDayButton({
   jaDescansou,
   principal = false,
@@ -40,9 +25,7 @@ export function RestDayButton({
   principal?: boolean;
 }) {
   const hoje = useToday();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [salvando, setSalvando] = useState(false);
+  const { registrar, salvando } = useRegistrarDescanso();
 
   if (jaDescansou) {
     return (
@@ -53,42 +36,12 @@ export function RestDayButton({
     );
   }
 
-  async function registrar() {
-    setSalvando(true);
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc('registrar_descanso', { p_day: hoje });
-
-      if (error) throw error;
-
-      if (data !== 'ok') {
-        toast.error('Não deu para registrar o descanso.', {
-          description: MOTIVOS[String(data)] ?? 'Tente novamente.',
-        });
-        return;
-      }
-
-      await recarregar(queryClient, ['dashboard'], ['workouts']);
-      // a trilha e o "já descansou" vêm do servidor: sem isto o dia de
-      // descanso ficava pedindo o descanso que acabou de ser registrado
-      router.refresh();
-      toast.success('Descanso registrado.', {
-        description: 'Recuperar faz parte. Sua sequência continua.',
-      });
-    } catch {
-      toast.error('Não conseguimos registrar agora.', { description: 'Confira a conexão.' });
-    } finally {
-      setSalvando(false);
-    }
-  }
-
   return (
     <Button
       variant={principal ? 'default' : 'ghost'}
       className={principal ? 'h-16 w-full text-base font-bold' : 'text-muted-foreground h-11'}
       disabled={salvando}
-      onClick={() => void registrar()}
+      onClick={() => void registrar(hoje)}
     >
       {salvando ? (
         <Loader2 aria-hidden className="size-4 animate-spin" />

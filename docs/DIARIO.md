@@ -9,6 +9,28 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 09/10/2026 · O descanso de ontem pode ser registrado hoje
+
+O pedido: "ontem foi descanso mas não anotei". O descanso só se registrava no
+próprio dia, e quem esquecia acordava com a sequência quebrada sem ter feito
+nada de errado.
+
+- **Até ontem, não mais.** `registrar_descanso` (migration
+  `20261009100000_descanso_de_ontem.sql`) passou a recusar `futuro` e
+  `antigo`, com "hoje" no fuso do perfil. É ontem que decide se a sequência
+  vive; liberar a semana inteira viraria borracha de calendário. Antes a
+  função aceitava qualquer data — inclusive futura, que travava o limite da
+  semana antes de ela acontecer.
+- **O convite só aparece quando resolve algo** (`features/rest/components/
+  yesterday-rest.tsx`, na tela Hoje, abaixo do cartão do dia): ontem sem treino
+  nem descanso, nenhum descanso a ±6 dias de ontem (a janela que o banco
+  confere) e algum treino antes de ontem.
+- O registro saiu do botão para `features/rest/use-registrar-descanso.ts`,
+  que os dois usam. Ele agora recarrega `['rest-days']`: a sequência da tela
+  Hoje é calculada com essa lista, e sem recarregá-la o descanso ficava gravado
+  e a sequência continuava quebrada na tela.
+- Teste: `e2e/descanso.spec.ts` › "o descanso de ontem pode ser registrado hoje".
+
 ## 27/09/2026 · O mascote mostra como se faz o exercício
 
 O pedido: no cartão do treino, ao lado de cada exercício, uma miniatura do
