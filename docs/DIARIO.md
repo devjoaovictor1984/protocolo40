@@ -30,7 +30,7 @@ não tive como alterar a senha no meu painel."
   de "sua sessão expirou" para todos.
 - **Fora do código, no painel do Supabase:** o SMTP padrão manda poucos
   e-mails por hora e não serve para produção. SMTP próprio em Authentication ›
-  Emails › SMTP Settings; `https://protocolo40.vercel.app/auth/callback` em
+  Emails › SMTP Settings; `https://www.p20x.com.br/auth/callback` em
   Authentication › URL Configuration › Redirect URLs.
 
 ## 19/10/2026 · Na tela Hoje, o sem açúcar deixa escolher 30, 60 ou 90
