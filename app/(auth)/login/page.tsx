@@ -13,6 +13,18 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+/**
+ * O que deu errado na volta do Google ou de um link de e-mail. "Sua sessão
+ * expirou" para um link de senha que não abriu fazia a pessoa tentar a senha
+ * que ela tinha acabado de dizer que esqueceu.
+ */
+const MENSAGENS_DE_ERRO: Record<string, string> = {
+  sessao:
+    'Esse link não abriu. Ele vale uma vez só e por pouco tempo — peça outro em "Esqueci minha senha".',
+  'sem-codigo': 'O link chegou incompleto. Peça outro em "Esqueci minha senha".',
+  oauth: 'O Google não concluiu a entrada. Tente de novo.',
+};
+
 export default async function LoginPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const redirectTo = typeof params.redirect === 'string' ? params.redirect : undefined;
@@ -27,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
 
       {erro ? (
         <p role="status" className="border-destructive/30 bg-destructive/8 text-destructive rounded-lg border p-3 text-sm">
-          Sua sessão expirou. Entre novamente para continuar.
+          {MENSAGENS_DE_ERRO[erro] ?? 'Sua sessão expirou. Entre novamente para continuar.'}
         </p>
       ) : null}
 

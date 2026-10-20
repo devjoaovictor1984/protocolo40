@@ -9,6 +9,30 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 20/10/2026 · Senha: troca pelo painel e link que abre em qualquer aparelho
+
+O relato: "não lembro minha senha, tentei recuperar e ele não mandou o e-mail. E
+não tive como alterar a senha no meu painel."
+
+- **Troca de senha em Configurações › Perfil e dados** (`changePassword` em
+  `features/auth/actions.ts`, `ChangePasswordForm`). Quem entrou pelo Google e
+  nunca teve senha cria uma ali.
+- **Erro de envio não some mais.** `requestPasswordReset` continua respondendo
+  igual com ou sem conta (não confirma e-mails para estranhos), mas registra no
+  log do servidor qualquer erro do Supabase. Antes, SMTP quebrado ou URL fora
+  da lista passavam como "o link está a caminho".
+- **O link aceita `token_hash`.** `/auth/callback` troca `code` (PKCE) ou
+  confere `token_hash` + `type` com `verifyOtp`. O `code` só vale no navegador
+  que pediu — pedir no computador e abrir no celular dava `erro=sessao`. Para
+  usar o `token_hash`, o modelo "Reset Password" do Supabase precisa apontar
+  para `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=/redefinir-senha`.
+- **O login diz o que falhou** (`?erro=sessao`, `sem-codigo`, `oauth`), em vez
+  de "sua sessão expirou" para todos.
+- **Fora do código, no painel do Supabase:** o SMTP padrão manda poucos
+  e-mails por hora e não serve para produção. SMTP próprio em Authentication ›
+  Emails › SMTP Settings; `https://protocolo40.vercel.app/auth/callback` em
+  Authentication › URL Configuration › Redirect URLs.
+
 ## 19/10/2026 · Na tela Hoje, o sem açúcar deixa escolher 30, 60 ou 90
 
 O relato: "a pessoa não escolhe 30, 60 ou 90. Vai direto para o de 90 dias."

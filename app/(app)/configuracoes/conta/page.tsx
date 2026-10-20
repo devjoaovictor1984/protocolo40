@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ArrowLeft } from 'lucide-react';
 
 import { ButtonLink } from '@/components/ui/button-link';
+import { ChangePasswordForm } from '@/features/auth/components/auth-forms';
 import { AvatarUpload } from '@/features/profile/components/avatar-upload';
 import { ProfileForm } from '@/features/settings/components/profile-form';
 import { DeleteAccountSection } from '@/features/settings/components/settings-controls';
@@ -36,6 +37,16 @@ export default async function ContaPage() {
       </section>
 
       <ProfileForm profile={profile} />
+
+      <section aria-labelledby="senha" className="border-border flex flex-col gap-3 border-t pt-8">
+        <h2
+          id="senha"
+          className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase"
+        >
+          Senha
+        </h2>
+        <ChangePasswordForm />
+      </section>
 
       <section className="border-border flex flex-col gap-3 border-t pt-8">
         <h2 className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">

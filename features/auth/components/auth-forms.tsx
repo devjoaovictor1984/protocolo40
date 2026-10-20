@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 
 import {
+  changePassword,
   requestPasswordReset,
   signInWithPassword,
   signUpWithPassword,
@@ -124,6 +125,37 @@ export function ResetPasswordForm() {
       />
 
       <SubmitButton>Salvar nova senha</SubmitButton>
+    </form>
+  );
+}
+
+/** Trocar (ou criar, para quem entrou pelo Google) a senha estando logado. */
+export function ChangePasswordForm() {
+  const [state, action] = useActionState(changePassword, idleState);
+
+  return (
+    <form action={action} className="flex flex-col gap-5" noValidate>
+      <FormMessage state={state} />
+
+      <Field
+        label="Nova senha"
+        name="password"
+        type="password"
+        autoComplete="new-password"
+        required
+        hint="Pelo menos 8 caracteres. Entrou pelo Google? Isto cria uma senha para entrar também por e-mail."
+        error={state.fieldErrors?.password}
+      />
+      <Field
+        label="Repita a nova senha"
+        name="confirm"
+        type="password"
+        autoComplete="new-password"
+        required
+        error={state.fieldErrors?.confirm}
+      />
+
+      <SubmitButton>Salvar senha</SubmitButton>
     </form>
   );
 }

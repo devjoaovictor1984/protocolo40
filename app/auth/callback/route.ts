@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import type { EmailOtpType } from '@supabase/supabase-js';
 
 import { aplicarConvitePendente } from '@/lib/invites/cookie';
 import { createClient } from '@/lib/supabase/server';
@@ -21,12 +22,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?erro=oauth`);
   }
 
-  if (!code) {
+  /*
+   * Dois formatos de link chegam aqui. O `code` (PKCE) só troca por sessão no
+   * mesmo navegador que pediu, porque o verificador mora num cookie dele: quem
+   * pedia a senha no computador e abria o e-mail no celular caía em
+   * `erro=sessao`. O `token_hash` vale em qualquer aparelho — é o que o modelo
+   * de e-mail do Supabase manda quando aponta para cá com
+   * `?token_hash={{ .TokenHash }}&type=recovery`.
+   */
+  const tokenHash = searchParams.get('token_hash');
+  const type = searchParams.get('type') as EmailOtpType | null;
+
+  if (!code && !(tokenHash && type)) {
     return NextResponse.redirect(`${origin}/login?erro=sem-codigo`);
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = code
+    ? await supabase.auth.exchangeCodeForSession(code)
+    : await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: type! });
 
   if (error) {
     return NextResponse.redirect(`${origin}/login?erro=sessao`);

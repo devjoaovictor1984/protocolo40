@@ -40,6 +40,9 @@ function describeAuthError(error: AuthError): string {
   if (code === 'same_password') {
     return 'A nova senha precisa ser diferente da anterior.';
   }
+  if (code === 'reauthentication_needed' || code === 'reauthentication_not_valid') {
+    return 'Por segurança, saia e entre de novo antes de trocar a senha — ou use "Esqueci minha senha".';
+  }
 
   return 'Não foi possível concluir agora. Tente novamente em instantes.';
 }
@@ -127,6 +130,13 @@ export async function requestPasswordReset(
     return { status: 'error', message: describeAuthError(error) };
   }
 
+  // para a pessoa a resposta é a mesma; para quem mantém o app, não. Sem este
+  // registro um SMTP quebrado ou uma URL fora da lista do Supabase passavam
+  // como "o link está a caminho", e ninguém tinha onde ver por que não chegou
+  if (error) {
+    console.error('[auth] resetPasswordForEmail falhou', { code: error.code, status: error.status, message: error.message });
+  }
+
   // A resposta é a mesma existindo ou não a conta: não confirmamos para
   // estranhos quais e-mails estão cadastrados.
   return {
@@ -165,6 +175,41 @@ export async function updatePassword(_prev: ActionState, formData: FormData): Pr
 
   revalidatePath('/', 'layout');
   redirect('/hoje');
+}
+
+/**
+ * Trocar a senha estando logado, pelo painel.
+ *
+ * Serve também para quem entrou pelo Google e nunca teve senha: `updateUser`
+ * cria uma. Não pede a senha atual porque o Supabase não tem como conferi-la
+ * aqui; quem protege é a sessão, e o projeto pode exigir reautenticação.
+ */
+export async function changePassword(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get('password'),
+    confirm: formData.get('confirm'),
+  });
+
+  if (!parsed.success) {
+    return invalidState(parsed.error.issues);
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { status: 'error', message: 'Sua sessão expirou. Entre de novo para trocar a senha.' };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+
+  if (error) {
+    return { status: 'error', message: describeAuthError(error) };
+  }
+
+  return { status: 'success', message: 'Senha salva. Use a nova da próxima vez que entrar.' };
 }
 
 export async function signOut() {
