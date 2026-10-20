@@ -71,9 +71,10 @@ export default async function DashboardPage() {
       ultimaInsignia={
         ultima ? { emblem: ultima.emblem, tier: ultima.tier, name: ultima.name } : null
       }
-      desafios={desafios.map(({ desafio }) => ({
+      desafios={desafios.map(({ desafio, variantes }) => ({
         desafio,
         dias: diasPorDesafio.get(desafio.id) ?? [],
+        variantes,
       }))}
       meta={meta}
       trilha={trilha}

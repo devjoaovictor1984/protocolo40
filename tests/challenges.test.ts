@@ -383,6 +383,9 @@ describe('os desafios da tela de Hoje', () => {
     kind: 'treino' | 'alimentacao';
     sort_order?: number;
     participando?: boolean;
+    duration_days?: number | null;
+    meuInicio?: string | null;
+    grupo?: string | null;
   };
   const d = (slug: string, starts_on: string, ends_on: string, extra: Partial<D> = {}): D => ({
     slug,
@@ -415,6 +418,41 @@ describe('os desafios da tela de Hoje', () => {
     );
 
     expect(slugs(lista).sort()).toEqual(['acucar', 'novembro']);
+  });
+
+  describe('o grupo vira um convite só, com a escolha', () => {
+    const acucar = (dias: number, extra: Partial<D> = {}) =>
+      d(`${dias}-dias-sem-acucar`, '2026-10-19', '2099-12-31', {
+        kind: 'alimentacao',
+        duration_days: dias,
+        grupo: 'Sem açúcar',
+        sort_order: dias,
+        ...extra,
+      });
+
+    it('quem não começou vê as três durações, da menor para a maior', () => {
+      const lista = desafiosDoHoje([acucar(90), acucar(30), acucar(60)], '2026-10-19');
+
+      expect(lista).toHaveLength(1);
+      expect(lista[0].papel).toBe('convite');
+      expect(lista[0].variantes?.map((v) => v.duration_days)).toEqual([30, 60, 90]);
+    });
+
+    it('quem está no de 30 vê o de 30 em curso, e nenhum convite do grupo', () => {
+      const lista = desafiosDoHoje(
+        [acucar(90), acucar(30, { participando: true, meuInicio: '2026-10-19' }), acucar(60)],
+        '2026-10-20',
+      );
+
+      expect(lista).toEqual([
+        { desafio: expect.objectContaining({ slug: '30-dias-sem-acucar' }), papel: 'em_curso' },
+      ]);
+    });
+
+    it('desafio fora de grupo continua sem escolha', () => {
+      const [convite] = desafiosDoHoje([acucar(21, { grupo: null })], '2026-10-19');
+      expect(convite.variantes).toBeUndefined();
+    });
   });
 
   it('em curso vem antes de convite', () => {

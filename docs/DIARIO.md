@@ -9,6 +9,23 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 19/10/2026 · Na tela Hoje, o sem açúcar deixa escolher 30, 60 ou 90
+
+O relato: "a pessoa não escolhe 30, 60 ou 90. Vai direto para o de 90 dias."
+`desafiosDoHoje` mostra um convite por tipo, o de maior `sort_order` — o de 90.
+Em /desafios os três já apareciam lado a lado, e lá ficou como estava.
+
+- **`challenges.grupo`** (migration `20261019120000_grupo_de_desafios.sql`):
+  desafios que são o mesmo em durações diferentes. É texto e é o nome que a
+  tela mostra ("Sem açúcar").
+- **`desafiosDoHoje` devolve `variantes`** no convite de um grupo, da menor
+  duração para a maior, enquanto a pessoa não começou nenhum. Quem começou o de
+  30 vê o de 30 em curso, e nenhum convite do grupo.
+- O cartão (`challenge-card.tsx`) vira "Sem açúcar" com três botões — 30 · 60 ·
+  90 dias —, cada um para a tela daquele desafio, onde se escolhe o dia de
+  começar. O número de participantes é a soma dos três.
+- Testes: `tests/challenges.test.ts` › "o grupo vira um convite só, com a escolha".
+
 ## 19/10/2026 · Sem açúcar: 30, 60 e 90 dias
 
 O pedido: o desafio sem açúcar, ativado quando a pessoa quiser, em 30, 60 e 90

@@ -35,6 +35,11 @@ export type Desafio = {
    * para começar — não quando o desafio acontece.
    */
   duration_days: number | null;
+  /**
+   * Desafios que são o mesmo em durações diferentes ("Sem açúcar" de 30, 60 e
+   * 90) têm o mesmo grupo. Na tela de Hoje viram um convite só, com a escolha.
+   */
+  grupo?: string | null;
 };
 
 type Janela = { starts_on: DayKey; ends_on: DayKey };
@@ -436,7 +441,16 @@ export function desafioEmDestaque<T extends Pick<Desafio, 'starts_on' | 'ends_on
   return porVir[0] ?? null;
 }
 
-export type DesafioNoHoje<T> = { desafio: T; papel: 'em_curso' | 'convite' };
+export type DesafioNoHoje<T> = {
+  desafio: T;
+  papel: 'em_curso' | 'convite';
+  /**
+   * No convite de um grupo, as durações para escolher, da menor para a maior.
+   * Sem isto a tela mostrava uma só — a de maior ordem — e a pessoa caía
+   * direto no de 90 dias sem saber que havia o de 30.
+   */
+  variantes?: T[];
+};
 
 /**
  * Os desafios que aparecem na tela de Hoje.
@@ -456,6 +470,7 @@ export type DesafioNoHoje<T> = { desafio: T; papel: 'em_curso' | 'convite' };
 export function desafiosDoHoje<
   T extends Pick<Desafio, 'starts_on' | 'ends_on' | 'kind'> & {
     duration_days?: number | null;
+    grupo?: string | null;
     meuInicio?: DayKey | null;
     sort_order?: number;
     participando?: boolean;
@@ -503,7 +518,22 @@ export function desafiosDoHoje<
         : doTipo
             .filter(({ desafio, janela }) => !janela && datasParaComecar(desafio, hoje))
             .sort(ordenar)[0]);
-    if (proximo) convites.push({ desafio: proximo.desafio, papel: 'convite' });
+    if (proximo) {
+      // o grupo só vira escolha enquanto ninguém dele começou: quem está no de
+      // 30 vê o de 30 em curso, e não um convite para os outros dois
+      const grupo = proximo.janela ? null : proximo.desafio.grupo;
+      const variantes = grupo
+        ? doTipo
+            .filter(({ desafio, janela }) => desafio.grupo === grupo && !janela && datasParaComecar(desafio, hoje))
+            .map(({ desafio }) => desafio)
+            .sort((a, b) => (a.duration_days ?? 0) - (b.duration_days ?? 0))
+        : [];
+      convites.push(
+        variantes.length > 1
+          ? { desafio: proximo.desafio, papel: 'convite', variantes }
+          : { desafio: proximo.desafio, papel: 'convite' },
+      );
+    }
   }
 
   // o que está valendo agora vem antes do que ainda vai começar

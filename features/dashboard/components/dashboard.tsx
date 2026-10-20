@@ -72,7 +72,7 @@ export function Dashboard({
   descansouHoje: boolean;
   ultimaInsignia: { emblem: string; tier: BadgeTier; name: string } | null;
   /** Os em curso e os convites, já escolhidos por `desafiosDoHoje`, com os meus dias. */
-  desafios: { desafio: DesafioResumo; dias: string[] }[];
+  desafios: { desafio: DesafioResumo; dias: string[]; variantes?: DesafioResumo[] }[];
   meta: MetaDePeso | null;
   /** A trilha em que a pessoa está. Nula quando ela não entrou em nenhuma. */
   trilha: TrilhaCompleta | null;
@@ -140,8 +140,14 @@ export function Dashboard({
           convite, não tarefa — quem abriu o app para treinar não precisa passar
           por eles. O próximo a começar aparece já no dia em que é criado, para
           dar tempo de entrar antes do primeiro dia. */}
-      {desafios.map(({ desafio, dias }) => (
-        <ChallengeCard key={desafio.id} desafio={desafio} meusDias={dias} hoje={today} />
+      {desafios.map(({ desafio, dias, variantes }) => (
+        <ChallengeCard
+          key={desafio.id}
+          desafio={desafio}
+          meusDias={dias}
+          hoje={today}
+          variantes={variantes}
+        />
       ))}
 
       {/*

@@ -186,6 +186,8 @@ export type ChallengeRow = Timestamps & {
   kind: ChallengeKind;
   /** Nulo: janela única. Preenchido: cada pessoa escolhe o início, e as datas dizem quando dá para começar. */
   duration_days: number | null;
+  /** Nome do grupo de desafios que são o mesmo em durações diferentes. Nulo fora de grupo. */
+  grupo: string | null;
 };
 
 export type ChallengeParticipantRow = {

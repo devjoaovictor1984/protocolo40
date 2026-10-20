@@ -24,10 +24,16 @@ export function ChallengeCard({
   desafio,
   meusDias,
   hoje,
+  variantes,
 }: {
   desafio: DesafioResumo;
   meusDias: readonly string[];
   hoje: string;
+  /**
+   * O mesmo desafio em durações diferentes ("Sem açúcar" de 30, 60 e 90). O
+   * cartão vira o do grupo, e a escolha da duração fica nele.
+   */
+  variantes?: readonly DesafioResumo[];
 }) {
   // só a fase sai daqui: ela depende das datas, e não do que este aparelho
   // sabe. O número de dias é da ilha de cliente, que conta o que não subiu.
@@ -39,8 +45,15 @@ export function ChallengeCard({
   const meuDesafio = janela ? { ...desafio, ...janela } : desafio;
   const fase = janela ? faseDo(janela, hoje) : 'antes';
   const arte = arteDoDesafio(desafio.image_path);
-  const href = `/desafios/${desafio.slug}`;
+  const escolha = variantes && variantes.length > 1 ? variantes : null;
+  // no grupo, o cartão leva à lista, onde as durações estão lado a lado
+  const href = escolha ? '/desafios' : `/desafios/${desafio.slug}`;
+  const titulo = escolha ? (desafio.grupo ?? desafio.title) : desafio.title;
+  const tagline = escolha ? 'Você escolhe quanto tempo e quando começar.' : desafio.tagline;
   const alimentacao = desafio.kind === 'alimentacao';
+  const participantes = escolha
+    ? escolha.reduce((soma, variante) => soma + variante.participantes, 0)
+    : desafio.participantes;
 
   const quando =
     pessoal && !janela
@@ -85,11 +98,9 @@ export function ChallengeCard({
               href={href}
               className="text-lg leading-tight font-extrabold tracking-tight text-white outline-none after:absolute after:inset-0 after:content-['']"
             >
-              {desafio.title}
+              {titulo}
             </Link>
-            {desafio.tagline ? (
-              <p className="truncate text-sm text-white/85">{desafio.tagline}</p>
-            ) : null}
+            {tagline ? <p className="truncate text-sm text-white/85">{tagline}</p> : null}
           </div>
         </div>
       ) : null}
@@ -110,11 +121,9 @@ export function ChallengeCard({
             href={href}
             className="block truncate text-base font-extrabold tracking-tight outline-none after:absolute after:inset-0 after:content-['']"
           >
-            {desafio.title}
+            {titulo}
           </Link>
-          {desafio.tagline ? (
-            <p className="text-muted-foreground truncate text-sm">{desafio.tagline}</p>
-          ) : null}
+          {tagline ? <p className="text-muted-foreground truncate text-sm">{tagline}</p> : null}
         </div>
 
         <ChevronRight
@@ -137,6 +146,21 @@ export function ChallengeCard({
         </div>
       ) : desafio.participando ? (
         <ProgressoResumido desafio={meuDesafio} meusDias={meusDias} hoje={hoje} />
+      ) : escolha ? (
+        // por cima do link esticado: cada duração leva à própria tela, onde
+        // a pessoa escolhe o dia de começar
+        <nav aria-label="Escolha a duração" className="relative z-10 grid grid-cols-3 gap-2">
+          {escolha.map((variante) => (
+            <Link
+              key={variante.id}
+              href={`/desafios/${variante.slug}`}
+              className="border-border hover:border-primary focus-visible:ring-ring flex h-14 flex-col items-center justify-center rounded-xl border text-center outline-none focus-visible:ring-2"
+            >
+              <span className="tnum text-base leading-none font-extrabold">{variante.duration_days}</span>
+              <span className="text-muted-foreground text-[11px]">dias</span>
+            </Link>
+          ))}
+        </nav>
       ) : (
         <div className="flex flex-col gap-1.5">
           <p className="text-muted-foreground text-xs leading-relaxed">
@@ -162,9 +186,9 @@ export function ChallengeCard({
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
         <Users aria-hidden className="size-3" />
-        {desafio.participantes === 0
+        {participantes === 0
           ? 'Ninguém entrou ainda. Seja o primeiro.'
-          : `${desafio.participantes} ${desafio.participantes === 1 ? 'pessoa' : 'pessoas'} participando`}
+          : `${participantes} ${participantes === 1 ? 'pessoa' : 'pessoas'} participando`}
       </p>
       </div>
     </article>
