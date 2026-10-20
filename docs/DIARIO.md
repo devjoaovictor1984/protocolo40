@@ -9,6 +9,24 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 19/10/2026 · Sem açúcar: 30, 60 e 90 dias
+
+O pedido: o desafio sem açúcar, ativado quando a pessoa quiser, em 30, 60 e 90
+dias.
+
+- **Só dados, nenhum código.** Migration `20261019110000_sem_acucar_30_60_90.sql`
+  cria três desafios de marcação (`kind = 'alimentacao'`) com início pessoal
+  (`duration_days` 30, 60 e 90) — a estrutura que o de 21 dias já usa.
+- **Três desafios, não um com três durações:** meta, ranking e medalha moram no
+  desafio. Um só poria no mesmo ranking o dia 25 de 30 e o dia 25 de 90.
+- **Folga de um dia por semana:** metas 26, 52 e 78. Medalhas `sem-acucar-30`
+  (prata), `-60` (ouro) e `-90` (imperial), todas com o cubo riscado.
+- **Nascem ligados**, ao contrário do de 21, porque foram pedidos para ir ao ar.
+  O de 21 ficou como estava.
+- Quem entra em dois ao mesmo tempo marca o dia em cada um: as marcações são
+  por desafio. Se isso incomodar, o caminho é uma marcação valer para todos os
+  desafios de açúcar em que a pessoa está, em `marcar_dia_no_desafio`.
+
 ## 19/10/2026 · Descanso sem limite por semana
 
 O pedido: "quero poder dar quantos descansos eu quiser". O teto de um por
