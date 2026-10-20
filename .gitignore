@@ -55,3 +55,6 @@ next-env.d.ts
 
 # permitir o exemplo de env
 !.env.example
+
+# projeto ligado pelo `vercel link`
+.vercel
