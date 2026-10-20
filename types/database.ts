@@ -697,8 +697,8 @@ export interface Database {
       badges: TableDef<BadgeRow, InsertOf<BadgeRow, 'slug' | 'name'>>;
       daily_messages: TableDef<DailyMessageRow, InsertOf<DailyMessageRow, 'day_of_year'>>;
       plans: TableDef<PlanRow, InsertOf<PlanRow, 'slug' | 'name'>>;
-      // Sem policy de INSERT: quem grava é `registrar_descanso`, que confere o
-      // limite de um por semana.
+      // Sem policy de INSERT: quem grava é `registrar_descanso`, que recusa dia
+      // já treinado, futuro ou anterior a ontem.
       rest_days: TableDef<
         RestDayRow,
         InsertOf<RestDayRow, 'user_id' | 'day'>,

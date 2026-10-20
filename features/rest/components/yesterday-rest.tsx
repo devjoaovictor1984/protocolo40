@@ -4,15 +4,14 @@ import { BedDouble, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useRegistrarDescanso } from '@/features/rest/use-registrar-descanso';
-import { addDays, daysBetween } from '@/services/calendar';
+import { addDays } from '@/services/calendar';
 
 /**
  * "Ontem foi descanso?"
  *
  * Quem descansou e esqueceu de marcar acordava com a sequência quebrada sem ter
  * feito nada de errado. O convite aparece só quando ele resolve alguma coisa:
- * ontem sem treino nem descanso, um descanso ainda livre na semana, e alguém
- * que já vinha treinando antes de ontem — no primeiro dia, "ontem" não existe.
+ * ontem sem treino nem descanso, e alguém que já vinha treinando antes de ontem — no primeiro dia, "ontem" não existe.
  *
  * O banco aceita até ontem e não mais: é ontem que decide se a sequência vive.
  */
@@ -29,12 +28,9 @@ export function YesterdayRest({
   const ontem = addDays(hoje, -1);
 
   const ontemResolvido = diasTreinados.includes(ontem) || descansos.includes(ontem);
-  // a mesma janela que `registrar_descanso` confere: oferecer um botão que o
-  // banco vai recusar seria pedir um toque para dar uma notícia ruim
-  const semanaOcupada = descansos.some((dia) => Math.abs(daysBetween(dia, ontem)) <= 6);
   const vinhaTreinando = diasTreinados.some((dia) => dia < ontem);
 
-  if (ontemResolvido || semanaOcupada || !vinhaTreinando) return null;
+  if (ontemResolvido || !vinhaTreinando) return null;
 
   return (
     <section

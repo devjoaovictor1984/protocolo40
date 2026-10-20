@@ -176,7 +176,7 @@ test.describe('descanso e navegação', () => {
     expect(stats.current_streak, 'ontem descansado mantém a sequência viva').toBe(3);
   });
 
-  test('um descanso por semana, e nunca num dia já treinado', async ({
+  test('um descanso por dia, e nunca num dia já treinado', async ({
     context,
     page,
     baseURL,

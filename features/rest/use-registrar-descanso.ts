@@ -11,13 +11,12 @@ import { createClient } from '@/lib/supabase/client';
 /**
  * Registrar um dia de descanso — hoje ou ontem.
  *
- * As regras vivem no banco e voltam como código — um por semana, nunca num dia
- * já treinado, nunca no futuro nem antes de ontem. A tela traduz o motivo em
+ * As regras vivem no banco e voltam como código — nunca num dia já treinado,
+ * nunca no futuro nem antes de ontem. Quantos por semana, a pessoa decide. A tela traduz o motivo em
  * vez de dizer "erro".
  */
 
 const MOTIVOS: Record<string, string> = {
-  limite: 'Você já tem um descanso nesta semana. Um por semana é o limite.',
   ja_treinou: 'Este dia já tem treino — ele já está garantido.',
   futuro: 'Só dá para registrar o descanso no próprio dia.',
   antigo: 'O descanso pode ser registrado até o dia seguinte. Esse já passou.',

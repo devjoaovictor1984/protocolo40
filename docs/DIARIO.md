@@ -9,6 +9,26 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 19/10/2026 · Descanso sem limite por semana
+
+O pedido: "quero poder dar quantos descansos eu quiser". O teto de um por
+semana engessava quem precisa de mais folga — e `services/objective.ts` chega
+a recomendar até quatro dias de descanso para alguns objetivos, que o app
+recusava.
+
+- **Só o `limite` saiu.** `registrar_descanso` (migration
+  `20261019100000_descanso_sem_limite.sql`) continua recusando `ja_treinou`,
+  `futuro` e `antigo`. Um por dia segue garantido pelo `unique(user_id, day)`.
+- O convite "Ontem foi descanso?" (`yesterday-rest.tsx`) não confere mais a
+  janela de ±6 dias.
+- **O que isso abre, de propósito:** a trilha conta descanso como dia cumprido,
+  então dá para "descansar" a trilha até a medalha. Antes o limite impedia; agora
+  a decisão é da pessoa. Se virar problema, o lugar de mexer é a contagem da
+  trilha (`20260927140100_trilha_do_novato_estrutura.sql`, contar descanso só na
+  sessão de descanso), não o registro.
+- A tabela de regras da entrada de 26/08 ("Quantos posso ter? Um por semana")
+  ficou histórica: hoje são quantos a pessoa quiser, um por dia.
+
 ## 09/10/2026 · O descanso de ontem pode ser registrado hoje
 
 O pedido: "ontem foi descanso mas não anotei". O descanso só se registrava no
