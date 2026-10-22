@@ -9,6 +9,26 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 22/10/2026 · E-mails do Auth em português e com a marca
+
+Os e-mails de senha, confirmação e afins saíam com o modelo padrão do Supabase,
+em inglês e sem marca. E o modelo "Reset Password" nunca tinha sido trocado
+para `token_hash` (o passo que a entrada de 20/10 pedia): o link ainda caía no
+PKCE e quebrava ao abrir em outro aparelho.
+
+- **`scripts/emails.mjs`** guarda assunto e corpo de recuperação, confirmação,
+  link de acesso, troca de e-mail, convite e código de verificação. Sem
+  argumento, gera prévias em HTML no diretório temporário; com `--aplicar`,
+  grava no projeto pela Management API (`SUPABASE_ACCESS_TOKEN`). Editar no
+  painel funciona, mas o próximo `--aplicar` sobrescreve: mude no script.
+- **Todo link vai para `/auth/callback?token_hash=...&type=...&next=...`**,
+  nunca `{{ .ConfirmationURL }}`. Recuperação leva a `/redefinir-senha`,
+  confirmação e convite a `/onboarding`.
+- **Logo em `public/marca/logo-email.png`** (PNG, fundo da faixa já aplicado),
+  porque o Outlook não abre WebP. Imagem bloqueada mostra "P20X" pelo `alt`.
+- As notificações (senha trocada, e-mail trocado...) seguem desligadas no
+  projeto e não foram traduzidas. Se forem ligadas, entram no mesmo script.
+
 ## 22/10/2026 · E-mail do domínio e um endereço só
 
 O e-mail de recuperação não chegava. O SMTP (Hostinger, `contato@p20x.com.br`)
