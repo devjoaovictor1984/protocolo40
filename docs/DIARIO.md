@@ -9,6 +9,23 @@ onde olhar quando voltar a dar problema. Ordem cronológica inversa — o recent
 
 ---
 
+## 22/10/2026 · E-mail do domínio e um endereço só
+
+O e-mail de recuperação não chegava. O SMTP (Hostinger, `contato@p20x.com.br`)
+estava certo e o Supabase respondia 200, mas o DNS do `p20x.com.br` só tinha
+o SPF: sem MX, sem DKIM e sem DMARC, o Gmail não tinha por que confiar no
+remetente.
+
+- **DNS no Registro.br** (zona em modo avançado, fora do código): MX
+  `5 mx1.hostinger.com` e `10 mx2.hostinger.com`; CNAME
+  `hostingermail-{a,b,c}._domainkey` → `hostingermail-{a,b,c}.dkim.mail.hostinger.com`;
+  TXT `_dmarc` = `v=DMARC1; p=none`. O A, o CNAME do `www` (Vercel) e o SPF
+  não mudaram. Confira com `nslookup -type=MX p20x.com.br d.sec.dns.br`.
+- **`protocolo40.vercel.app` leva para `www.p20x.com.br`** (`redirects()` em
+  `next.config.ts`, por `host`). Sessão e cookie são por domínio: quem usava o
+  vercel.app tinha outra sessão e recebia links do www. `/api` (o cron) e
+  `/auth` (um login já começado lá) ficam de fora.
+
 ## 20/10/2026 · Senha: troca pelo painel e link que abre em qualquer aparelho
 
 O relato: "não lembro minha senha, tentei recuperar e ele não mandou o e-mail. E

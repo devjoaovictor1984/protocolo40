@@ -47,6 +47,18 @@ const nextConfig: NextConfig = {
       { source: '/criar-conta', destination: '/cadastro', permanent: false },
       { source: '/insignias', destination: '/conquistas', permanent: false },
       { source: '/suporte', destination: '/ajuda', permanent: false },
+      /*
+       * O endereço da Vercel leva para o domínio oficial. Login, cookie e link
+       * de e-mail moram em www.p20x.com.br; quem ficava no vercel.app tinha
+       * outra sessão e recebia links de outro domínio. `/api` (o cron) e
+       * `/auth` (um login já começado lá) ficam de fora para não quebrar no meio.
+       */
+      {
+        source: '/:path((?!api/|auth/).*)',
+        has: [{ type: 'host', value: 'protocolo40.vercel.app' }],
+        destination: 'https://www.p20x.com.br/:path',
+        permanent: true,
+      },
     ];
   },
 
